@@ -113,11 +113,24 @@
             class="grid grid-cols-1 gap-1.5 mb-4"
             style="max-height: 260px; overflow-y: auto"
           >
+            <!-- No teams in DB at all → season over -->
             <div
-              v-if="filteredTeams.length === 0"
+              v-if="teams.length === 0"
+              class="flex flex-col items-center gap-2 py-6 text-center"
+            >
+              <span class="text-2xl">📅</span>
+              <p class="text-slate-700 font-semibold text-sm">Season not active</p>
+              <p class="text-slate-400 text-xs leading-relaxed max-w-xs">
+                No upcoming matches found for <strong>{{ league }}</strong>.<br />
+                The season may be over or not started yet — check back closer to the new season.
+              </p>
+            </div>
+            <!-- Teams exist but search filtered them out -->
+            <div
+              v-else-if="filteredTeams.length === 0"
               class="text-slate-400 text-sm py-4 text-center"
             >
-              No teams found
+              No teams match "{{ search }}"
             </div>
             <button
               v-for="t in filteredTeams"

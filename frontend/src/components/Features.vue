@@ -48,7 +48,7 @@ const feats: { icon: IconName; title: string; desc: string }[] = [
   {
     icon: 'bell',
     title: 'Built-in reminders',
-    desc: 'Every event can includes a 1-hour heads-up reminder so you never miss the opening whistle.',
+    desc: 'Every event includes a 1-hour heads-up reminder so you never miss the opening whistle.',
   },
   {
     icon: 'zap',

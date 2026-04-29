@@ -7,7 +7,7 @@
           Whatever your sport, we've got it.
         </h2>
       </div>
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+      <div class="flex flex-wrap justify-center gap-4">
         <SportCard
           v-for="s in sports"
           :key="s.id"

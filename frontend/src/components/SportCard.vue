@@ -1,7 +1,7 @@
 <template>
   <button
     type="button"
-    class="sport-card rounded-2xl border-2 border-slate-200 bg-white p-4 flex flex-col items-center gap-2 cursor-pointer transition-all"
+    class="sport-card w-36 rounded-2xl border-2 border-slate-200 bg-white p-4 flex flex-col items-center gap-2 cursor-pointer transition-all"
     :class="{ selected }"
     @click="emit('click')"
   >
