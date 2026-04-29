@@ -19,21 +19,8 @@
           class="btn ms-btn-primary rounded-full px-8 py-3 text-base font-semibold shadow-md"
           @click="emit('getStarted')"
         >
-          Pick your team — it's free
+          Pick your team
         </button>
-        <a
-          href="#how-it-works"
-          class="btn btn-outline rounded-full px-8 py-3 text-base font-semibold text-slate-600 hover:bg-slate-50"
-          style="border-color: #94a3b8"
-        >
-          See how it works
-        </a>
-      </div>
-      <div class="flex items-center justify-center gap-8 mt-14">
-        <div v-for="[n, l] in stats" :key="n" class="text-center">
-          <div class="text-2xl font-black text-slate-900">{{ n }}</div>
-          <div class="text-xs text-slate-600 mt-0.5 font-medium">{{ l }}</div>
-        </div>
       </div>
     </div>
   </section>

@@ -22,7 +22,7 @@
           class="btn ms-btn-primary rounded-full px-10 text-sm font-semibold"
           @click="emit('getStarted')"
         >
-          Pick your team →
+          Pick your team 
         </button>
       </div>
     </div>

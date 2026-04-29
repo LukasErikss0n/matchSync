@@ -12,7 +12,7 @@
           class="btn btn-sm ms-btn-primary rounded-full px-5 text-sm hidden sm:flex"
           @click="emit('getStarted')"
         >
-          Get your calendar →
+          Get your calendar
         </button>
         <button
           class="md:hidden flex flex-col gap-1.5 p-2 rounded-lg hover:bg-slate-100 transition-colors"
@@ -42,7 +42,7 @@
         class="btn ms-btn-primary rounded-full mt-2 font-semibold text-sm"
         @click="onMobileCta"
       >
-        Get your calendar →
+        Get your calendar
       </button>
     </div>
   </nav>
