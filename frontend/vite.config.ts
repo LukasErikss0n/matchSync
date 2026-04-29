@@ -46,6 +46,7 @@ export default defineConfig({
     watch: {
       usePolling: true
     },
+    allowedHosts: ["matchsync.vinlaro.com"],
     proxy: {
       '/api': {
         // In Docker: backend service name. Locally: localhost.
