@@ -45,6 +45,13 @@ export default defineConfig({
     port: 5173,
     watch: {
       usePolling: true
+    },
+    proxy: {
+      '/api': {
+        // In Docker: backend service name. Locally: localhost.
+        target: process.env.API_TARGET ?? 'http://localhost:8000',
+        changeOrigin: true,
+      }
     }
   }
 })
