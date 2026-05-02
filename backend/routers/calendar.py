@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from sqlmodel import Session, select
@@ -34,6 +35,9 @@ def get_ics(league_slug: str, team_slug: str, session: Session = Depends(get_ses
     ).first()
     if not team_row:
         raise HTTPException(status_code=404, detail="Team not found")
-    matches = session.exec(select(Match).where(Match.team_id == team_row.id)).all()
+    now = datetime.now(timezone.utc)
+    matches = session.exec(
+        select(Match).where(Match.team_id == team_row.id, Match.start_time > now)
+    ).all()
     ics_bytes = build_ics(team_row.name, list(matches))
     return Response(content=ics_bytes, media_type="text/calendar")
