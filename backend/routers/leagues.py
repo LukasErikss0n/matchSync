@@ -1,13 +1,9 @@
-import re
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 from database import get_session
 from models.models import League, Sport, Team
-from schemas.schemas import SportOut
+from schemas.schemas import LeagueOut, SportOut, TeamOut
 
-
-def _slugify(s: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
 
 router = APIRouter()
 
@@ -22,20 +18,81 @@ def get_sports(session: Session = Depends(get_session)):
             id=sport.slug,
             label=sport.name,
             icon=sport.icon,
-            leagues=[l.name for l in leagues],
+            leagues=[LeagueOut(name=l.name, slug=l.slug) for l in leagues],
         ))
     return result
 
 
-@router.get("/leagues/{slug}/teams", response_model=list[str])
-def get_teams(slug: str, session: Session = Depends(get_session)):
-    # Try stored slug first, then fall back to matching against slugified display name
-    # (handles mismatch between key-based slugs in DB and name-based slugs from frontend)
-    league = session.exec(select(League).where(League.slug == slug)).first()
-    if not league:
-        all_leagues = session.exec(select(League)).all()
-        league = next((l for l in all_leagues if _slugify(l.name) == slug), None)
-    if not league:
-        raise HTTPException(status_code=404, detail="League not found")
-    teams = session.exec(select(Team).where(Team.league_id == league.id)).all()
-    return [t.name for t in teams]
+def _collect_teams(rows: list[tuple[Team, League, Sport]]) -> list[TeamOut]:
+    """Group (team, league, sport) rows into TeamOut entries keyed by (sport_slug, team_slug)."""
+    by_key: dict[tuple[str, str], TeamOut] = {}
+    for team, league, sport in rows:
+        key = (sport.slug, team.slug)
+        entry = by_key.get(key)
+        league_out = LeagueOut(name=league.name, slug=league.slug)
+        if entry is None:
+            by_key[key] = TeamOut(
+                name=team.name,
+                slug=team.slug,
+                sport=sport.slug,
+                leagues=[league_out],
+            )
+        elif not any(l.slug == league.slug for l in entry.leagues):
+            entry.leagues.append(league_out)
+    return list(by_key.values())
+
+
+@router.get("/teams", response_model=list[TeamOut])
+def list_teams(
+    sport: str | None = None,
+    q: str | None = None,
+    limit: int = Query(default=12, ge=1, le=200),
+    session: Session = Depends(get_session),
+):
+    """List teams, optionally filtered by sport slug and search query.
+
+    Returns deduplicated teams (one entry per (sport, team)) with all leagues
+    each team competes in. Sorted by league count desc, then alphabetical.
+    """
+    stmt = (
+        select(Team, League, Sport)
+        .join(League, Team.league_id == League.id)
+        .join(Sport, League.sport_id == Sport.id)
+    )
+    if sport:
+        stmt = stmt.where(Sport.slug == sport)
+
+    rows = session.exec(stmt).all()
+    teams = _collect_teams(rows)
+
+    if q:
+        ql = q.lower()
+        teams = [t for t in teams if ql in t.name.lower()]
+
+    teams.sort(key=lambda t: (-len(t.leagues), t.name.lower()))
+    return teams[:limit]
+
+
+@router.get("/teams/{team_slug}", response_model=TeamOut)
+def get_team(
+    team_slug: str,
+    sport: str | None = None,
+    session: Session = Depends(get_session),
+):
+    """Fetch a single team (by slug) and its leagues. Sport disambiguates name collisions."""
+    stmt = (
+        select(Team, League, Sport)
+        .join(League, Team.league_id == League.id)
+        .join(Sport, League.sport_id == Sport.id)
+        .where(Team.slug == team_slug)
+    )
+    if sport:
+        stmt = stmt.where(Sport.slug == sport)
+
+    rows = session.exec(stmt).all()
+    if not rows:
+        raise HTTPException(status_code=404, detail="Team not found")
+
+    teams = _collect_teams(rows)
+    teams.sort(key=lambda t: -len(t.leagues))
+    return teams[0]

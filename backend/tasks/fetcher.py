@@ -20,6 +20,19 @@ def slugify(s: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
 
 
+# Substrings that indicate a placeholder team name (fixture not yet decided).
+_PLACEHOLDER_FRAGMENTS = {
+    "winner", "loser", "runner-up", "runner up", "tbd", "tbc",
+    "semi-final", "semifinal", "quarter-final", "quarterfinal",
+    "to be confirmed", "to be decided",
+}
+
+
+def _is_placeholder(name: str) -> bool:
+    lower = name.lower()
+    return any(frag in lower for frag in _PLACEHOLDER_FRAGMENTS)
+
+
 # Maps sport string from filters → (db_name, db_slug, icon)
 SPORT_META: dict[str, tuple[str, str, str]] = {
     "football":   ("Football",     "football",         "football"),
@@ -135,7 +148,11 @@ class DBStore:
         sport = self._get_or_create_sport(sport_key)
         league = self._get_or_create_league(league_key, sport.id)
 
+        expected_external_ids: set[str] = set()
+
         for event_id, event in events.items():
+            if _is_placeholder(event["homeTeam"]) or _is_placeholder(event["awayTeam"]):
+                continue
             home_team = self._get_or_create_team(event["homeTeam"], league.id)
             away_team = self._get_or_create_team(event["awayTeam"], league.id)
             start_time = datetime.fromisoformat(event["startDateAndTime"].replace("Z", "+00:00"))
@@ -143,6 +160,7 @@ class DBStore:
             # Each match stored twice — once per team — so calendar queries stay simple
             for team, ext_suffix in [(home_team, "home"), (away_team, "away")]:
                 external_id = f"{event_id}_{ext_suffix}"
+                expected_external_ids.add(external_id)
                 existing = self.session.exec(
                     select(Match).where(Match.external_id == external_id)
                 ).first()
@@ -160,8 +178,27 @@ class DBStore:
                         start_time=start_time,
                     ))
 
+        # Reconcile: delete future matches in this league that the source no longer reports.
+        # Past matches are left alone — sources stop returning them once played, but we keep history.
+        team_ids = [t.id for t in self.session.exec(
+            select(Team).where(Team.league_id == league.id)
+        ).all()]
+        deleted = 0
+        if team_ids:
+            now = datetime.now(timezone.utc)
+            future_matches = self.session.exec(
+                select(Match).where(
+                    Match.team_id.in_(team_ids),
+                    Match.start_time > now,
+                )
+            ).all()
+            for m in future_matches:
+                if m.external_id not in expected_external_ids:
+                    self.session.delete(m)
+                    deleted += 1
+
         self.session.commit()
-        print(f"Saved {league_key} → {len(events)} events")
+        print(f"Saved {league_key} → {len(events)} events (removed {deleted} stale)")
 
 
 # ── Filters (fetching logic unchanged, output goes to DBStore) ────────────────

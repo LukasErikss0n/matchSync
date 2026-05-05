@@ -55,99 +55,115 @@
             v-for="s in sports"
             :key="s.id"
             :sport="s"
-            :selected="sport === s.id"
+            :selected="sportId === s.id"
             @click="selectSport(s.id)"
           />
           <button
-            :disabled="!sport"
+            :disabled="!sportId"
             class="col-span-2 sm:col-span-3 btn ms-btn-primary rounded-full mt-2 font-semibold disabled:opacity-40"
-            @click="step = 2"
-          >
-            Continue →
-          </button>
-        </div>
-
-        <!-- Step 2: League -->
-        <div v-else-if="step === 2 && selectedSport">
-          <button
-            class="text-sm text-slate-400 hover:text-slate-700 mb-4 flex items-center gap-1"
-            @click="step = 1"
-          >
-            ← Back
-          </button>
-          <div class="grid grid-cols-1 gap-2 mb-4">
-            <button
-              v-for="l in selectedSport.leagues"
-              :key="l"
-              class="team-card rounded-xl border-2 border-slate-200 px-5 py-3 text-left font-medium text-slate-700 transition-all"
-              :class="{ selected: league === l }"
-              @click="selectLeague(l)"
-            >
-              {{ l }}
-            </button>
-          </div>
-          <button
-            :disabled="!league"
-            class="btn ms-btn-primary rounded-full w-full font-semibold disabled:opacity-40"
             @click="goToTeams"
           >
-            Continue →
+            Continue
           </button>
         </div>
 
-        <!-- Step 3: Team -->
-        <div v-else-if="step === 3">
+        <!-- Step 2: Team -->
+        <div v-else-if="step === 2">
           <button
-            class="text-sm text-slate-400 hover:text-slate-700 mb-4 flex items-center gap-1"
-            @click="step = 2"
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-full px-3 py-1.5 mb-4 transition-all"
+            @click="step = 1"
           >
-            ← Back
+            <svg viewBox="0 0 16 16" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg>
+            Back
           </button>
           <input
             v-model="search"
             class="input input-bordered w-full mb-3 rounded-xl text-sm"
-            :placeholder="`Search ${league} teams…`"
+            :placeholder="`Search ${sportLabel} teams…`"
             autofocus
           />
           <div
-            class="grid grid-cols-1 gap-1.5 mb-4"
-            style="max-height: 260px; overflow-y: auto"
+            class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4"
+            style="max-height: 320px; overflow-y: auto"
           >
-            <!-- No teams in DB at all → season over -->
             <div
-              v-if="teams.length === 0"
-              class="flex flex-col items-center gap-2 py-6 text-center"
+              v-if="!teamsLoading && teamResults.length === 0"
+              class="col-span-full flex flex-col items-center gap-2 py-6 text-center"
             >
               <span class="text-2xl">📅</span>
-              <p class="text-slate-700 font-semibold text-sm">Season not active</p>
-              <p class="text-slate-400 text-xs leading-relaxed max-w-xs">
-                No upcoming matches found for <strong>{{ league }}</strong>.<br />
-                The season may be over or not started yet — check back closer to the new season.
+              <p class="text-slate-700 font-semibold text-sm">
+                {{ search ? `No teams match "${search}"` : 'No teams available yet' }}
               </p>
             </div>
-            <!-- Teams exist but search filtered them out -->
-            <div
-              v-else-if="filteredTeams.length === 0"
-              class="text-slate-400 text-sm py-4 text-center"
-            >
-              No teams match "{{ search }}"
-            </div>
             <button
-              v-for="t in filteredTeams"
-              :key="t"
-              class="team-card rounded-xl border-2 border-slate-200 px-4 py-2.5 text-left text-sm font-medium text-slate-700 transition-all"
-              :class="{ selected: team === t }"
-              @click="team = t"
+              v-for="t in teamResults"
+              :key="`${t.sport}-${t.slug}`"
+              class="team-card rounded-xl border-2 border-slate-200 px-4 py-3 text-left transition-all"
+              :class="{ selected: teamSlug === t.slug }"
+              @click="selectTeam(t)"
             >
-              {{ t }}
+              <div class="font-semibold text-slate-800 text-sm mb-0.5 truncate">{{ t.name }}</div>
+              <div class="text-xs text-slate-400 truncate">
+                {{ t.leagues.map(l => l.name).join(' · ') }}
+              </div>
             </button>
           </div>
           <button
-            :disabled="!team"
+            :disabled="!teamSlug"
+            class="btn ms-btn-primary rounded-full w-full font-semibold disabled:opacity-40"
+            @click="goToLeagues"
+          >
+            Continue
+          </button>
+        </div>
+
+        <!-- Step 3: Leagues -->
+        <div v-else-if="step === 3 && selectedTeam">
+          <button
+            class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-full px-3 py-1.5 mb-3 transition-all"
+            @click="goBackToTeams"
+          >
+            <svg viewBox="0 0 16 16" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg>
+            Back
+          </button>
+          <p class="text-sm text-slate-500 mb-4">
+            <strong class="text-slate-700">{{ selectedTeam.name }}</strong> — select leagues
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+            <label
+              v-for="l in selectedTeam.leagues"
+              :key="l.slug"
+              class="rounded-xl border-2 px-4 py-3 cursor-pointer flex items-center gap-3 transition-all"
+              :class="chosenLeagues.includes(l.slug)
+                ? 'border-[var(--ms-blue)] bg-sky-50'
+                : 'border-slate-200 bg-white hover:border-slate-300'"
+            >
+              <input
+                type="checkbox"
+                :value="l.slug"
+                v-model="chosenLeagues"
+                class="hidden"
+              />
+              <!-- Custom checkbox -->
+              <span
+                class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                :class="chosenLeagues.includes(l.slug)
+                  ? 'bg-[var(--ms-blue)] border-[var(--ms-blue)]'
+                  : 'border-slate-300 bg-white'"
+              >
+                <svg v-if="chosenLeagues.includes(l.slug)" viewBox="0 0 12 12" class="w-3 h-3" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 6l3 3 5-5"/>
+                </svg>
+              </span>
+              <span class="text-sm font-medium text-slate-700">{{ l.name }}</span>
+            </label>
+          </div>
+          <button
+            :disabled="chosenLeagues.length === 0"
             class="btn ms-btn-primary rounded-full w-full font-semibold disabled:opacity-40"
             @click="goToLink"
           >
-            Get my calendar link →
+            Get my link
           </button>
         </div>
 
@@ -159,8 +175,8 @@
             </div>
             <h3 class="text-xl font-black text-slate-900 mb-1">Your calendar is ready!</h3>
             <p class="text-slate-500 text-sm">
-              Subscribe to <strong>{{ team }}</strong> ({{ league }}) — every match syncs
-              automatically.
+              <strong>{{ calLink.team }}</strong> — {{ calLink.leagues.map(l => l.name).join(', ') }}.
+              Every match syncs automatically.
             </p>
           </div>
           <div class="mb-4">
@@ -212,68 +228,134 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import type { Sport, CalendarLink } from '@/types'
-import { fetchSports, fetchTeams, fetchCalendarLink } from '@/services/sports'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import type { CalendarLink, Sport, Team } from '@/types'
+import { fetchSports, fetchTeams, fetchTeam, fetchCalendarLink } from '@/services/sports'
 import SportCard from './SportCard.vue'
 import Icon from './Icon.vue'
+
+const props = defineProps<{
+  initialSport?: string | null
+  initialTeam?: Team | null
+}>()
 
 const emit = defineEmits<{ close: [] }>()
 
 const step = ref(1)
-const sport = ref<string | null>(null)
-const league = ref<string | null>(null)
-const team = ref<string | null>(null)
+const sportId = ref<string | null>(null)
+const teamSlug = ref<string | null>(null)
+const selectedTeam = ref<Team | null>(null)
+const chosenLeagues = ref<string[]>([])
 const search = ref('')
 const copied = ref(false)
 
 const sports = ref<Sport[]>([])
-const teams = ref<string[]>([])
+const teamResults = ref<Team[]>([])
+const teamsLoading = ref(false)
 const calLink = ref<CalendarLink | null>(null)
 
-const stepLabels = ['Sport', 'League', 'Team', 'Your link']
+const stepLabels = ['Sport', 'Team', 'Leagues', 'Link']
 
-const selectedSport = computed(() => sports.value.find(s => s.id === sport.value) ?? null)
-const filteredTeams = computed(() =>
-  teams.value.filter(t => t.toLowerCase().includes(search.value.toLowerCase()))
+const sportLabel = computed(
+  () => sports.value.find(s => s.id === sportId.value)?.label ?? '',
 )
+
+let searchTimer: number | null = null
 
 function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') emit('close')
+}
+
+async function loadTeams() {
+  if (!sportId.value) return
+  teamsLoading.value = true
+  try {
+    teamResults.value = await fetchTeams({
+      sport: sportId.value,
+      q: search.value.trim() || undefined,
+      limit: 30,
+    })
+  } finally {
+    teamsLoading.value = false
+  }
 }
 
 onMounted(async () => {
   window.addEventListener('keydown', onKey)
   document.body.style.overflow = 'hidden'
   sports.value = await fetchSports()
+
+  // Apply deep-link state passed from the hero
+  if (props.initialSport) sportId.value = props.initialSport
+  if (props.initialTeam) {
+    selectedTeam.value = props.initialTeam
+    teamSlug.value = props.initialTeam.slug
+    sportId.value = props.initialTeam.sport
+    chosenLeagues.value = props.initialTeam.leagues.map(l => l.slug)
+    step.value = 3
+  } else if (props.initialSport) {
+    await loadTeams()
+    step.value = 2
+  }
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKey)
   document.body.style.overflow = ''
+  if (searchTimer !== null) window.clearTimeout(searchTimer)
+})
+
+watch(search, () => {
+  if (step.value !== 2) return
+  if (searchTimer !== null) window.clearTimeout(searchTimer)
+  searchTimer = window.setTimeout(loadTeams, 200)
 })
 
 function selectSport(id: string) {
-  sport.value = id
-  league.value = null
-  team.value = null
-}
-
-function selectLeague(l: string) {
-  league.value = l
-  team.value = null
+  sportId.value = id
+  teamSlug.value = null
+  selectedTeam.value = null
+  chosenLeagues.value = []
 }
 
 async function goToTeams() {
-  if (!league.value) return
+  if (!sportId.value) return
   search.value = ''
-  teams.value = await fetchTeams(league.value)
+  await loadTeams()
+  step.value = 2
+}
+
+function selectTeam(t: Team) {
+  teamSlug.value = t.slug
+  selectedTeam.value = t
+  chosenLeagues.value = t.leagues.map(l => l.slug)
+}
+
+async function goBackToTeams() {
+  // If teams were never loaded (e.g. modal opened at step 3 from hero), load them first
+  if (teamResults.value.length === 0 && sportId.value) {
+    await loadTeams()
+  }
+  step.value = 2
+}
+
+async function goToLeagues() {
+  if (!teamSlug.value || !sportId.value) return
+  // Ensure we have the full team (with leagues) — if missing, fetch it
+  if (!selectedTeam.value || selectedTeam.value.slug !== teamSlug.value) {
+    selectedTeam.value = await fetchTeam(teamSlug.value, sportId.value)
+    chosenLeagues.value = selectedTeam.value.leagues.map(l => l.slug)
+  }
   step.value = 3
 }
 
 async function goToLink() {
-  if (!team.value || !league.value) return
-  calLink.value = await fetchCalendarLink(team.value, league.value)
+  if (!sportId.value || !teamSlug.value || chosenLeagues.value.length === 0) return
+  calLink.value = await fetchCalendarLink(
+    sportId.value,
+    teamSlug.value,
+    chosenLeagues.value,
+  )
   step.value = 4
 }
 
@@ -285,14 +367,14 @@ function handleCopy() {
 }
 
 function reset() {
-  sport.value = null
-  league.value = null
-  team.value = null
+  sportId.value = null
+  teamSlug.value = null
+  selectedTeam.value = null
+  chosenLeagues.value = []
   search.value = ''
   calLink.value = null
   step.value = 1
 }
-
 </script>
 
 <style scoped>

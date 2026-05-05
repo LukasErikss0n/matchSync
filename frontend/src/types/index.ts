@@ -15,15 +15,28 @@ export type IconName =
   | 'calendar'
   | 'search'
 
+export interface League {
+  name: string
+  slug: string
+}
+
 export interface Sport {
-  id: string
-  label: string
+  id: string          // sport slug, e.g. "football"
+  label: string       // display name, e.g. "Football"
   icon: IconName
-  leagues: string[]
+  leagues: League[]
+}
+
+export interface Team {
+  name: string
+  slug: string
+  sport: string       // sport slug
+  leagues: League[]
 }
 
 export interface CalendarLink {
   team: string
-  league: string
+  sport: string
+  leagues: League[]
   url: string
 }

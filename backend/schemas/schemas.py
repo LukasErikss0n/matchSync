@@ -73,16 +73,31 @@ class MatchPublic(MatchBase):
 
 # ── Complex API response shapes ───────────────────────────────────────────────
 
+class LeagueOut(SQLModel):
+    """League info exposed to frontend."""
+    name: str
+    slug: str
+
+
 class SportOut(SQLModel):
     """Shape the frontend expects from GET /sports."""
     id: str          # slug, e.g. "football"
     label: str       # display name, e.g. "Football"
     icon: str
-    leagues: list[str]
+    leagues: list[LeagueOut]
+
+
+class TeamOut(SQLModel):
+    """A team in the context of a sport, with all leagues it competes in."""
+    name: str
+    slug: str
+    sport: str       # sport slug
+    leagues: list[LeagueOut]
 
 
 class CalendarLink(SQLModel):
     """Shape the frontend expects from GET /calendar."""
     team: str
-    league: str
+    sport: str
+    leagues: list[LeagueOut]
     url: str
