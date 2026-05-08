@@ -166,6 +166,7 @@ class DBStore:
                     select(Match).where(Match.external_id == external_id)
                 ).first()
                 if existing:
+                    existing.team_id = team.id
                     existing.home_team = event["homeTeam"]
                     existing.away_team = event["awayTeam"]
                     existing.start_time = start_time
