@@ -343,10 +343,44 @@ class IIHFFilter:
         "iihf_world_championship": 969,
     }
 
+    TEAM_NAMES: dict[str, str] = {
+        "AUT": "Austria",
+        "BLR": "Belarus",
+        "BEL": "Belgium",
+        "CAN": "Canada",
+        "CZE": "Czechia",
+        "DEN": "Denmark",
+        "EST": "Estonia",
+        "FIN": "Finland",
+        "FRA": "France",
+        "GBR": "Great Britain",
+        "GER": "Germany",
+        "HUN": "Hungary",
+        "ITA": "Italy",
+        "JPN": "Japan",
+        "KAZ": "Kazakhstan",
+        "KOR": "South Korea",
+        "LAT": "Latvia",
+        "LTU": "Lithuania",
+        "NED": "Netherlands",
+        "NOR": "Norway",
+        "POL": "Poland",
+        "ROM": "Romania",
+        "SVK": "Slovakia",
+        "SLO": "Slovenia",
+        "SUI": "Switzerland",
+        "SWE": "Sweden",
+        "UKR": "Ukraine",
+        "USA": "United States",
+    }
+
     def __init__(self, api: FetchAPI, time: TimeManagement, store: DBStore):
         self.api = api
         self.time = time
         self.store = store
+
+    def _team_name(self, code: str) -> str:
+        return self.TEAM_NAMES.get(code, code)
 
     def filter(self):
         season = self.time.get_active_season_year("05")
@@ -361,14 +395,13 @@ class IIHFFilter:
                 )
                 if self.time.has_date_passed(utc_str):
                     continue
-                event_id = str(g.get(
-                    "GameId",
-                    f"{g['HomeTeam']['TeamCode']}v{g['GuestTeam']['TeamCode']}{utc_str[:10]}",
-                ))
+                home_code = g["HomeTeam"]["TeamCode"]
+                away_code = g["GuestTeam"]["TeamCode"]
+                event_id = str(g.get("GameId", f"{home_code}v{away_code}{utc_str[:10]}"))
                 events[event_id] = {
                     "eventId":          event_id,
-                    "homeTeam":         g["HomeTeam"]["TeamCode"],
-                    "awayTeam":         g["GuestTeam"]["TeamCode"],
+                    "homeTeam":         self._team_name(home_code),
+                    "awayTeam":         self._team_name(away_code),
                     "startDateAndTime": utc_str,
                 }
             self.store.save("hockey", tournament_key, events)
