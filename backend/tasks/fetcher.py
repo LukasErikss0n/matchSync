@@ -53,6 +53,7 @@ LEAGUE_DISPLAY: dict[str, str] = {
     "sdhl":                     "SDHL",
     "sblherrar":                "SBL Herrar",
     "sbldamer":                 "SBL Damer",
+    "iihf_world_championship":  "IIHF World Championship",
 }
 
 
@@ -337,6 +338,42 @@ class SwedishFootballFilter:
             self.store.save("football", league_key, events)
 
 
+class IIHFFilter:
+    TOURNAMENTS = {
+        "iihf_world_championship": 969,
+    }
+
+    def __init__(self, api: FetchAPI, time: TimeManagement, store: DBStore):
+        self.api = api
+        self.time = time
+        self.store = store
+
+    def filter(self):
+        season = self.time.get_active_season_year("05")
+        for tournament_key, tournament_id in self.TOURNAMENTS.items():
+            events: dict = {}
+            games = self.api.get(f"https://realtime.iihf.com/gamestate/GetLatestScoresState/{tournament_id}")
+            for g in games:
+                utc_str = (
+                    datetime.fromisoformat(g["GameDateTimeUTC"].replace("Z", "+00:00"))
+                    .astimezone(timezone.utc)
+                    .strftime("%Y-%m-%dT%H:%M:%SZ")
+                )
+                if self.time.has_date_passed(utc_str):
+                    continue
+                event_id = str(g.get(
+                    "GameId",
+                    f"{g['HomeTeam']['TeamCode']}v{g['GuestTeam']['TeamCode']}{utc_str[:10]}",
+                ))
+                events[event_id] = {
+                    "eventId":          event_id,
+                    "homeTeam":         g["HomeTeam"]["TeamCode"],
+                    "awayTeam":         g["GuestTeam"]["TeamCode"],
+                    "startDateAndTime": utc_str,
+                }
+            self.store.save("hockey", tournament_key, events)
+
+
 # ── Fetcher state (readable by health endpoint) ───────────────────────────────
 
 fetcher_state: dict = {
@@ -360,6 +397,7 @@ def run_fetch() -> None:
             FootballFilter(api, time, store).filter()
             HockeyBasketballFilter(api, time, store, helpers).filter()
             SwedishFootballFilter(api, time, store).filter()
+            IIHFFilter(api, time, store).filter()
 
         fetcher_state["status"] = "ok"
         fetcher_state["last_run"] = datetime.now(timezone.utc).isoformat()

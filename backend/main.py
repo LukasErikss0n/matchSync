@@ -1,3 +1,4 @@
+import datetime
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,9 +14,14 @@ from tasks.fetcher import run_fetch, fetcher_state
 async def lifespan(app: FastAPI):
     create_db_and_tables()
 
-    scheduler = BackgroundScheduler()
-    # Run immediately on startup, then every 4 hours
-    scheduler.add_job(run_fetch, "interval", hours=4, next_run_time=__import__("datetime").datetime.now())
+    # Scheduler runs in Europe/Stockholm time (UTC+2 CEST / UTC+1 CET).
+    scheduler = BackgroundScheduler(timezone="Europe/Stockholm")
+    # 18:00–22:00 local time: run every hour
+    scheduler.add_job(run_fetch, "cron", hour="18,19,20,21,22", minute=0)
+    # Rest of day: run every 4 hours (0, 4, 8, 12, 16)
+    scheduler.add_job(run_fetch, "cron", hour="0,4,8,12,16", minute=0)
+    # Run once immediately on startup
+    scheduler.add_job(run_fetch, "date", run_date=datetime.datetime.now())
     scheduler.start()
 
     yield
