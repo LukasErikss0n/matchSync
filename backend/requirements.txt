@@ -9,3 +9,4 @@ apscheduler
 requests
 python-dateutil
 beautifulsoup4
+resend

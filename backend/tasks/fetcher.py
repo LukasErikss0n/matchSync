@@ -1,7 +1,5 @@
 import re
-import smtplib
 from datetime import datetime, timezone
-from email.mime.text import MIMEText
 from zoneinfo import ZoneInfo
 from urllib.parse import parse_qs, urlparse
 
@@ -12,7 +10,8 @@ from requests.adapters import HTTPAdapter
 from sqlmodel import Session, select
 from urllib3.util.retry import Retry
 
-from config import SMTP_USER, SMTP_PASSWORD, ALERT_EMAIL
+import resend
+from config import RESEND_API_KEY, ALERT_EMAIL
 from database import engine
 from models.models import League, Match, Sport, Team
 
@@ -421,18 +420,17 @@ fetcher_state: dict = {
 
 
 def _send_error_email(error: str) -> None:
-    if not SMTP_USER or not SMTP_PASSWORD or not ALERT_EMAIL:
+    if not RESEND_API_KEY or not ALERT_EMAIL:
         print("[fetcher] email not configured, skipping alert")
         return
     try:
-        msg = MIMEText(f"MatchSync fetcher failed at {datetime.now(_LOCAL_TZ).isoformat()}\n\nError:\n{error}")
-        msg["Subject"] = "MatchSync fetcher error"
-        msg["From"] = SMTP_USER
-        msg["To"] = ALERT_EMAIL
-        with smtplib.SMTP("smtp.office365.com", 587) as server:
-            server.starttls()
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.sendmail(SMTP_USER, ALERT_EMAIL, msg.as_string())
+        resend.api_key = RESEND_API_KEY
+        resend.Emails.send({
+            "from": ALERT_EMAIL,
+            "to": ALERT_EMAIL,
+            "subject": "MatchSync fetcher error",
+            "text": f"MatchSync fetcher failed at {datetime.now(_LOCAL_TZ).isoformat()}\n\nError:\n{error}",
+        })
         print("[fetcher] error alert email sent")
     except Exception as e:
         print(f"[fetcher] failed to send alert email: {e}")
