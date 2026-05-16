@@ -210,3 +210,6 @@ __marimo__/
 frontend/node_modules/
 frontend/dist/
 ClaudeContext.txt
+
+# Local dev overrides
+docker-compose.override.yml
