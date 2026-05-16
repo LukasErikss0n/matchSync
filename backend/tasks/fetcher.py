@@ -426,7 +426,7 @@ def _send_error_email(error: str) -> None:
     try:
         resend.api_key = RESEND_API_KEY
         resend.Emails.send({
-            "from": ALERT_EMAIL,
+            "from": "onboarding@resend.dev",
             "to": ALERT_EMAIL,
             "subject": "MatchSync fetcher error",
             "text": f"MatchSync fetcher failed at {datetime.now(_LOCAL_TZ).isoformat()}\n\nError:\n{error}",
