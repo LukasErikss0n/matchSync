@@ -97,7 +97,10 @@ class TimeManagement:
         return season
 
     def has_date_passed(self, date_utc: str) -> bool:
-        dt = datetime.fromisoformat(date_utc.replace("Z", "+00:00"))
+        try:
+            dt = datetime.fromisoformat(date_utc.replace("Z", "+00:00"))
+        except ValueError:
+            return True  # unparseable date (e.g. placeholder year 0001) — skip the event
         return dt <= datetime.now(timezone.utc)
 
     def convert_to_utc(self, start_date_and_time: str, time_zone: str | None = None) -> str:
@@ -156,9 +159,12 @@ class DBStore:
         for event_id, event in events.items():
             if _is_placeholder(event["homeTeam"]) or _is_placeholder(event["awayTeam"]):
                 continue
+            try:
+                start_time = datetime.fromisoformat(event["startDateAndTime"].replace("Z", "+00:00"))
+            except ValueError:
+                continue
             home_team = self._get_or_create_team(event["homeTeam"], league.id)
             away_team = self._get_or_create_team(event["awayTeam"], league.id)
-            start_time = datetime.fromisoformat(event["startDateAndTime"].replace("Z", "+00:00"))
 
             # Each match stored twice — once per team — so calendar queries stay simple
             for team, ext_suffix in [(home_team, "home"), (away_team, "away")]:
