@@ -37,13 +37,13 @@ services:
       timeout: 5s
       retries: 10
 
-  # tunnel:
-  #   image: cloudflare/cloudflared:latest
-  #   container_name: tunnel
-  #   restart: unless-stopped
-  #   command: tunnel run
-  #   env_file:
-  #     - .env
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: tunnel
+    restart: unless-stopped
+    command: tunnel run
+    env_file:
+      - .env
 
 volumes:
   postgres_data:
