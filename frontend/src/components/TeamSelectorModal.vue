@@ -78,7 +78,7 @@
           </button>
           <input
             v-model="search"
-            class="input input-bordered w-full mb-3 rounded-xl text-sm"
+            class="input input-bordered w-full mb-3 rounded-xl text-sm focus:outline-none focus:border-[var(--ms-blue)] focus:ring-2 focus:ring-[var(--ms-blue)]/30"
             :placeholder="`Search ${sportLabel} teams…`"
             autofocus
           />
@@ -102,8 +102,8 @@
               :class="{ selected: teamSlug === t.slug }"
               @click="selectTeam(t)"
             >
-              <div class="font-semibold text-slate-800 text-sm mb-0.5 truncate">{{ t.name }}</div>
-              <div class="text-xs text-slate-400 truncate">
+              <div class="font-semibold text-slate-800 text-sm mb-0.5">{{ t.name }}</div>
+              <div class="text-xs text-slate-400">
                 {{ t.leagues.map(l => l.name).join(' · ') }}
               </div>
             </button>

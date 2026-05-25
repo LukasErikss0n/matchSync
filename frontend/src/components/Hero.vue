@@ -48,7 +48,7 @@
       </div>
 
       <!-- Team grid -->
-      <div class="grid grid-cols-2 gap-3 mb-5 items-start">
+      <div class="grid grid-cols-2 gap-3 mb-5">
         <button
           v-for="t in teams"
           :key="`${t.sport}-${t.slug}`"
@@ -56,8 +56,8 @@
           :class="{ selected: selectedTeam?.slug === t.slug && selectedTeam?.sport === t.sport }"
           @click="onTeamClick(t)"
         >
-          <div class="font-semibold text-slate-800 text-sm mb-0.5 truncate">{{ t.name }}</div>
-          <div class="text-xs text-slate-400 truncate">
+          <div class="font-semibold text-slate-800 text-sm mb-0.5 line-clamp-2">{{ t.name }}</div>
+          <div class="text-xs text-slate-400 line-clamp-1">
             {{ t.leagues.map(l => l.name).join(' · ') }}
           </div>
         </button>

@@ -13,7 +13,7 @@
           :key="s.id"
           :sport="s"
           show-leagues
-          @click="emit('getStarted')"
+          @click="emit('pickSport', s.id)"
         />
       </div>
     </div>
@@ -26,7 +26,7 @@ import type { Sport } from '@/types'
 import { fetchSports } from '@/services/sports'
 import SportCard from './SportCard.vue'
 
-const emit = defineEmits<{ getStarted: [] }>()
+const emit = defineEmits<{ pickSport: [id: string] }>()
 
 const sports = ref<Sport[]>([])
 

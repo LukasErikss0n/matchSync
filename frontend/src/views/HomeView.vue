@@ -5,8 +5,8 @@
     @pick-sport="openWithSport"
     @pick-team="openWithTeam"
   />
+  <SportsGrid @pick-sport="openWithSport" />
   <HowItWorks @get-started="openSport" />
-  <SportsGrid @get-started="openSport" />
   <Features />
   <Footer />
   <TeamSelectorModal
