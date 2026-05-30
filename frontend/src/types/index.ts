@@ -31,7 +31,24 @@ export interface Team {
   name: string
   slug: string
   sport: string       // sport slug
+  icon?: string | null
   leagues: League[]
+}
+
+export interface Match {
+  id: number
+  external_id: string
+  sport: string
+  league: League
+  home_team: string
+  away_team: string
+  home_slug?: string | null
+  away_slug?: string | null
+  home_icon?: string | null
+  away_icon?: string | null
+  home_score?: number | null
+  away_score?: number | null
+  start_time: string   // ISO-UTC (with Z) — rendered in the viewer's local time
 }
 
 export interface CalendarLink {

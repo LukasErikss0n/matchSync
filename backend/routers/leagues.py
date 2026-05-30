@@ -35,8 +35,11 @@ def _collect_teams(rows: list[tuple[Team, League, Sport]]) -> list[TeamOut]:
                 name=team.name,
                 slug=team.slug,
                 sport=sport.slug,
+                icon=team.icon,
                 leagues=[league_out],
             )
+        elif entry.icon is None and team.icon:
+            entry.icon = team.icon
         elif not any(l.slug == league.slug for l in entry.leagues):
             entry.leagues.append(league_out)
     return list(by_key.values())

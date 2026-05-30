@@ -1,4 +1,4 @@
-import type { CalendarLink, Sport, Team } from '@/types'
+import type { CalendarLink, Match, Sport, Team } from '@/types'
 
 const API_BASE = '/api'
 
@@ -27,6 +27,23 @@ export async function fetchTeam(teamSlug: string, sport?: string): Promise<Team>
   const qs = sport ? `?sport=${encodeURIComponent(sport)}` : ''
   const res = await fetch(`${API_BASE}/teams/${encodeURIComponent(teamSlug)}${qs}`)
   if (!res.ok) throw new Error(`Failed to fetch team: ${res.status}`)
+  return res.json()
+}
+
+export async function fetchMatches(opts: {
+  sport?: string
+  league?: string
+  team?: string
+  limit?: number
+} = {}): Promise<Match[]> {
+  const params = new URLSearchParams()
+  if (opts.sport) params.set('sport', opts.sport)
+  if (opts.league) params.set('league', opts.league)
+  if (opts.team) params.set('team', opts.team)
+  if (opts.limit) params.set('limit', String(opts.limit))
+  const qs = params.toString()
+  const res = await fetch(`${API_BASE}/matches${qs ? `?${qs}` : ''}`)
+  if (!res.ok) throw new Error(`Failed to fetch matches: ${res.status}`)
   return res.json()
 }
 

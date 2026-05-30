@@ -6,7 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from sqlmodel import Session, select
 
 from database import create_db_and_tables, engine
-from routers import calendar, leagues
+from routers import calendar, leagues, matches
 from tasks.fetcher import run_fetch, fetcher_state
 
 
@@ -16,8 +16,8 @@ async def lifespan(app: FastAPI):
 
     # Scheduler runs in Europe/Stockholm time (UTC+2 CEST / UTC+1 CET).
     scheduler = BackgroundScheduler(timezone="Europe/Stockholm")
-    # 18:00–22:00 local time: run every hour
-    scheduler.add_job(run_fetch, "cron", hour="18,19,20,21,22", minute=0)
+    # 17:00–23:30 local time: run every 30 minutes
+    scheduler.add_job(run_fetch, "cron", hour="17-23", minute="0,30")
     # Rest of day: run every 4 hours (0, 4, 8, 12, 16)
     scheduler.add_job(run_fetch, "cron", hour="0,4,8,12,16", minute=0)
     scheduler.start()
@@ -39,6 +39,7 @@ app.add_middleware(
 
 app.include_router(leagues.router, prefix="/api")
 app.include_router(calendar.router, prefix="/api")
+app.include_router(matches.router, prefix="/api")
 
 
 @app.get("/health")

@@ -41,6 +41,7 @@ class TeamBase(SQLModel):
     name: str
     slug: str
     league_id: int
+    icon: Optional[str] = None   # team logo URL — nullable (not every source provides one)
 
 
 class TeamCreate(TeamBase):
@@ -60,6 +61,8 @@ class MatchBase(SQLModel):
     start_time: datetime
     end_time: Optional[datetime] = None
     venue: Optional[str] = None
+    home_score: Optional[int] = None   # nullable — only set once a match is played
+    away_score: Optional[int] = None
     team_id: int
 
 
@@ -92,7 +95,25 @@ class TeamOut(SQLModel):
     name: str
     slug: str
     sport: str       # sport slug
+    icon: Optional[str] = None
     leagues: list[LeagueOut]
+
+
+class MatchOut(SQLModel):
+    """A single fixture/result exposed to the frontend (deduplicated)."""
+    id: int
+    external_id: str
+    sport: str
+    league: LeagueOut
+    home_team: str
+    away_team: str
+    home_slug: Optional[str] = None
+    away_slug: Optional[str] = None
+    home_icon: Optional[str] = None
+    away_icon: Optional[str] = None
+    home_score: Optional[int] = None
+    away_score: Optional[int] = None
+    start_time: datetime
 
 
 class CalendarLink(SQLModel):

@@ -1,17 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 @plugin "daisyui" {
     themes: light --default;
 }
 
 :root {
-    --ms-blue: #29ABE2;
+    --ms-blue: #29abe2;
     --ms-blue-dark: #1a8ec4;
     --ms-navy: #1a2235;
 }
 
 * {
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
 }
 
 html {
@@ -46,6 +46,26 @@ body {
     background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid #e2e8f0;
+}
+
+/* ── Nav tabs (Home / Matches) ─────────────────────────────────────────────── */
+.ms-tab {
+    position: relative;
+    padding-bottom: 2px;
+}
+
+.ms-tab-active {
+    color: #0f172a;
+}
+
+.ms-tab-active::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -20px;
+    height: 2px;
+    background: var(--ms-blue);
 }
 
 .section-label {
@@ -98,11 +118,90 @@ body {
     color: #94a3b8;
 }
 
+/* ── Matches page: filter pills, dropdowns, pager ──────────────────────────── */
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 1rem;
+    border-radius: 9999px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #334155;
+    transition: all 0.15s ease;
+}
+
+.filter-pill:hover {
+    border-color: #cbd5e1;
+}
+
+.filter-pill.active {
+    border-color: var(--ms-blue);
+    color: var(--ms-blue);
+}
+
+.filter-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    min-width: 16rem;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.9rem;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+    padding: 0.35rem;
+}
+
+.filter-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 0.7rem;
+    border-radius: 0.6rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #334155;
+    transition: background 0.12s ease;
+}
+
+.filter-item:hover {
+    background: #f1f5f9;
+}
+
+.filter-item.chosen {
+    background: #e0f2fe;
+    color: var(--ms-blue);
+}
+
+.pager-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 9999px;
+    border: 1.5px solid #e2e8f0;
+    background: white;
+    color: #475569;
+    transition: all 0.15s ease;
+}
+
+.pager-btn:hover {
+    border-color: var(--ms-blue);
+    color: var(--ms-blue);
+}
+
 /* ── Calendar link box ─────────────────────────────────────────────────────── */
 .link-box {
     background: #f8fafc;
     border: 1.5px dashed #cbd5e1;
-    font-family: 'Courier New', monospace;
+    font-family: "Courier New", monospace;
     font-size: 0.78rem;
     color: #475569;
 }
