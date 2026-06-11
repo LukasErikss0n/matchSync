@@ -71,6 +71,7 @@ LEAGUE_DISPLAY: dict[str, str] = {
     "sblherrar": "SBL Herrar",
     "sbldamer": "SBL Damer",
     "iihf_world_championship": "IIHF World Championship",
+    "fifa_world_cup_2026": "FIFA World Cup 2026",
 }
 
 
@@ -577,6 +578,58 @@ class IIHFFilter:
             self.store.save("hockey", tournament_key, events)
 
 
+class FifaFilter:
+    TOURNAMENTS = {
+        "fifa_world_cup_2026": "285023",
+    }
+
+    def __init__(self, api: FetchAPI, time: TimeManagement, store: DBStore):
+        self.api = api
+        self.time = time
+        self.store = store
+
+    def _team_name(self, team: dict) -> str | None:
+        names = team.get("TeamName") or []
+        return names[0]["Description"] if names else None
+
+    def _picture_url(self, team: dict) -> str | None:
+        # FIFA crest URLs carry {format} (shape: "sq") and {size} (1-4, 4 = largest).
+        url = team.get("PictureUrl")
+        if not url:
+            return None
+        return url.replace("{format}", "sq").replace("{size}", "4")
+
+    def filter(self):
+        for tournament_key, season_id in self.TOURNAMENTS.items():
+            events: dict = {}
+            url = (
+                "https://api.fifa.com/api/v3/calendar/matches"
+                f"?language=en&count=500&idSeason={season_id}"
+            )
+            data = self.api.get(url)
+            for match in data.get("Results", []):
+                if not self.time.is_recent_or_future(match["Date"]):
+                    continue
+                home = match.get("Home") or {}
+                away = match.get("Away") or {}
+                home_name = self._team_name(home)
+                away_name = self._team_name(away)
+                if not home_name or not away_name:
+                    continue
+                event_id = str(match["IdMatch"])
+                events[event_id] = {
+                    "eventId": event_id,
+                    "homeTeam": home_name,
+                    "awayTeam": away_name,
+                    "startDateAndTime": match["Date"],
+                    "homeIcon": self._picture_url(home),
+                    "awayIcon": self._picture_url(away),
+                    "homeScore": home.get("Score"),
+                    "awayScore": away.get("Score"),
+                }
+            self.store.save("football", tournament_key, events)
+
+
 class FootballIconsFetcher:
     """Fetches Premier League team crests via the FPL bootstrap API and stores
     them for every football team (PL, UCL, UEL, etc.) matched by name."""
@@ -676,6 +729,7 @@ def run_fetch() -> None:
             HockeyBasketballFilter(api, time, store, helpers).filter()
             SwedishFootballFilter(api, time, store).filter()
             IIHFFilter(api, time, store).filter()
+            FifaFilter(api, time, store).filter()
             FootballIconsFetcher(api, store).filter()
 
         fetcher_state["status"] = "ok"
