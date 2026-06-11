@@ -10,7 +10,7 @@
                     class="h-8 w-8 rounded-lg object-cover"
                 />
                 <span class="font-bold text-lg tracking-tight text-slate-900">
-                    Match<span class="ms-text-accent">Sync</span>
+                    Game<span class="ms-text-accent">Sync</span>
                 </span>
             </RouterLink>
 
@@ -88,8 +88,8 @@ const emit = defineEmits<{ getStarted: [] }>();
 const menuOpen = ref(false);
 
 const tabs = [
-    { label: "", to: "/" }, //home
-    { label: "", to: "/matches" }, //matches
+    { label: "Home", to: "/" }, //home
+    { label: "Matches", to: "/matches?league=fifa-world-cup-2026" }, //matches
 ];
 
 function onMobileCta() {

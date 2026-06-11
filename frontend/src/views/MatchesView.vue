@@ -16,24 +16,6 @@
 
             <!-- Filters -->
             <div class="flex flex-wrap items-center gap-2.5 mb-8">
-                <span
-                    class="flex items-center justify-center w-9 h-9 rounded-full bg-white border border-slate-200 text-slate-400"
-                >
-                    <svg
-                        viewBox="0 0 24 24"
-                        class="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <line x1="4" y1="6" x2="20" y2="6" />
-                        <line x1="7" y1="12" x2="17" y2="12" />
-                        <line x1="10" y1="18" x2="14" y2="18" />
-                    </svg>
-                </span>
-
                 <!-- League -->
                 <div class="relative">
                     <button
@@ -80,7 +62,7 @@
                     </button>
                     <div
                         v-if="open === 'team'"
-                        class="filter-menu max-h-72 overflow-y-auto"
+                        class="filter-menu right-align max-h-72 overflow-y-auto"
                     >
                         <button
                             class="filter-item"
@@ -185,37 +167,29 @@
 
             <!-- Empty -->
             <div v-else class="text-center py-16">
-                <p class="text-slate-700 font-semibold mb-1">
-                    No matches this week
-                </p>
-                <p class="text-sm text-slate-400">
-                    {{
-                        matches.length
-                            ? "Try the arrows to browse other weeks."
-                            : "No fixtures available for this selection yet."
-                    }}
-                </p>
+                <p class="text-slate-700 font-semibold">No matches this week</p>
             </div>
 
             <!-- Footer CTA -->
             <div
                 v-if="selectedLeague"
-                class="mt-8 bg-white rounded-2xl border border-slate-100 shadow-sm px-5 sm:px-7 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                class="mt-8 bg-white rounded-2xl border border-slate-100 shadow-sm px-5 py-4 flex items-center justify-between gap-4"
             >
-                <div>
-                    <p class="font-bold text-slate-800">
-                        Subscribe to the full {{ selectedLeague.name }} calendar
-                    </p>
-                    <p class="text-sm text-slate-500">
-                        Get every match · including reschedules and playoffs ·
-                        synced automatically.
-                    </p>
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="flex-shrink-0 w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+                        <Icon name="calendar" class="!w-4 !h-4 text-[var(--ms-blue)]" />
+                    </div>
+                    <div class="min-w-0">
+                        <p class="font-semibold text-slate-800 text-sm truncate">{{ selectedLeague.name }} calendar</p>
+                        <p class="text-xs text-slate-400">Subscribe once, stay synced forever</p>
+                    </div>
                 </div>
                 <button
-                    class="btn ms-btn-primary rounded-full font-semibold px-5 whitespace-nowrap"
+                    class="flex-shrink-0 flex items-center gap-2 btn ms-btn-primary rounded-full font-semibold px-4 text-sm whitespace-nowrap"
                     @click="openSportModal"
                 >
-                    Get calendar link
+                    <Icon name="link" class="!w-3.5 !h-3.5" />
+                    Get link
                 </button>
             </div>
         </div>
@@ -231,6 +205,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, h } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import type { League, Match, Sport, Team } from "@/types";
 import {
     fetchSports,
@@ -268,6 +243,9 @@ const ChevronDown = (
 
 type LeagueOption = League & { sport: string; sportLabel: string };
 
+const route = useRoute();
+const router = useRouter();
+
 const sports = ref<Sport[]>([]);
 const selectedLeague = ref<LeagueOption | null>(null);
 const teamOptions = ref<Team[]>([]);
@@ -302,7 +280,7 @@ const selectedTeamName = computed(() => {
 // singleYear: true → show "2026"; false → show "2025/26".
 type SeasonCfg = { threshold: number; atStart: boolean; singleYear: boolean };
 const LEAGUE_SEASON: Record<string, SeasonCfg> = {
-    "premier-league": { threshold: 7, atStart: false, singleYear: false }, // after August
+    "premier-league": { threshold: 4, atStart: false, singleYear: false }, // after May
     "uefa-champions-league": {
         threshold: 4,
         atStart: false,
@@ -353,6 +331,15 @@ function toggle(which: "league" | "team") {
     open.value = open.value === which ? null : which;
 }
 
+function pushQuery(league: LeagueOption | null, team: string | null) {
+    router.replace({
+        query: {
+            league: league?.slug ?? undefined,
+            filter: team ?? undefined,
+        },
+    });
+}
+
 async function selectLeague(opt: LeagueOption) {
     open.value = null;
     if (
@@ -362,18 +349,21 @@ async function selectLeague(opt: LeagueOption) {
         return;
     selectedLeague.value = opt;
     selectedTeamSlug.value = null;
+    pushQuery(opt, null);
     await Promise.all([loadTeams(), loadMatches()]);
 }
 
 function selectTeam(slug: string | null) {
     open.value = null;
     selectedTeamSlug.value = slug;
+    pushQuery(selectedLeague.value, slug);
     loadMatches();
 }
 
 function resetFilters() {
     selectedTeamSlug.value = null;
     weekOffset.value = 0;
+    pushQuery(selectedLeague.value, null);
     loadMatches();
 }
 
@@ -507,9 +497,9 @@ const windowTitle = computed(() => {
     const s = windowStart.value;
     const e = new Date(windowEnd.value.getTime() - DAY);
     const sameMonth = s.getMonth() === e.getMonth();
-    const month = (d: Date) => d.toLocaleDateString([], { month: 'short' })
+    const month = (d: Date) => d.toLocaleDateString([], { month: "short" });
     if (sameMonth) {
-        return `${s.getDate()}–${e.getDate()} ${month(e)}`
+        return `${s.getDate()}–${e.getDate()} ${month(e)}`;
     }
     return `${s.getDate()} ${month(s)} – ${e.getDate()} ${month(e)}`;
 });
@@ -549,10 +539,23 @@ function closeModal() {
 
 onMounted(async () => {
     sports.value = await fetchSports();
-    if (leagueOptions.value.length) {
-        selectedLeague.value = leagueOptions.value[0];
-        await Promise.all([loadTeams(), loadMatches()]);
+    if (!leagueOptions.value.length) return;
+
+    const leagueParam = route.query.league as string | undefined;
+    const filterParam = route.query.filter as string | undefined;
+
+    selectedLeague.value =
+        leagueOptions.value.find((l) => l.slug === leagueParam) ??
+        leagueOptions.value[0];
+
+    await loadTeams();
+
+    if (filterParam && teamOptions.value.some((t) => t.slug === filterParam)) {
+        selectedTeamSlug.value = filterParam;
     }
+
+    await loadMatches();
+    pushQuery(selectedLeague.value, selectedTeamSlug.value);
 });
 
 watch(weekOffset, () => {
