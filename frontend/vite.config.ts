@@ -1,58 +1,61 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import tailwindcss from '@tailwindcss/vite'
-import { VitePWA } from 'vite-plugin-pwa'
-import { fileURLToPath, URL } from 'node:url'
-
-
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
+import tailwindcss from "@tailwindcss/vite";
+import { VitePWA } from "vite-plugin-pwa";
+import { fileURLToPath, URL } from "node:url";
 
 export default defineConfig({
   plugins: [
     vue(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
-     
+      registerType: "autoUpdate",
+
       manifest: {
-        name: 'matchSync',
-        short_name: 'matchSync',
-        description: 'Live, always-updated calendars for football and hockey fans',
-        theme_color: '#1d4ed8',
-        background_color: '#ffffff',
-        display: 'standalone',
+        name: "matchSync",
+        short_name: "matchSync",
+        description:
+          "Live, always-updated calendars for football and hockey fans",
+        theme_color: "#1d4ed8",
+        background_color: "#ffffff",
+        display: "standalone",
         icons: [
           {
-            src: '/icons/icon-192.png',
-            sizes: '192x192',
-            type: 'image/png'
+            src: "/icons/icon-192.png",
+            sizes: "192x192",
+            type: "image/png",
           },
           {
-            src: '/icons/icon-512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      }
-    })
+            src: "/icons/icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+        ],
+      },
+    }),
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
   },
   server: {
-    host: '0.0.0.0',
+    host: "0.0.0.0",
     port: 5173,
     watch: {
-      usePolling: true
+      usePolling: true,
     },
-    allowedHosts: ["matchsync.vinlaro.com"],
+    allowedHosts: ["matchcalender.com"],
     proxy: {
-      '/api': {
+      "/api": {
         // In Docker: backend service name. Locally: localhost.
-        target: process.env.API_TARGET ?? 'http://localhost:8000',
+        target: process.env.API_TARGET ?? "http://localhost:8000",
         changeOrigin: true,
-      }
-    }
-  }
-})
+        // Injected server-side by the proxy — the key never reaches the browser.
+        headers: process.env.API_KEY
+          ? { "X-API-Key": process.env.API_KEY }
+          : undefined,
+      },
+    },
+  },
+});
