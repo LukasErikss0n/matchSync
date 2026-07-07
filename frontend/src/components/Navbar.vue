@@ -10,7 +10,7 @@
                     class="h-8 w-8 rounded-lg object-cover"
                 />
                 <span class="font-bold text-lg tracking-tight text-slate-900">
-                    Game<span class="ms-text-accent">Sync</span>
+                    Match<span class="ms-text-accent">Calender</span>
                 </span>
             </RouterLink>
 
