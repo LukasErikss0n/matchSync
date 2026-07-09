@@ -1,29 +1,35 @@
 <template>
   <div
     class="fixed inset-0 z-50 flex items-center justify-center p-4"
-    style="background: rgba(15, 23, 42, 0.55); backdrop-filter: blur(4px)"
+    style="background: rgba(5, 8, 14, 0.6); backdrop-filter: blur(8px)"
     @click.self="emit('close')"
   >
     <div
-      class="bg-white rounded-3xl shadow-2xl w-full max-w-xl fade-up"
-      style="max-height: 90vh; overflow-y: auto"
+      class="glass-panel relative rounded-[30px] w-full max-w-xl fade-up overflow-hidden"
+      style="max-height: 90vh; overflow-y: auto; background: rgba(22,32,52,.9); backdrop-filter: blur(32px) saturate(150%); border: 1px solid rgba(255,255,255,.2)"
     >
+      <div
+        class="absolute inset-0 pointer-events-none"
+        style="background: linear-gradient(115deg, rgba(255,255,255,.08) 0 34%, transparent 34%)"
+      ></div>
+
       <!-- Header -->
-      <div class="flex items-center justify-between px-7 pt-7 pb-5 border-b border-slate-100">
+      <div class="relative flex items-center justify-between px-7 pt-7 pb-5 border-b border-white/10">
         <div>
-          <div class="section-label mb-0.5">Step {{ step }} of 4</div>
-          <h2 class="text-xl font-black text-slate-900">{{ stepLabels[step - 1] }}</h2>
+          <div class="text-[11.5px] font-bold uppercase mb-1 ms-text-accent" style="letter-spacing: 1.8px">Step {{ step }} of 4</div>
+          <h2 class="text-2xl font-extrabold" style="letter-spacing: -0.5px">{{ stepLabels[step - 1] }}</h2>
         </div>
         <button
-          class="btn btn-ghost btn-sm btn-circle text-slate-400"
+          class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+          style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16)"
           @click="emit('close')"
         >
-          ✕
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </div>
 
       <!-- Step indicator -->
-      <div class="flex items-center gap-2 px-7 py-4">
+      <div class="relative flex items-center gap-2 px-7 py-4">
         <template v-for="(l, i) in stepLabels" :key="l">
           <div class="flex items-center gap-1.5">
             <span
@@ -34,7 +40,7 @@
             </span>
             <span
               class="text-xs font-medium"
-              :class="i + 1 === step ? 'text-slate-800' : 'text-slate-400'"
+              :style="i + 1 === step ? 'color: var(--ms-text)' : 'color: var(--ms-muted-dim)'"
             >
               {{ l }}
             </span>
@@ -42,13 +48,13 @@
           <div
             v-if="i < 3"
             class="flex-1 h-px"
-            :class="i + 1 < step ? 'bg-green-400' : 'bg-slate-200'"
+            :style="i + 1 < step ? 'background: var(--ms-green)' : 'background: rgba(255,255,255,.14)'"
           />
         </template>
       </div>
 
       <!-- Body -->
-      <div class="px-7 pb-7">
+      <div class="relative px-7 pb-7">
         <!-- Step 1: Sport -->
         <div v-if="step === 1" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <SportCard
@@ -60,7 +66,7 @@
           />
           <button
             :disabled="!sportId"
-            class="col-span-2 sm:col-span-3 btn ms-btn-primary rounded-full mt-2 font-semibold disabled:opacity-40"
+            class="col-span-2 sm:col-span-3 ms-btn-primary rounded-2xl mt-2 py-3.5 font-bold text-[15px] disabled:opacity-40"
             @click="goToTeams"
           >
             Continue
@@ -70,18 +76,23 @@
         <!-- Step 2: Team -->
         <div v-else-if="step === 2">
           <button
-            class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-full px-3 py-1.5 mb-4 transition-all"
+            class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 mb-4 transition-all"
+            style="color: rgba(244,247,251,.6); background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16)"
             @click="step = 1"
           >
             <svg viewBox="0 0 16 16" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg>
             Back
           </button>
-          <input
-            v-model="search"
-            class="input input-bordered w-full mb-3 rounded-xl text-sm focus:outline-none focus:border-[var(--ms-blue)] focus:ring-2 focus:ring-[var(--ms-blue)]/30"
-            :placeholder="`Search ${sportLabel} teams…`"
-            autofocus
-          />
+          <div class="flex items-center gap-2.5 rounded-2xl px-4 mb-3.5" style="background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color: rgba(244,247,251,.5)"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input
+              v-model="search"
+              class="flex-1 bg-transparent border-none outline-none text-[15px] py-3.5"
+              style="color: var(--ms-text)"
+              :placeholder="`Search ${sportLabel} teams…`"
+              autofocus
+            />
+          </div>
           <div
             class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4"
             style="max-height: 320px; overflow-y: auto"
@@ -91,26 +102,29 @@
               class="col-span-full flex flex-col items-center gap-2 py-6 text-center"
             >
               <span class="text-2xl">📅</span>
-              <p class="text-slate-700 font-semibold text-sm">
+              <p class="font-semibold text-sm">
                 {{ search ? `No teams match "${search}"` : 'No teams available yet' }}
               </p>
             </div>
             <button
               v-for="t in teamResults"
               :key="`${t.sport}-${t.slug}`"
-              class="team-card rounded-xl border-2 border-slate-200 px-4 py-3 text-left transition-all"
+              class="team-card rounded-2xl border-2 px-4 py-3 text-left transition-all flex items-center gap-3"
               :class="{ selected: teamSlug === t.slug }"
               @click="selectTeam(t)"
             >
-              <div class="font-semibold text-slate-800 text-sm mb-0.5">{{ t.name }}</div>
-              <div class="text-xs text-slate-400">
-                {{ t.leagues.map(l => l.name).join(' · ') }}
+              <TeamBadge :name="t.name" :icon="t.icon" :size="32" />
+              <div class="min-w-0">
+                <div class="font-bold text-sm truncate">{{ t.name }}</div>
+                <div class="text-xs font-semibold mt-0.5 truncate" style="color: rgba(244,247,251,.5)">
+                  {{ t.leagues.map(l => l.name).join(' · ') }}
+                </div>
               </div>
             </button>
           </div>
           <button
             :disabled="!teamSlug"
-            class="btn ms-btn-primary rounded-full w-full font-semibold disabled:opacity-40"
+            class="ms-btn-primary rounded-2xl w-full py-3.5 font-bold text-[15px] disabled:opacity-40"
             @click="goToLeagues"
           >
             Continue
@@ -120,23 +134,23 @@
         <!-- Step 3: Leagues -->
         <div v-else-if="step === 3 && selectedTeam">
           <button
-            class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-full px-3 py-1.5 mb-3 transition-all"
+            class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 mb-3 transition-all"
+            style="color: rgba(244,247,251,.6); background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16)"
             @click="goBackToTeams"
           >
             <svg viewBox="0 0 16 16" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg>
             Back
           </button>
-          <p class="text-sm text-slate-500 mb-4">
-            <strong class="text-slate-700">{{ selectedTeam.name }}</strong> — select leagues
+          <p class="text-sm font-medium mb-4" style="color: rgba(244,247,251,.65)">
+            <strong style="color: var(--ms-text)">{{ selectedTeam.name }}</strong> — select leagues
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
             <label
               v-for="l in selectedTeam.leagues"
               :key="l.slug"
-              class="rounded-xl border-2 px-4 py-3 cursor-pointer flex items-center gap-3 transition-all"
-              :class="chosenLeagues.includes(l.slug)
-                ? 'border-[var(--ms-blue)] bg-sky-50'
-                : 'border-slate-200 bg-white hover:border-slate-300'"
+              class="rounded-2xl border-2 px-4 py-3 cursor-pointer flex items-center gap-3 transition-all"
+              :class="chosenLeagues.includes(l.slug) ? 'border-[rgba(142,205,242,.5)]' : 'border-white/[0.14]'"
+              :style="chosenLeagues.includes(l.slug) ? 'background: rgba(142,205,242,.14)' : 'background: rgba(255,255,255,.05)'"
             >
               <input
                 type="checkbox"
@@ -148,19 +162,20 @@
               <span
                 class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all"
                 :class="chosenLeagues.includes(l.slug)
-                  ? 'bg-[var(--ms-blue)] border-[var(--ms-blue)]'
-                  : 'border-slate-300 bg-white'"
+                  ? 'border-[var(--ms-blue)]'
+                  : 'border-white/25'"
+                :style="chosenLeagues.includes(l.slug) ? 'background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark))' : 'background: transparent'"
               >
-                <svg v-if="chosenLeagues.includes(l.slug)" viewBox="0 0 12 12" class="w-3 h-3" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <svg v-if="chosenLeagues.includes(l.slug)" viewBox="0 0 12 12" class="w-3 h-3" fill="none" stroke="#08131f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M2 6l3 3 5-5"/>
                 </svg>
               </span>
-              <span class="text-sm font-medium text-slate-700">{{ l.name }}</span>
+              <span class="text-sm font-semibold" style="color: rgba(244,247,251,.85)">{{ l.name }}</span>
             </label>
           </div>
           <button
             :disabled="chosenLeagues.length === 0"
-            class="btn ms-btn-primary rounded-full w-full font-semibold disabled:opacity-40"
+            class="ms-btn-primary rounded-2xl w-full py-3.5 font-bold text-[15px] disabled:opacity-40"
             @click="goToLink"
           >
             Get my link
@@ -170,22 +185,26 @@
         <!-- Step 4: Link -->
         <div v-else-if="step === 4 && calLink" class="fade-up">
           <div class="text-center mb-7">
-            <div class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 feature-icon">
-              <Icon name="calendar" />
+            <div
+              class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style="background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark)); box-shadow: 0 20px 36px -14px rgba(94,178,230,.6)"
+            >
+              <Icon name="calendar" style="color: #08131f" />
             </div>
-            <h3 class="text-xl font-black text-slate-900 mb-1">Your calendar is ready!</h3>
-            <p class="text-slate-500 text-sm">
-              <strong>{{ calLink.team }}</strong> — {{ calLink.leagues.map(l => l.name).join(', ') }}.
+            <h3 class="text-xl font-extrabold mb-1" style="letter-spacing: -0.3px">Your calendar is ready!</h3>
+            <p class="text-sm font-medium" style="color: rgba(244,247,251,.6)">
+              <strong style="color: var(--ms-text)">{{ calLink.team }}</strong> — {{ calLink.leagues.map(l => l.name).join(', ') }}.
               Every match syncs automatically.
             </p>
           </div>
           <div class="mb-4">
-            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+            <div class="text-[10.5px] font-bold uppercase tracking-widest mb-2" style="color: rgba(244,247,251,.45)">
               Your personal calendar link
             </div>
-            <div class="link-box rounded-xl px-4 py-3 break-all mb-2">{{ calLink.url }}</div>
+            <div class="link-box rounded-2xl px-4 py-3 break-all mb-2">{{ calLink.url }}</div>
             <button
-              class="btn btn-sm btn-outline rounded-full text-xs border-slate-300 text-slate-600"
+              class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 transition-all"
+              style="background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16); color: var(--ms-text)"
               @click="handleCopy"
             >
               Copy link
@@ -194,7 +213,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
             <a
               :href="calLink.url"
-              class="btn ms-btn-primary rounded-full flex items-center gap-2 justify-center font-semibold text-sm"
+              class="ms-btn-primary rounded-2xl flex items-center gap-2 justify-center py-3.5 font-bold text-sm"
             >
               Add to Apple Calendar
             </a>
@@ -202,19 +221,24 @@
               :href="`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(calLink.url)}`"
               target="_blank"
               rel="noreferrer"
-              class="btn btn-outline rounded-full border-slate-300 text-slate-700 flex items-center gap-2 justify-center font-semibold text-sm hover:bg-slate-50"
+              class="ms-btn-secondary rounded-2xl flex items-center gap-2 justify-center py-3.5 font-bold text-sm"
             >
               Add to Google Calendar
             </a>
           </div>
           <div
-            class="rounded-2xl bg-slate-50 border border-slate-100 p-4 text-sm text-slate-500 leading-relaxed"
+            class="rounded-2xl p-4 text-sm leading-relaxed"
+            style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: rgba(244,247,251,.6)"
           >
-            <strong class="text-slate-700">How it stays updated:</strong> Your calendar app checks
+            <strong style="color: var(--ms-text)">How it stays updated:</strong> Your calendar app checks
             this link automatically. Every reschedule and playoff round appears instantly — nothing
             to do on your end.
           </div>
-          <button class="btn btn-ghost btn-sm text-slate-400 mt-4 w-full" @click="reset">
+          <button
+            class="mt-4 w-full text-sm font-semibold py-2"
+            style="color: rgba(244,247,251,.45)"
+            @click="reset"
+          >
             Add another team
           </button>
         </div>
@@ -233,6 +257,7 @@ import type { CalendarLink, Sport, Team } from '@/types'
 import { fetchSports, fetchTeams, fetchTeam, fetchCalendarLink } from '@/services/sports'
 import SportCard from './SportCard.vue'
 import Icon from './Icon.vue'
+import TeamBadge from './TeamBadge.vue'
 
 const props = defineProps<{
   initialSport?: string | null

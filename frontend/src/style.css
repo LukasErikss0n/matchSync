@@ -5,9 +5,21 @@
 }
 
 :root {
-    --ms-blue: #29abe2;
-    --ms-blue-dark: #1a8ec4;
-    --ms-navy: #1a2235;
+    --ms-blue: #8ecdf2;
+    --ms-blue-dark: #5eb2e6;
+    --ms-navy: #0b101d;
+    --ms-ink: #08131f;
+    --ms-text: #f4f7fb;
+    --ms-muted: rgba(244, 247, 251, 0.55);
+    --ms-muted-dim: rgba(244, 247, 251, 0.4);
+    --ms-card: rgba(21, 30, 48, 0.85);
+    --ms-card-border: rgba(255, 255, 255, 0.12);
+    --ms-glass: rgba(255, 255, 255, 0.06);
+    --ms-glass-border: rgba(255, 255, 255, 0.14);
+    --ms-menu: rgba(22, 32, 52, 0.92);
+    --ms-menu-border: rgba(255, 255, 255, 0.16);
+    --ms-pink: #f2b8c6;
+    --ms-green: #c9e8d2;
 }
 
 * {
@@ -19,53 +31,104 @@ html {
 }
 
 body {
-    background: white;
-    color: #334155;
+    margin: 0;
+    background:
+        radial-gradient(1200px 600px at 15% -10%, #1c2a4a 0%, transparent 60%),
+        radial-gradient(900px 700px at 90% 20%, #2a1c3f 0%, transparent 55%),
+        radial-gradient(800px 800px at 50% 110%, #10263a 0%, transparent 60%),
+        var(--ms-navy);
+    background-attachment: fixed;
+    color: var(--ms-text);
+}
+
+/* Faint diagonal light sheen across the whole page */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        linear-gradient(115deg, transparent 42%, rgba(142, 205, 242, 0.05) 50%, transparent 58%),
+        linear-gradient(65deg, transparent 40%, rgba(255, 255, 255, 0.03) 50%, transparent 60%);
+}
+
+#app {
+    position: relative;
+    z-index: 1;
 }
 
 /* ── Brand utilities ───────────────────────────────────────────────────────── */
-.ms-gradient-hero {
-    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 40%, #f8fafc 100%);
-}
-
 .ms-btn-primary {
-    background: var(--ms-blue);
-    color: white;
+    background: linear-gradient(160deg, var(--ms-blue) 0%, var(--ms-blue-dark) 100%);
+    color: var(--ms-ink);
     border: none;
+    box-shadow: 0 16px 32px -12px rgba(94, 178, 230, 0.55);
+    transition: filter 0.15s ease;
 }
 
 .ms-btn-primary:hover {
-    background: var(--ms-blue-dark);
+    filter: brightness(1.06);
+    background: linear-gradient(160deg, var(--ms-blue) 0%, var(--ms-blue-dark) 100%);
+}
+
+.ms-btn-secondary {
+    background: rgba(21, 30, 48, 0.85);
+    color: var(--ms-text);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(20px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: background 0.15s ease;
+}
+
+.ms-btn-secondary:hover {
+    background: rgba(35, 48, 72, 0.9);
 }
 
 .ms-text-accent {
     color: var(--ms-blue);
 }
 
-.ms-nav {
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid #e2e8f0;
+/* ── Glass card / panel primitives ─────────────────────────────────────────── */
+.glass-card {
+    background: var(--ms-card);
+    border: 1px solid var(--ms-card-border);
+    backdrop-filter: blur(20px);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel {
+    background: var(--ms-glass);
+    border: 1px solid var(--ms-glass-border);
+    backdrop-filter: blur(24px) saturate(140%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 30px 60px -30px rgba(0, 0, 0, 0.6);
+}
+
+.glass-nav {
+    background: rgba(16, 24, 40, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(24px) saturate(140%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 32px -16px rgba(0, 0, 0, 0.6);
+}
+
+.glass-menu {
+    background: var(--ms-menu);
+    border: 1px solid var(--ms-menu-border);
+    backdrop-filter: blur(24px) saturate(140%);
+    box-shadow: 0 24px 48px -20px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 /* ── Nav tabs (Home / Matches) ─────────────────────────────────────────────── */
 .ms-tab {
     position: relative;
-    padding-bottom: 2px;
+    color: var(--ms-muted);
 }
 
 .ms-tab-active {
-    color: #0f172a;
-}
-
-.ms-tab-active::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -20px;
-    height: 2px;
-    background: var(--ms-blue);
+    color: var(--ms-text) !important;
+    background: rgba(142, 205, 242, 0.18);
+    border: 1px solid rgba(142, 205, 242, 0.35);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .section-label {
@@ -78,44 +141,57 @@ body {
 
 /* ── Cards ─────────────────────────────────────────────────────────────────── */
 .feature-icon {
-    background: #e0f2fe;
+    background: rgba(142, 205, 242, 0.14);
+    border: 1px solid rgba(142, 205, 242, 0.3);
     color: var(--ms-blue);
 }
 
+.sport-card {
+    background: var(--ms-card);
+    border: 1px solid var(--ms-card-border) !important;
+    backdrop-filter: blur(20px);
+}
+
 .sport-card:hover {
-    border-color: var(--ms-blue) !important;
-    box-shadow: 0 0 0 2px rgba(41, 171, 226, 0.2);
+    border-color: rgba(142, 205, 242, 0.4) !important;
+    box-shadow: none;
 }
 
 .sport-card.selected {
-    border-color: var(--ms-blue) !important;
-    background: #f0f9ff;
+    border-color: rgba(142, 205, 242, 0.5) !important;
+    background: rgba(142, 205, 242, 0.1);
+}
+
+.team-card {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    color: var(--ms-text);
 }
 
 .team-card:hover {
-    border-color: var(--ms-blue) !important;
-    background: #f0f9ff;
+    border-color: rgba(142, 205, 242, 0.4) !important;
+    background: rgba(142, 205, 242, 0.1);
 }
 
 .team-card.selected {
-    border-color: var(--ms-blue) !important;
-    background: #e0f2fe;
+    border-color: rgba(142, 205, 242, 0.5) !important;
+    background: rgba(142, 205, 242, 0.16);
 }
 
 /* ── Modal step indicator ──────────────────────────────────────────────────── */
 .step-indicator.active {
-    background: var(--ms-blue);
-    color: white;
+    background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark));
+    color: var(--ms-ink);
 }
 
 .step-indicator.done {
-    background: #22c55e;
-    color: white;
+    background: var(--ms-green);
+    color: var(--ms-ink);
 }
 
 .step-indicator.idle {
-    background: #e2e8f0;
-    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--ms-muted-dim);
 }
 
 /* ── Matches page: filter pills, dropdowns, pager ──────────────────────────── */
@@ -123,42 +199,54 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.45rem 1rem;
-    border-radius: 9999px;
-    border: 1.5px solid #e2e8f0;
-    background: white;
+    padding: 0.55rem 1.05rem;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(21, 30, 48, 0.85);
     font-size: 0.82rem;
     font-weight: 600;
-    color: #334155;
+    color: rgba(244, 247, 251, 0.75);
+    backdrop-filter: blur(20px);
     transition: all 0.15s ease;
 }
 
 .filter-pill:hover {
-    border-color: #cbd5e1;
+    background: rgba(35, 48, 72, 0.9);
 }
 
 .filter-pill.active {
-    border-color: var(--ms-blue);
-    color: var(--ms-blue);
+    border-color: rgba(142, 205, 242, 0.45);
+    background: rgba(142, 205, 242, 0.16);
+    color: #bfe2f7;
 }
 
 .filter-menu {
     position: absolute;
-    top: calc(100% + 6px);
+    top: calc(100% + 8px);
     left: 0;
     z-index: 20;
     min-width: 16rem;
     max-width: min(20rem, calc(100vw - 1.5rem));
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.9rem;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-    padding: 0.35rem;
+    background: var(--ms-menu);
+    border: 1px solid var(--ms-menu-border);
+    border-radius: 16px;
+    backdrop-filter: blur(24px) saturate(140%);
+    box-shadow: 0 24px 48px -20px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    padding: 0.4rem;
 }
 
 .filter-menu.right-align {
     left: auto;
     right: 0;
+}
+
+/* On narrow screens filters wrap onto their own row near the left edge —
+   right-aligning there pushes the menu off-screen, so force left-align. */
+@media (max-width: 639px) {
+    .filter-menu.right-align {
+        left: 0;
+        right: auto;
+    }
 }
 
 .filter-item {
@@ -167,20 +255,20 @@ body {
     gap: 0.6rem;
     width: 100%;
     text-align: left;
-    padding: 0.5rem 0.7rem;
-    border-radius: 0.6rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.7rem;
     font-size: 0.85rem;
     font-weight: 500;
-    color: #334155;
+    color: rgba(244, 247, 251, 0.8);
     transition: background 0.12s ease;
 }
 
 .filter-item:hover {
-    background: #f1f5f9;
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .filter-item.chosen {
-    background: #e0f2fe;
+    background: rgba(142, 205, 242, 0.14);
     color: var(--ms-blue);
 }
 
@@ -188,27 +276,27 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.25rem;
-    height: 2.25rem;
+    width: 2.5rem;
+    height: 2.5rem;
     border-radius: 9999px;
-    border: 1.5px solid #e2e8f0;
-    background: white;
-    color: #475569;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(21, 30, 48, 0.85);
+    color: var(--ms-text);
+    backdrop-filter: blur(16px);
     transition: all 0.15s ease;
 }
 
 .pager-btn:hover {
-    border-color: var(--ms-blue);
-    color: var(--ms-blue);
+    background: rgba(35, 48, 72, 0.9);
 }
 
 /* ── Calendar link box ─────────────────────────────────────────────────────── */
 .link-box {
-    background: #f8fafc;
-    border: 1.5px dashed #cbd5e1;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px dashed rgba(142, 205, 242, 0.35);
     font-family: "Courier New", monospace;
     font-size: 0.78rem;
-    color: #475569;
+    color: #bfe2f7;
 }
 
 /* ── Toast ─────────────────────────────────────────────────────────────────── */
@@ -217,8 +305,10 @@ body {
     bottom: 28px;
     left: 50%;
     transform: translateX(-50%);
-    background: #1a2235;
-    color: white;
+    background: var(--ms-menu);
+    border: 1px solid var(--ms-menu-border);
+    backdrop-filter: blur(20px);
+    color: var(--ms-text);
     padding: 10px 22px;
     border-radius: 999px;
     font-size: 0.85rem;
@@ -240,4 +330,17 @@ body {
 
 .fade-up {
     animation: fadeUp 0.4s ease forwards;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    @keyframes modalin {
+        from {
+            opacity: 0;
+            transform: translateY(14px) scale(0.98);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
 }

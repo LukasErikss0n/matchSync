@@ -1,13 +1,13 @@
 <template>
   <span
-    class="inline-flex items-center justify-center rounded-full overflow-hidden flex-shrink-0 shadow-sm"
-    :style="{ width: `${size}px`, height: `${size}px` }"
+    class="inline-flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
+    :style="{ width: `${size}px`, height: `${size}px`, boxShadow: '0 4px 10px -4px rgba(0,0,0,.5)' }"
   >
     <img
       v-if="icon && !failed"
       :src="icon"
       :alt="name"
-      class="w-full h-full object-contain bg-white"
+      class="w-full h-full object-cover"
       loading="lazy"
       decoding="async"
       @error="failed = true"

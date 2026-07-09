@@ -1,13 +1,13 @@
 <template>
-  <section id="how-it-works" class="py-24 px-6 bg-white">
+  <section id="how-it-works" class="py-24 px-6">
     <div class="max-w-5xl mx-auto">
       <div class="text-center mb-16">
         <div class="section-label mb-3">How it works</div>
-        <h2 class="text-3xl font-black text-slate-900" style="letter-spacing: -0.02em">
+        <h2 class="text-3xl sm:text-[34px] font-extrabold" style="letter-spacing: -0.02em">
           Three steps. No app needed.
         </h2>
       </div>
-      <div class="grid md:grid-cols-3 gap-8">
+      <div class="grid md:grid-cols-3 gap-4.5">
         <FeatureCard
           v-for="s in steps"
           :key="s.n"
@@ -19,10 +19,10 @@
       </div>
       <div class="text-center mt-12">
         <button
-          class="btn ms-btn-primary rounded-full px-10 text-sm font-semibold"
+          class="ms-btn-primary rounded-2xl px-10 py-3.5 text-[15px] font-bold"
           @click="emit('getStarted')"
         >
-          Pick your team 
+          Pick your team
         </button>
       </div>
     </div>

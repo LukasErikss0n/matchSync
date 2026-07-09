@@ -1,16 +1,17 @@
 <template>
     <Navbar @get-started="openSportModal" />
 
-    <main class="min-h-screen bg-slate-50/60">
+    <main class="min-h-screen">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
             <!-- Header -->
             <p class="section-label mb-2">Fixtures &amp; Results</p>
             <h1
-                class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-2"
+                class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2"
+                style="letter-spacing: -0.02em"
             >
                 All matches
             </h1>
-            <p class="text-slate-500 mb-7 max-w-xl">
+            <p class="mb-7 max-w-xl" style="color: var(--ms-muted)">
                 Browse every fixture by league or team.
             </p>
 
@@ -38,7 +39,7 @@
                             @click="selectLeague(opt)"
                         >
                             {{ opt.name }}
-                            <span class="text-xs text-slate-400 ml-2">{{
+                            <span class="text-xs ml-2" style="color: rgba(244,247,251,.4)">{{
                                 opt.sportLabel
                             }}</span>
                         </button>
@@ -46,7 +47,7 @@
                 </div>
 
                 <!-- Season (informational) -->
-                <span class="filter-pill cursor-default text-slate-500">{{
+                <span class="filter-pill cursor-default">{{
                     season
                 }}</span>
 
@@ -90,7 +91,7 @@
 
                 <button
                     v-if="selectedTeamSlug || weekOffset !== 0"
-                    class="filter-pill text-slate-500 flex items-center gap-1.5"
+                    class="filter-pill flex items-center gap-1.5"
                     @click="resetFilters"
                 >
                     <Icon name="refresh" class="!w-3.5 !h-3.5" /> Reset
@@ -110,10 +111,10 @@
                     <ChevronDown class="rotate-90" />
                 </button>
                 <div class="text-center">
-                    <div class="font-bold text-slate-800">
+                    <div class="font-extrabold">
                         {{ windowTitle }}
                     </div>
-                    <div class="text-xs text-slate-400 mt-0.5">
+                    <div class="text-xs mt-0.5" style="color: rgba(244,247,251,.45)">
                         {{ windowSubtitle }}
                     </div>
                 </div>
@@ -129,7 +130,8 @@
             <!-- Loading -->
             <div
                 v-if="loading"
-                class="text-center text-slate-400 py-16 text-sm"
+                class="text-center py-16 text-sm"
+                style="color: var(--ms-muted)"
             >
                 Loading matches…
             </div>
@@ -139,22 +141,22 @@
                 <div
                     v-for="group in visibleGroups"
                     :key="group.key"
-                    class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-4"
+                    class="glass-card rounded-[24px] overflow-hidden mb-3.5"
                 >
                     <div
-                        class="flex items-center justify-between px-4 sm:px-6 py-3 bg-slate-50/70 border-b border-slate-100"
+                        class="flex items-center justify-between px-4 sm:px-6 py-3.5 bg-white/[0.05] border-b border-white/[0.08]"
                     >
-                        <span class="font-bold text-sm text-slate-700">{{
+                        <span class="font-extrabold text-sm">{{
                             group.label
                         }}</span>
-                        <span class="text-xs text-slate-400"
+                        <span class="text-xs font-semibold" style="color: rgba(244,247,251,.45)"
                             >{{ group.matches.length }}
                             {{
                                 group.matches.length === 1 ? "match" : "matches"
                             }}</span
                         >
                     </div>
-                    <div class="divide-y divide-slate-100">
+                    <div>
                         <MatchRow
                             v-for="m in group.matches"
                             :key="m.id"
@@ -167,25 +169,25 @@
 
             <!-- Empty -->
             <div v-else class="text-center py-16">
-                <p class="text-slate-700 font-semibold">No matches this week</p>
+                <p class="font-semibold">No matches this week</p>
             </div>
 
             <!-- Footer CTA -->
             <div
                 v-if="selectedLeague"
-                class="mt-8 bg-white rounded-2xl border border-slate-100 shadow-sm px-5 py-4 flex items-center justify-between gap-4"
+                class="mt-8 glass-card rounded-2xl px-5 py-4 flex items-center justify-between gap-4"
             >
                 <div class="flex items-center gap-3 min-w-0">
-                    <div class="flex-shrink-0 w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
-                        <Icon name="calendar" class="!w-4 !h-4 text-[var(--ms-blue)]" />
+                    <div class="flex-shrink-0 w-9 h-9 rounded-xl feature-icon flex items-center justify-center">
+                        <Icon name="calendar" class="!w-4 !h-4" />
                     </div>
                     <div class="min-w-0">
-                        <p class="font-semibold text-slate-800 text-sm truncate">{{ selectedLeague.name }} calendar</p>
-                        <p class="text-xs text-slate-400">Subscribe once, stay synced forever</p>
+                        <p class="font-bold text-sm truncate">{{ selectedLeague.name }} calendar</p>
+                        <p class="text-xs" style="color: rgba(244,247,251,.45)">Subscribe once, stay synced forever</p>
                     </div>
                 </div>
                 <button
-                    class="flex-shrink-0 flex items-center gap-2 btn ms-btn-primary rounded-full font-semibold px-4 text-sm whitespace-nowrap"
+                    class="flex-shrink-0 flex items-center gap-2 ms-btn-primary rounded-full font-bold px-4 py-2.5 text-sm whitespace-nowrap"
                     @click="openSportModal"
                 >
                     <Icon name="link" class="!w-3.5 !h-3.5" />

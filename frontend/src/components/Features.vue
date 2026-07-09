@@ -1,9 +1,9 @@
 <template>
-  <section class="py-24 px-6 bg-white">
+  <section class="py-24 px-6">
     <div class="max-w-5xl mx-auto">
       <div class="text-center mb-16">
         <div class="section-label mb-3">Features</div>
-        <h2 class="text-3xl font-black text-slate-900" style="letter-spacing: -0.02em">
+        <h2 class="text-3xl sm:text-[34px] font-extrabold" style="letter-spacing: -0.02em">
           Set it and forget it.
         </h2>
       </div>
