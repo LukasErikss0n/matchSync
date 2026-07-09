@@ -9,6 +9,7 @@
       :alt="name"
       class="w-full h-full object-contain bg-white"
       loading="lazy"
+      decoding="async"
       @error="failed = true"
     />
     <span

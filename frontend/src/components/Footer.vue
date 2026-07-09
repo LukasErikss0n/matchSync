@@ -4,7 +4,7 @@
       <div class="grid md:grid-cols-3 gap-10 pb-10 border-b border-slate-100">
         <div>
           <div class="flex items-center gap-2 mb-3">
-            <img src="/matchSync_bg.png" alt="MatchSync" class="h-7 w-7 rounded-lg object-cover" />
+            <img src="/matchSync_bg.png" alt="MatchSync" class="h-7 w-7 rounded-lg object-cover" loading="lazy" decoding="async" />
             <span class="font-bold text-slate-800">
               Match<span class="ms-text-accent">Sync</span>
             </span>

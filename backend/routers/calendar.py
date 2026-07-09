@@ -7,6 +7,7 @@ from models.models import League, Match, Sport, Team
 from schemas.schemas import CalendarLink, LeagueOut
 from services.ics_builder import build_ics
 from config import BASE_WEBCAL_URL
+from security import require_api_key
 
 router = APIRouter()
 
@@ -42,7 +43,11 @@ def _resolve_team_rows(
     return rows
 
 
-@router.get("/calendar", response_model=CalendarLink)
+@router.get(
+    "/calendar",
+    response_model=CalendarLink,
+    dependencies=[Depends(require_api_key)],
+)
 def get_calendar_link(
     sport: str,
     team: str,
@@ -78,5 +83,7 @@ def get_ics(
     ).all()
 
     team_name = rows[0][0].name
-    ics_bytes = build_ics(team_name, list(matches))
+    # league name per team row, so each event title can say which competition it is
+    league_by_team = {t.id: l.name for t, l in rows}
+    ics_bytes = build_ics(team_name, list(matches), league_by_team)
     return Response(content=ics_bytes, media_type="text/calendar")

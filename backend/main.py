@@ -1,12 +1,13 @@
 import threading
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlmodel import Session, select
 
 from database import create_db_and_tables, engine
 from routers import calendar, leagues, matches
+from security import require_api_key
 from tasks.fetcher import run_fetch, fetcher_state
 
 
@@ -37,9 +38,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(leagues.router, prefix="/api")
+app.include_router(
+    leagues.router, prefix="/api", dependencies=[Depends(require_api_key)]
+)
+# calendar router handles its own auth: the .ics endpoint must stay public
+# (calendar clients can't send headers), the rest requires the key.
 app.include_router(calendar.router, prefix="/api")
-app.include_router(matches.router, prefix="/api")
+app.include_router(
+    matches.router, prefix="/api", dependencies=[Depends(require_api_key)]
+)
 
 
 @app.get("/health")
