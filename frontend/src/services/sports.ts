@@ -47,6 +47,19 @@ export async function fetchMatches(opts: {
   return res.json()
 }
 
+export async function fetchFeaturedMatch(): Promise<Match | null> {
+  const res = await fetch(`${API_BASE}/matches/featured`)
+  if (!res.ok) throw new Error(`Failed to fetch featured match: ${res.status}`)
+  return res.json()
+}
+
+export async function fetchLastUpdated(): Promise<string | null> {
+  const res = await fetch(`${API_BASE}/last-updated`)
+  if (!res.ok) throw new Error(`Failed to fetch last-updated: ${res.status}`)
+  const data = await res.json()
+  return data.last_run
+}
+
 export async function fetchCalendarLink(
   sport: string,
   teamSlug: string,

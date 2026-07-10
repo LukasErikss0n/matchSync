@@ -11,9 +11,17 @@
             >
                 All matches
             </h1>
-            <p class="mb-7 max-w-xl" style="color: var(--ms-muted)">
+            <p class="mb-2 max-w-xl" style="color: var(--ms-muted)">
                 Browse every fixture by league or team.
             </p>
+            <div
+                v-if="lastUpdatedText"
+                class="inline-flex items-center gap-1.5 mb-7 text-xs font-semibold"
+                style="color: rgba(244, 247, 251, 0.45)"
+            >
+                <span class="live-dot" />
+                Updated {{ lastUpdatedText }}
+            </div>
 
             <!-- Filters -->
             <div class="flex flex-wrap items-center gap-2.5 mb-8">
@@ -206,7 +214,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, h } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, h } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { League, Match, Sport, Team } from "@/types";
 import {
@@ -214,6 +222,7 @@ import {
     fetchTeams,
     fetchTeam,
     fetchMatches,
+    fetchLastUpdated,
 } from "@/services/sports";
 import Navbar from "@/components/Navbar.vue";
 import Icon from "@/components/Icon.vue";
@@ -261,6 +270,23 @@ const weekOffset = ref(0);
 const showModal = ref(false);
 const modalSport = ref<string | null>(null);
 const modalTeam = ref<Team | null>(null);
+
+// "Updated X ago" badge — reflects the fetcher's last successful run, not page load
+const lastUpdatedAt = ref<Date | null>(null);
+const now = ref(Date.now());
+let clockTimer: number | null = null;
+
+const lastUpdatedText = computed(() => {
+    if (!lastUpdatedAt.value) return null;
+    const diffSec = Math.max(0, Math.floor((now.value - lastUpdatedAt.value.getTime()) / 1000));
+    if (diffSec < 60) return "just now";
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? "" : "s"} ago`;
+    const diffHour = Math.floor(diffMin / 60);
+    if (diffHour < 24) return `${diffHour} hour${diffHour === 1 ? "" : "s"} ago`;
+    const diffDay = Math.floor(diffHour / 24);
+    return `${diffDay} day${diffDay === 1 ? "" : "s"} ago`;
+});
 
 const leagueOptions = computed<LeagueOption[]>(() =>
     sports.value.flatMap((s) =>
@@ -558,6 +584,18 @@ onMounted(async () => {
 
     await loadMatches();
     pushQuery(selectedLeague.value, selectedTeamSlug.value);
+
+    try {
+        const iso = await fetchLastUpdated();
+        lastUpdatedAt.value = iso ? new Date(iso) : null;
+    } catch {
+        /* badge just won't show */
+    }
+    clockTimer = window.setInterval(() => (now.value = Date.now()), 15_000);
+});
+
+onUnmounted(() => {
+    if (clockTimer !== null) window.clearInterval(clockTimer);
 });
 
 watch(weekOffset, () => {

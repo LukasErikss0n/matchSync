@@ -11,27 +11,48 @@
             The whole season.<br />One subscription.
           </h1>
         </div>
-        <!-- compact pastel badge -->
-        <div class="relative flex-none w-[132px] h-[132px] rounded-[22px] overflow-hidden border border-white/20">
+        <!-- compact pastel badge: both crests + VS chip, or a generic promo when nothing's featured -->
+        <div class="relative flex-none w-[132px] h-[132px] rounded-[22px] overflow-hidden border border-white/20 flex items-center justify-center gap-1.5">
           <div class="absolute inset-0" style="background: linear-gradient(160deg, #bfe2f7 0%, #8ecdf2 55%, #5eb2e6 100%)"></div>
-          <div class="absolute inset-0" style="background: linear-gradient(118deg, rgba(255,255,255,.5) 0 44%, transparent 44%)"></div>
+          <div class="absolute inset-0" style="background: linear-gradient(118deg, rgba(255,255,255,.5) 0 50%, transparent 50%)"></div>
+          <template v-if="hasFeatured">
+            <TeamBadge class="relative flex-none" :name="spotlight.homeTeam" :icon="spotlight.homeIcon" :size="42" />
+            <div
+              class="relative flex-none w-[22px] h-[22px] rounded-md flex items-center justify-center font-black text-[8px] italic"
+              style="background: rgba(11,26,43,.55); border: 1px solid rgba(255,255,255,.5); backdrop-filter: blur(8px); color: #f4f7fb"
+            >
+              VS
+            </div>
+            <TeamBadge class="relative flex-none" :name="spotlight.awayTeam" :icon="spotlight.awayIcon" :size="42" />
+          </template>
           <div
-            class="absolute left-1/2 top-[56%] -translate-x-1/2 -translate-y-1/2 w-[62px] h-[62px] rounded-2xl overflow-hidden flex items-center justify-center"
+            v-else
+            class="relative w-14 h-14 rounded-2xl flex items-center justify-center"
             style="background: rgba(255,255,255,.32); border: 1.5px solid rgba(255,255,255,.7); backdrop-filter: blur(8px); box-shadow: 0 10px 20px -8px rgba(9,30,50,.45), inset 0 1px 0 rgba(255,255,255,.6)"
           >
-            <TeamBadge name="Malmö FF" :icon="heroTeamIcon" :size="58" />
+            <Icon name="calendar" class="!w-6 !h-6" style="color: white" />
           </div>
         </div>
       </div>
 
-      <div class="flex items-center gap-3.5 rounded-2xl px-4 py-3.5 mt-3.5 glass-panel">
+      <RouterLink
+        v-if="!hasFeatured"
+        to="/matches"
+        class="flex items-center gap-3.5 rounded-2xl px-4 py-3.5 mt-3.5 glass-panel"
+      >
+        <div class="min-w-0">
+          <div class="text-sm font-bold">More matches today</div>
+          <div class="text-[11.5px] font-semibold mt-0.5" style="color: rgba(244,247,251,.55)">Browse every league and fixture</div>
+        </div>
+      </RouterLink>
+      <div v-else class="flex items-center gap-3.5 rounded-2xl px-4 py-3.5 mt-3.5 glass-panel">
         <div class="w-12 text-center flex-shrink-0">
-          <div class="text-[15px] font-extrabold">19:10</div>
-          <div class="text-[10.5px] font-semibold mt-px" style="color: rgba(244,247,251,.55)">today</div>
+          <div class="text-[15px] font-extrabold">{{ spotlight.timeLabel }}</div>
+          <div class="text-[10.5px] font-semibold mt-px" style="color: rgba(244,247,251,.55)">{{ spotlight.dayLabel }}</div>
         </div>
         <div class="min-w-0">
-          <div class="text-sm font-bold truncate">Malmö FF – AIK</div>
-          <div class="text-[11.5px] font-semibold mt-0.5 truncate" style="color: rgba(244,247,251,.55)">Allsvenskan · Eleda Stadion</div>
+          <div class="text-sm font-bold truncate">{{ spotlight.homeTeam }} – {{ spotlight.awayTeam }}</div>
+          <div class="text-[11.5px] font-semibold mt-0.5 truncate" style="color: rgba(244,247,251,.55)">{{ spotlight.leagueName }}</div>
         </div>
       </div>
 
@@ -117,7 +138,7 @@
         </div>
       </div>
 
-      <!-- Pastel stage: hardcoded to Malmö FF, matching the design -->
+      <!-- Pastel stage: real featured match, or a generic promo card when nothing's featured -->
       <div class="relative rounded-[28px] overflow-hidden h-[340px] border border-white/15">
         <div
           class="absolute inset-0"
@@ -125,27 +146,51 @@
         ></div>
         <div
           class="absolute inset-0"
-          style="background: linear-gradient(118deg, rgba(255,255,255,.5) 0 44%, transparent 44%)"
+          style="background: linear-gradient(118deg, rgba(255,255,255,.5) 0 50%, transparent 50%)"
         ></div>
-        <div
-          class="absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 w-[140px] h-[140px] rounded-[24px] overflow-hidden flex items-center justify-center"
-          style="background: rgba(255,255,255,.30); border: 1.5px solid rgba(255,255,255,.65); backdrop-filter: blur(10px); box-shadow: 0 30px 50px -18px rgba(9,30,50,.45), inset 0 1px 0 rgba(255,255,255,.6)"
-        >
-          <TeamBadge name="Malmö FF" :icon="heroTeamIcon" :size="130" />
-        </div>
-        <div
-          class="absolute left-3.5 right-3.5 bottom-3.5 flex items-center gap-3.5 rounded-2xl px-4 py-3.5"
-          style="background: rgba(11,26,43,.55); border: 1px solid rgba(255,255,255,.2); backdrop-filter: blur(20px)"
-        >
-          <div class="w-13 text-center flex-shrink-0">
-            <div class="text-base font-extrabold">19:10</div>
-            <div class="text-[11px] font-semibold mt-0.5" style="color: rgba(244,247,251,.55)">today</div>
+        <template v-if="hasFeatured">
+          <div class="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-4">
+            <TeamBadge :name="spotlight.homeTeam" :icon="spotlight.homeIcon" :size="96" />
+            <div
+              class="flex-none w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm italic"
+              style="background: rgba(11,26,43,.55); border: 1px solid rgba(255,255,255,.5); backdrop-filter: blur(8px); color: #f4f7fb"
+            >
+              VS
+            </div>
+            <TeamBadge :name="spotlight.awayTeam" :icon="spotlight.awayIcon" :size="96" />
           </div>
-          <div class="min-w-0">
-            <div class="text-[15px] font-bold truncate">Malmö FF – AIK</div>
-            <div class="text-xs font-semibold mt-0.5" style="color: rgba(244,247,251,.55)">Allsvenskan · Eleda Stadion</div>
+          <div
+            class="absolute left-3.5 right-3.5 bottom-3.5 flex items-center gap-3.5 rounded-2xl px-4 py-3.5"
+            style="background: rgba(11,26,43,.55); border: 1px solid rgba(255,255,255,.2); backdrop-filter: blur(20px)"
+          >
+            <div class="w-13 text-center flex-shrink-0">
+              <div class="text-base font-extrabold">{{ spotlight.timeLabel }}</div>
+              <div class="text-[11px] font-semibold mt-0.5" style="color: rgba(244,247,251,.55)">{{ spotlight.dayLabel }}</div>
+            </div>
+            <div class="min-w-0">
+              <div class="text-[15px] font-bold truncate">{{ spotlight.homeTeam }} – {{ spotlight.awayTeam }}</div>
+              <div class="text-xs font-semibold mt-0.5" style="color: rgba(244,247,251,.55)">{{ spotlight.leagueName }}</div>
+            </div>
           </div>
-        </div>
+        </template>
+        <template v-else>
+          <div
+            class="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 w-[110px] h-[110px] rounded-[24px] flex items-center justify-center"
+            style="background: rgba(255,255,255,.30); border: 1.5px solid rgba(255,255,255,.65); backdrop-filter: blur(10px); box-shadow: 0 30px 50px -18px rgba(9,30,50,.45), inset 0 1px 0 rgba(255,255,255,.6)"
+          >
+            <Icon name="calendar" class="!w-10 !h-10" style="color: white" />
+          </div>
+          <RouterLink
+            to="/matches"
+            class="absolute left-3.5 right-3.5 bottom-3.5 flex items-center rounded-2xl px-4 py-3.5"
+            style="background: rgba(11,26,43,.55); border: 1px solid rgba(255,255,255,.2); backdrop-filter: blur(20px)"
+          >
+            <div class="min-w-0">
+              <div class="text-[15px] font-bold">More matches today</div>
+              <div class="text-xs font-semibold mt-0.5" style="color: rgba(244,247,251,.55)">Browse every league and fixture</div>
+            </div>
+          </RouterLink>
+        </template>
       </div>
     </div>
 
@@ -226,10 +271,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Sport, Team } from '@/types'
-import { fetchSports, fetchTeams, fetchTeam } from '@/services/sports'
+import { fetchSports, fetchTeams } from '@/services/sports'
+import { cachedFeaturedMatch, refreshFeaturedMatch } from '@/services/featuredMatchCache'
 import Icon from './Icon.vue'
 import TeamBadge from './TeamBadge.vue'
 
@@ -245,8 +291,40 @@ const loading = ref(false)
 const search = ref('')
 const sportFilter = ref<string | null>(null)
 const selectedTeam = ref<Team | null>(null)
-// Hero badge is hardcoded to Malmö FF per design — fetch its real crest if available
-const heroTeamIcon = ref<string | null>(null)
+
+// Featured match, scored server-side (live > imminent kickoff > recent result,
+// weighted by league + Swedish-audience boost). Falls back to a generic
+// "more matches today" promo card when nothing in the DB scores high enough
+// (e.g. dead period, or the request fails). Cached at module scope so
+// switching tabs and back doesn't flash the fallback while a fresh fetch resolves.
+const hasFeatured = computed(() => !!cachedFeaturedMatch.value)
+
+function dayLabelFor(iso: string): string {
+  const start = new Date(iso)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const that = new Date(start)
+  that.setHours(0, 0, 0, 0)
+  const diffDays = Math.round((that.getTime() - today.getTime()) / 86_400_000)
+  if (diffDays === 0) return 'today'
+  if (diffDays === 1) return 'tomorrow'
+  if (diffDays === -1) return 'yesterday'
+  return start.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
+// Only meaningful when hasFeatured is true — templates guard on that first.
+const spotlight = computed(() => {
+  const m = cachedFeaturedMatch.value!
+  return {
+    homeTeam: m.home_team,
+    awayTeam: m.away_team,
+    leagueName: m.league.name,
+    timeLabel: new Date(m.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+    dayLabel: dayLabelFor(m.start_time),
+    homeIcon: m.home_icon ?? null,
+    awayIcon: m.away_icon ?? null,
+  }
+})
 
 let searchTimer: number | null = null
 
@@ -267,12 +345,8 @@ onMounted(async () => {
   sports.value = await fetchSports()
   if (sports.value.length > 0) sportFilter.value = sports.value[0].id
   await loadTeams()
-  try {
-    const malmo = await fetchTeam('malmo-ff', 'football')
-    heroTeamIcon.value = malmo.icon ?? null
-  } catch {
-    /* fall back to initials badge */
-  }
+  // Cached value (if any) is already showing instantly; this just keeps it fresh.
+  refreshFeaturedMatch()
 })
 
 watch(sportFilter, () => {

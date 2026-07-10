@@ -6,8 +6,15 @@ from sqlmodel import Session, select
 from database import get_session
 from models.models import League, Match, Sport, Team
 from schemas.schemas import LeagueOut, MatchOut
+from services.featured_match import get_featured_match
 
 router = APIRouter()
+
+
+@router.get("/matches/featured", response_model=MatchOut | None)
+def featured_match(session: Session = Depends(get_session)):
+    """The single highest-scoring live/upcoming/recent match, for the hero card."""
+    return get_featured_match(session)
 
 
 @router.get("/matches", response_model=list[MatchOut])

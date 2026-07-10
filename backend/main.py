@@ -49,6 +49,12 @@ app.include_router(
 )
 
 
+@app.get("/api/last-updated")
+def last_updated():
+    """When the fetcher last completed a successful run — public, not sensitive."""
+    return {"last_run": fetcher_state["last_run"]}
+
+
 @app.get("/health")
 def health():
     # Check DB

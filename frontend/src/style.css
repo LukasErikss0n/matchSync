@@ -343,4 +343,20 @@ body::before {
             transform: none;
         }
     }
+
+    @keyframes lgpulse {
+        to {
+            box-shadow: 0 0 0 6px rgba(201, 232, 210, 0);
+        }
+    }
+}
+
+.live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ms-green);
+    flex: none;
+    box-shadow: 0 0 0 0 rgba(201, 232, 210, 0.6);
+    animation: lgpulse 2s infinite;
 }
