@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="calBody" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8ecdf2" />
+      <stop offset="100%" stop-color="#5eb2e6" />
+    </linearGradient>
+  </defs>
+
+  <!-- No background rect: the calendar shapes are drawn on a transparent canvas so
+       the rounded navy backdrop can be a CSS background (which clips to border-radius
+       cleanly, unlike a clipped <img> which leaves an anti-aliasing fringe in Firefox). -->
+
+  <!-- calendar rings -->
+  <rect x="72" y="46" width="12" height="26" rx="6" fill="url(#calBody)" />
+  <rect x="116" y="46" width="12" height="26" rx="6" fill="url(#calBody)" />
+
+  <!-- calendar body -->
+  <rect x="52" y="66" width="96" height="88" rx="12" fill="url(#calBody)" />
+
+  <!-- header strip -->
+  <rect x="52" y="66" width="96" height="24" rx="12" fill="#5eb2e6" />
+
+  <!-- day-cell grid -->
+  <g fill="rgba(8,19,31,0.35)">
+    <rect x="63" y="100" width="14" height="14" rx="3" />
+    <rect x="85" y="100" width="14" height="14" rx="3" />
+    <rect x="107" y="100" width="14" height="14" rx="3" />
+    <rect x="129" y="100" width="14" height="14" rx="3" />
+    <rect x="63" y="122" width="14" height="14" rx="3" />
+    <rect x="85" y="122" width="14" height="14" rx="3" />
+    <rect x="107" y="122" width="14" height="14" rx="3" />
+    <rect x="129" y="122" width="14" height="14" rx="3" />
+  </g>
+
+  <!-- lightning streak, kept within the calendar body so it can't reach the icon's corners -->
+  <polygon
+    points="54,148 128,84 112,94 146,64 104,106 118,96"
+    fill="#ffffff"
+  />
+</svg>

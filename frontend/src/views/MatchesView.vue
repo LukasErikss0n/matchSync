@@ -375,12 +375,22 @@ function toggle(which: "league" | "team") {
 }
 
 function pushQuery(league: LeagueOption | null, team: string | null) {
-    router.replace({
-        query: {
-            league: league?.slug ?? undefined,
-            filter: team ?? undefined,
-        },
-    });
+    // Merge so the subscribe-wizard params (wstep/wsport/wteam) survive when the
+    // modal is open on top of the matches page.
+    const query: Record<string, string> = { ...(route.query as Record<string, string>) };
+    if (league?.slug) query.league = league.slug;
+    else delete query.league;
+    if (team) query.filter = team;
+    else delete query.filter;
+    router.replace({ query });
+}
+
+function clearWizardQuery() {
+    const query = { ...route.query };
+    delete query.wstep;
+    delete query.wsport;
+    delete query.wteam;
+    router.replace({ query });
 }
 
 async function selectLeague(opt: LeagueOption) {
@@ -660,9 +670,15 @@ function closeModal() {
     showModal.value = false;
     modalSport.value = null;
     modalTeam.value = null;
+    clearWizardQuery();
 }
 
 onMounted(async () => {
+    // Reopen the subscribe wizard if the URL still carries its state (reload while open).
+    if (route.query.wstep || route.query.wsport || route.query.wteam) {
+        showModal.value = true;
+    }
+
     sports.value = await fetchSports();
     if (!leagueOptions.value.length) return;
 

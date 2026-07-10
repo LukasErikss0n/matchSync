@@ -195,12 +195,12 @@
           <div class="text-center mb-7">
             <div
               class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-              style="background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark)); box-shadow: 0 20px 36px -14px rgba(94,178,230,.6)"
+              style="background: #131c2e"
             >
               <img
-                src="/matchSync_bg.png"
+                src="/logo.svg"
                 alt="MatchCalender"
-                class="w-full h-full rounded-2xl object-cover"
+                class="w-full h-full object-contain"
               />
             </div>
             <h3 class="text-xl font-extrabold mb-1" style="letter-spacing: -0.3px">Your calendar is ready!</h3>
@@ -265,6 +265,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import type { CalendarLink, Sport, Team } from '@/types'
 import { fetchSports, fetchTeams, fetchTeam, fetchCalendarLink } from '@/services/sports'
 import SportCard from './SportCard.vue'
@@ -276,6 +277,25 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ close: [] }>()
+
+const route = useRoute()
+const router = useRouter()
+// Mirror the wizard's position into the URL (?wstep=&wsport=&wteam=) so a page
+// reload while the modal is open restores it instead of dropping to the page
+// behind it. Guarded until the initial restore finishes so the watcher below
+// doesn't fire mid-setup.
+const urlSyncReady = ref(false)
+
+function syncUrl() {
+  if (!urlSyncReady.value) return
+  const query: Record<string, string> = { ...(route.query as Record<string, string>) }
+  query.wstep = String(step.value)
+  if (sportId.value) query.wsport = sportId.value
+  else delete query.wsport
+  if (teamSlug.value) query.wteam = teamSlug.value
+  else delete query.wteam
+  router.replace({ query })
+}
 
 const step = ref(1)
 const sportId = ref<string | null>(null)
@@ -321,19 +341,49 @@ onMounted(async () => {
   document.body.style.overflow = 'hidden'
   sports.value = await fetchSports()
 
-  // Apply deep-link state passed from the hero
-  if (props.initialSport) sportId.value = props.initialSport
   if (props.initialTeam) {
+    // Deep-link from the hero (full Team object already in hand)
     selectedTeam.value = props.initialTeam
     teamSlug.value = props.initialTeam.slug
     sportId.value = props.initialTeam.sport
     chosenLeagues.value = props.initialTeam.leagues.map(l => l.slug)
     step.value = 3
   } else if (props.initialSport) {
+    // Deep-link from a sport card
+    sportId.value = props.initialSport
     await loadTeams()
     step.value = 2
+  } else {
+    // No props → restore from the URL (page reload with the modal open)
+    const urlSport = (route.query.wsport as string) || null
+    const urlTeam = (route.query.wteam as string) || null
+    const urlStep = route.query.wstep ? Number(route.query.wstep) : null
+
+    if (urlTeam && urlSport) {
+      sportId.value = urlSport
+      try {
+        const team = await fetchTeam(urlTeam, urlSport)
+        selectedTeam.value = team
+        teamSlug.value = urlTeam
+        chosenLeagues.value = team.leagues.map(l => l.slug)
+      } catch {
+        /* team no longer resolvable — fall back to sport step */
+      }
+      await loadTeams()
+      // Step 4 needs a freshly generated link, so cap the restore at step 3.
+      step.value = urlStep && urlStep >= 2 ? Math.min(urlStep, 3) : (teamSlug.value ? 3 : 2)
+    } else if (urlSport) {
+      sportId.value = urlSport
+      await loadTeams()
+      step.value = 2
+    }
   }
+
+  urlSyncReady.value = true
+  syncUrl()
 })
+
+watch([step, sportId, teamSlug], syncUrl)
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKey)

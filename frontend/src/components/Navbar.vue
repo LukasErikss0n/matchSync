@@ -6,12 +6,12 @@
             <RouterLink to="/" class="flex items-center gap-2.5 flex-shrink-0 pl-1">
                 <div
                     class="w-8 h-8 rounded-[10px] flex items-center justify-center flex-shrink-0"
-                    style="background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark)); box-shadow: 0 8px 16px -6px rgba(94,178,230,.5)"
+                    style="background: #131c2e"
                 >
                     <img
-                        src="/matchSync_bg.png"
+                        src="/logo.svg"
                         alt="MatchCalender"
-                        class="w-full h-full rounded-[10px] object-cover"
+                        class="w-full h-full object-contain"
                     />
                 </div>
                 <span class="hidden sm:inline font-extrabold text-[15px] tracking-tight whitespace-nowrap">
