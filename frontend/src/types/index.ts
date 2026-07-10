@@ -55,6 +55,7 @@ export interface SeasonStats {
   published: boolean
   season_start: string | null   // ISO-UTC
   regular_season_count: number
+  progressive_knockout: boolean // true for cups like FA Cup/EFL Cup — later rounds aren't drawn yet
 }
 
 export interface CalendarLink {

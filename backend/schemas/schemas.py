@@ -125,6 +125,10 @@ class SeasonStatsOut(SQLModel):
     published: bool         # False when the competition's fixtures aren't out yet
     season_start: Optional[datetime] = None
     regular_season_count: int
+    # True for pure knockout cups (FA Cup, EFL Cup) whose later rounds are drawn
+    # only once earlier ones finish — `regular_season_count` there means "matches
+    # currently scheduled", not a fixed season total.
+    progressive_knockout: bool = False
 
 
 class CalendarLink(SQLModel):

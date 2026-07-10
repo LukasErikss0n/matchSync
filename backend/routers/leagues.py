@@ -114,4 +114,5 @@ def league_season_stats(league_slug: str):
         published=stats.published,
         season_start=stats.season_start,
         regular_season_count=stats.regular_season_count,
+        progressive_knockout=stats.progressive_knockout,
     )

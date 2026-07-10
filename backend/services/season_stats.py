@@ -32,12 +32,26 @@ _cache: dict[str, tuple[float, "SeasonStats"]] = {}
 
 _PLAYOFF_FRAGMENTS = ("playoff", "slutspel", "kvalspel", "playout")
 
+# Pure knockout cups whose pairings are drawn round-by-round as the competition
+# progresses (the next round isn't fixed until the previous one finishes) — so
+# unlike a league or a League Phase, there's no fixed "total games this season"
+# to report. league-slug based since it's a property of the competition format,
+# not something derivable from the fixture data itself.
+_PROGRESSIVE_KNOCKOUT_SLUGS = {"fa-cup", "efl-cup"}
+
 
 class SeasonStats:
-    def __init__(self, season_start: datetime | None, regular_season_count: int, published: bool):
+    def __init__(
+        self,
+        season_start: datetime | None,
+        regular_season_count: int,
+        published: bool,
+        progressive_knockout: bool = False,
+    ):
         self.season_start = season_start
         self.regular_season_count = regular_season_count
         self.published = published
+        self.progressive_knockout = progressive_knockout
 
 
 def _slug_to_league_key() -> dict[str, str]:
@@ -212,13 +226,21 @@ def _compute(league_slug: str) -> SeasonStats | None:
                 regular_count = len(regular_starts) if regular_starts else len(all_starts)
                 break
 
+    progressive_knockout = league_slug in _PROGRESSIVE_KNOCKOUT_SLUGS
+
     if not starts:
-        return SeasonStats(season_start=None, regular_season_count=0, published=False)
+        return SeasonStats(
+            season_start=None,
+            regular_season_count=0,
+            published=False,
+            progressive_knockout=progressive_knockout,
+        )
 
     return SeasonStats(
         season_start=min(starts),
         regular_season_count=regular_count if regular_count is not None else len(starts),
         published=True,
+        progressive_knockout=progressive_knockout,
     )
 
 

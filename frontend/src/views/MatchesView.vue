@@ -587,6 +587,13 @@ const seasonFaq = computed(() => {
         d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
     const start = stats.season_start ? fmt(new Date(stats.season_start)) : null;
 
+    // Knockout cups (FA Cup, EFL Cup) draw each round only once the previous one
+    // finishes — there's no fixed "games this season" total to report, so the
+    // count means "currently scheduled", phrased to make that explicit.
+    const countAnswer = stats.progressive_knockout
+        ? `${stats.regular_season_count} ${stats.regular_season_count === 1 ? "match is" : "matches are"} currently scheduled for the ${name}. Later rounds are drawn as the competition progresses, so the full total isn't set yet.`
+        : `The season contains ${stats.regular_season_count} matches before playoffs that we track.`;
+
     return {
         items: [
             ...(start
@@ -599,7 +606,7 @@ const seasonFaq = computed(() => {
                 : []),
             {
                 question: `How many games are in a ${name} season?`,
-                answer: `The season contains ${stats.regular_season_count} matches before playoffs that we track.`,
+                answer: countAnswer,
             },
         ],
     };
