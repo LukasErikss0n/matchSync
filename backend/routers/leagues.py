@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 from database import get_session
 from models.models import League, Sport, Team
-from schemas.schemas import LeagueOut, SportOut, TeamOut
+from schemas.schemas import LeagueOut, SeasonStatsOut, SportOut, TeamOut
+from services.season_stats import get_season_stats
 
 
 router = APIRouter()
@@ -99,3 +100,18 @@ def get_team(
     teams = _collect_teams(rows)
     teams.sort(key=lambda t: -len(t.leagues))
     return teams[0]
+
+
+@router.get("/leagues/{league_slug}/season-stats", response_model=SeasonStatsOut)
+def league_season_stats(league_slug: str):
+    """Season start date + regular-season match count, fetched live from the
+    same external providers the fetcher uses (see services/season_stats.py) —
+    not our own DB, which may only hold a partial rolling window."""
+    stats = get_season_stats(league_slug)
+    if stats is None:
+        raise HTTPException(status_code=404, detail="Unknown league")
+    return SeasonStatsOut(
+        published=stats.published,
+        season_start=stats.season_start,
+        regular_season_count=stats.regular_season_count,
+    )

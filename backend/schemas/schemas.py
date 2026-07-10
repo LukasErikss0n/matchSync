@@ -116,6 +116,17 @@ class MatchOut(SQLModel):
     start_time: datetime
 
 
+class SeasonStatsOut(SQLModel):
+    """Live season overview for a league, computed from the same external
+    providers the fetcher uses (not our own DB, which may only hold a partial
+    window). `regular_season_count` excludes playoff-stage games where that
+    distinction exists (currently only the Swedish hockey/basketball leagues);
+    for everything else it's simply the total tracked match count."""
+    published: bool         # False when the competition's fixtures aren't out yet
+    season_start: Optional[datetime] = None
+    regular_season_count: int
+
+
 class CalendarLink(SQLModel):
     """Shape the frontend expects from GET /calendar."""
     team: str

@@ -51,6 +51,12 @@ export interface Match {
   start_time: string   // ISO-UTC (with Z) — rendered in the viewer's local time
 }
 
+export interface SeasonStats {
+  published: boolean
+  season_start: string | null   // ISO-UTC
+  regular_season_count: number
+}
+
 export interface CalendarLink {
   team: string
   sport: string

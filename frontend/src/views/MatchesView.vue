@@ -202,6 +202,15 @@
                     Get link
                 </button>
             </div>
+
+            <!-- Season FAQ (built from the live fixture list — helps long-tail search) -->
+            <div v-if="seasonFaq" class="mt-6 glass-card rounded-2xl px-5 py-5">
+                <p class="section-label mb-3">FAQ</p>
+                <div v-for="item in seasonFaq.items" :key="item.question" class="mb-4 last:mb-0">
+                    <p class="font-bold text-sm mb-1">{{ item.question }}</p>
+                    <p class="text-sm" style="color: var(--ms-muted)">{{ item.answer }}</p>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -216,15 +225,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, h } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import type { League, Match, Sport, Team } from "@/types";
+import type { League, Match, SeasonStats, Sport, Team } from "@/types";
 import {
     fetchSports,
     fetchTeams,
     fetchTeam,
     fetchMatches,
     fetchLastUpdated,
+    fetchSeasonStats,
 } from "@/services/sports";
 import { cachedFeaturedMatch, refreshFeaturedMatch } from "@/services/featuredMatchCache";
+import { setJsonLd, removeJsonLd } from "@/utils/seo";
 import Navbar from "@/components/Navbar.vue";
 import Icon from "@/components/Icon.vue";
 import TeamBadge from "@/components/TeamBadge.vue";
@@ -336,9 +347,12 @@ const LEAGUE_SEASON: Record<string, SeasonCfg> = {
 };
 
 const season = computed(() => {
-    const now = new Date();
-    const m = now.getMonth();
-    const y = now.getFullYear();
+    // Based on the week currently being browsed, not today's date — otherwise
+    // paging into a past/future week shows a season label that doesn't match
+    // the matches actually on screen.
+    const viewed = windowStart.value;
+    const m = viewed.getMonth();
+    const y = viewed.getFullYear();
     const cfg = LEAGUE_SEASON[selectedLeague.value?.slug ?? ""];
     const start = cfg
         ? cfg.atStart
@@ -379,7 +393,7 @@ async function selectLeague(opt: LeagueOption) {
     selectedLeague.value = opt;
     selectedTeamSlug.value = null;
     pushQuery(opt, null);
-    await Promise.all([loadTeams(), loadMatches()]);
+    await Promise.all([loadTeams(), loadMatches(), loadSeasonStats()]);
 }
 
 function selectTeam(slug: string | null) {
@@ -407,6 +421,18 @@ async function loadTeams() {
             t.leagues.some((l) => l.slug === selectedLeague.value!.slug),
         )
         .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+const seasonStats = ref<SeasonStats | null>(null);
+
+async function loadSeasonStats() {
+    if (!selectedLeague.value) return;
+    seasonStats.value = null;
+    try {
+        seasonStats.value = await fetchSeasonStats(selectedLeague.value.slug);
+    } catch {
+        /* FAQ just won't show for this league */
+    }
 }
 
 async function loadMatches() {
@@ -536,6 +562,69 @@ const windowSubtitle = computed(
     () => `${visibleMatches.value.length} matches this week`,
 );
 
+// ── Season FAQ ───────────────────────────────────────────────────────────────
+// Backed by GET /api/leagues/{slug}/season-stats, which queries the same
+// external providers the fetcher uses (see backend/services/season_stats.py) —
+// not our own DB, which only ever holds a rolling window and can look empty
+// right after a season ends and before the next one is announced.
+const seasonFaq = computed(() => {
+    if (!selectedLeague.value || !seasonStats.value) return null;
+    const name = selectedLeague.value.name;
+    const stats = seasonStats.value;
+
+    if (!stats.published) {
+        return {
+            items: [
+                {
+                    question: `When does the ${name} season start?`,
+                    answer: `Fixtures for the next ${name} season haven't been published yet. Check back soon — this updates automatically once they're announced.`,
+                },
+            ],
+        };
+    }
+
+    const fmt = (d: Date) =>
+        d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
+    const start = stats.season_start ? fmt(new Date(stats.season_start)) : null;
+
+    return {
+        items: [
+            ...(start
+                ? [
+                      {
+                          question: `When does the ${name} season start?`,
+                          answer: `The ${name} season starts on ${start}.`,
+                      },
+                  ]
+                : []),
+            {
+                question: `How many games are in a ${name} season?`,
+                answer: `The season contains ${stats.regular_season_count} matches before playoffs that we track.`,
+            },
+        ],
+    };
+});
+
+watch(
+    seasonFaq,
+    (faq) => {
+        if (!faq) {
+            removeJsonLd("faq-jsonld");
+            return;
+        }
+        setJsonLd("faq-jsonld", {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faq.items.map((item) => ({
+                "@type": "Question",
+                name: item.question,
+                acceptedAnswer: { "@type": "Answer", text: item.answer },
+            })),
+        });
+    },
+    { immediate: true },
+);
+
 // ── Modal ────────────────────────────────────────────────────────────────────
 function openSportModal() {
     modalTeam.value = null;
@@ -599,7 +688,7 @@ onMounted(async () => {
         selectedTeamSlug.value = filterParam;
     }
 
-    await loadMatches();
+    await Promise.all([loadMatches(), loadSeasonStats()]);
     pushQuery(selectedLeague.value, selectedTeamSlug.value);
 
     try {
@@ -613,6 +702,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
     if (clockTimer !== null) window.clearInterval(clockTimer);
+    removeJsonLd("faq-jsonld");
 });
 
 watch(weekOffset, () => {

@@ -345,35 +345,46 @@ class FootballFilter:
         yr = str(season_year)[-2:]
         return f"https://resources.premierleague.com/premierleague{yr}/badges-alt/50/{team_id}.png"
 
+    def _fetch_season(self, league_id: int, season: str) -> dict:
+        events: dict = {}
+        for week in range(1, 50):
+            url = (
+                f"https://sdp-prem-prod.premier-league-prod.pulselive.com"
+                f"/api/v1/competitions/{league_id}/seasons/{season}/matchweeks/{week}/matches"
+            )
+            week_data = self.api.get(url)
+            if not week_data.get("data"):
+                break
+            for match in week_data["data"]:
+                start = self.time.convert_to_utc(
+                    match["kickoff"], match["kickoffTimezone"]
+                )
+                if not self.time.is_recent_or_future(start):
+                    continue
+                event_id = str(match["matchId"])
+                events[event_id] = {
+                    "eventId":          event_id,
+                    "homeTeam":         match["homeTeam"]["name"],
+                    "awayTeam":         match["awayTeam"]["name"],
+                    "startDateAndTime": start,
+                    "homeIcon":         self._badge_url(match["homeTeam"]),
+                    "awayIcon":         self._badge_url(match["awayTeam"]),
+                    "homeScore":        match["homeTeam"].get("score"),
+                    "awayScore":        match["awayTeam"].get("score"),
+                }
+        return events
+
     def filter(self):
         season = self.time.get_active_season_year("08")
         for league_key, league_id in self.LEAGUES.items():
-            events: dict = {}
-            for week in range(1, 50):
-                url = (
-                    f"https://sdp-prem-prod.premier-league-prod.pulselive.com"
-                    f"/api/v1/competitions/{league_id}/seasons/{season}/matchweeks/{week}/matches"
-                )
-                week_data = self.api.get(url)
-                if not week_data.get("data"):
-                    break
-                for match in week_data["data"]:
-                    start = self.time.convert_to_utc(
-                        match["kickoff"], match["kickoffTimezone"]
-                    )
-                    if not self.time.is_recent_or_future(start):
-                        continue
-                    event_id = str(match["matchId"])
-                    events[event_id] = {
-                        "eventId":          event_id,
-                        "homeTeam":         match["homeTeam"]["name"],
-                        "awayTeam":         match["awayTeam"]["name"],
-                        "startDateAndTime": start,
-                        "homeIcon":         self._badge_url(match["homeTeam"]),
-                        "awayIcon":         self._badge_url(match["awayTeam"]),
-                        "homeScore":        match["homeTeam"].get("score"),
-                        "awayScore":        match["awayTeam"].get("score"),
-                    }
+            events = self._fetch_season(league_id, season)
+            if not events:
+                # Providers usually publish next season's full fixture list well
+                # before our month-threshold flips (e.g. the PL releases fixtures
+                # in June, ~2 months before the August kickoff) — if the season we
+                # assumed has nothing recent/upcoming, the next one may already be out.
+                next_season = str(int(season) + 1)
+                events = self._fetch_season(league_id, next_season)
             self.store.save("football", league_key, events)
 
 
