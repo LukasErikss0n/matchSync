@@ -184,12 +184,24 @@
 
         <!-- Step 4: Link -->
         <div v-else-if="step === 4 && calLink" class="fade-up">
+          <button
+            class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 mb-4 transition-all"
+            style="color: rgba(244,247,251,.6); background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16)"
+            @click="step = 3"
+          >
+            <svg viewBox="0 0 16 16" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg>
+            Back
+          </button>
           <div class="text-center mb-7">
             <div
               class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
               style="background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark)); box-shadow: 0 20px 36px -14px rgba(94,178,230,.6)"
             >
-              <Icon name="calendar" style="color: #08131f" />
+              <img
+                src="/matchSync_bg.png"
+                alt="MatchSync"
+                class="w-full h-full rounded-2xl object-cover"
+              />
             </div>
             <h3 class="text-xl font-extrabold mb-1" style="letter-spacing: -0.3px">Your calendar is ready!</h3>
             <p class="text-sm font-medium" style="color: rgba(244,247,251,.6)">
@@ -256,7 +268,6 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import type { CalendarLink, Sport, Team } from '@/types'
 import { fetchSports, fetchTeams, fetchTeam, fetchCalendarLink } from '@/services/sports'
 import SportCard from './SportCard.vue'
-import Icon from './Icon.vue'
 import TeamBadge from './TeamBadge.vue'
 
 const props = defineProps<{
