@@ -702,8 +702,8 @@ def _send_error_email(error: str) -> None:
             {
                 "from": "onboarding@resend.dev",
                 "to": ALERT_EMAIL,
-                "subject": "MatchSync fetcher error",
-                "text": f"MatchSync fetcher failed at {datetime.now(_LOCAL_TZ).isoformat()}\n\nError:\n{error}",
+                "subject": "MatchCalender fetcher error",
+                "text": f"MatchCalender fetcher failed at {datetime.now(_LOCAL_TZ).isoformat()}\n\nError:\n{error}",
             }
         )
         print("[fetcher] error alert email sent")

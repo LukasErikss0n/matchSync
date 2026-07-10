@@ -199,7 +199,7 @@
             >
               <img
                 src="/matchSync_bg.png"
-                alt="MatchSync"
+                alt="MatchCalender"
                 class="w-full h-full rounded-2xl object-cover"
               />
             </div>

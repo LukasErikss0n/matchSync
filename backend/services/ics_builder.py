@@ -22,7 +22,7 @@ def build_ics(
     cal = Calendar()
     cal.add("prodid", "-//Matchcalender//matchcalender.com//")
     cal.add("version", "2.0")
-    cal.add("x-wr-calname", f"{team_name} — MatchSync")
+    cal.add("x-wr-calname", f"{team_name} — MatchCalender")
     cal.add("x-wr-timezone", "UTC")
     cal.add("refresh-interval", vDuration(timedelta(hours=1)))
     cal.add("x-published-ttl", vDuration(timedelta(hours=1)))

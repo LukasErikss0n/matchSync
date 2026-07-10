@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
     scheduler.shutdown()
 
 
-app = FastAPI(title="MatchSync API", lifespan=lifespan)
+app = FastAPI(title="MatchCalender API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

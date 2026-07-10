@@ -8,10 +8,10 @@
               class="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center"
               style="background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark))"
             >
-              <img src="/matchSync_bg.png" alt="MatchSync" class="w-full h-full rounded-[9px] object-cover" loading="lazy" decoding="async" />
+              <img src="/matchSync_bg.png" alt="MatchCalender" class="w-full h-full rounded-[9px] object-cover" loading="lazy" decoding="async" />
             </div>
             <span class="font-extrabold text-[15px]">
-              Match<span class="ms-text-accent">Sync</span>
+              Match<span class="ms-text-accent">Calender</span>
             </span>
           </div>
           <p class="text-[13.5px] leading-relaxed max-w-[320px]" style="color: var(--ms-muted)">
@@ -21,37 +21,37 @@
         </div>
         <div class="flex flex-col gap-2.5">
           <div class="text-[11px] font-bold uppercase tracking-widest mb-1" style="color: var(--ms-muted-dim)">Product</div>
-          <a
+          <RouterLink
             v-for="l in productLinks"
-            :key="l"
-            href="#"
+            :key="l.label"
+            :to="l.to"
             class="text-[13.5px] font-semibold transition-colors"
             style="color: rgba(244,247,251,.65)"
           >
-            {{ l }}
-          </a>
+            {{ l.label }}
+          </RouterLink>
         </div>
         <div class="flex flex-col gap-2.5">
           <div class="text-[11px] font-bold uppercase tracking-widest mb-1" style="color: var(--ms-muted-dim)">Company</div>
-          <a
+          <RouterLink
             v-for="l in companyLinks"
-            :key="l"
-            href="#"
+            :key="l.label"
+            :to="l.to"
             class="text-[13.5px] font-semibold transition-colors"
             style="color: rgba(244,247,251,.65)"
           >
-            {{ l }}
-          </a>
+            {{ l.label }}
+          </RouterLink>
           <a
-            href="mailto:hello@matchsync.io"
+            href="mailto:hello@matchcalender.io"
             class="text-[13.5px] font-semibold hover:opacity-80 transition-opacity ms-text-accent"
           >
-            hello@matchsync.io
+            hello@matchcalender.io
           </a>
         </div>
       </div>
       <div class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-5">
-        <p class="text-xs" style="color: var(--ms-muted-dim)">© 2026 MatchSync. All rights reserved.</p>
+        <p class="text-xs" style="color: var(--ms-muted-dim)">© 2026 MatchCalender. All rights reserved.</p>
         <p class="text-xs" style="color: var(--ms-muted-dim)">Built for fans, by fans.</p>
       </div>
     </div>
@@ -59,6 +59,15 @@
 </template>
 
 <script setup lang="ts">
-const productLinks = ['How it works', 'Supported sports', 'API docs']
-const companyLinks = ['Privacy policy', 'Terms of service']
+import { RouterLink } from 'vue-router'
+
+const productLinks = [
+  { label: 'How it works', to: '/#how-it-works' },
+  { label: 'Supported sports', to: '/#sports' },
+  { label: 'API docs', to: '/api-docs' },
+]
+const companyLinks = [
+  { label: 'Privacy policy', to: '/privacy' },
+  { label: 'Terms of service', to: '/terms' },
+]
 </script>

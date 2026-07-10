@@ -10,7 +10,7 @@
                 >
                     <img
                         src="/matchSync_bg.png"
-                        alt="MatchSync"
+                        alt="MatchCalender"
                         class="w-full h-full rounded-[10px] object-cover"
                     />
                 </div>
@@ -50,6 +50,6 @@ const emit = defineEmits<{ getStarted: [] }>();
 
 const tabs = [
     { label: "Home", to: "/" }, //home
-    { label: "Matches", to: "/matches?league=fifa-world-cup-2026" }, //matches
+    { label: "Matches", to: "/matches" }, //matches — league defaults to the featured match's league
 ];
 </script>

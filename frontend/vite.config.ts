@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: "autoUpdate",
 
       manifest: {
-        name: "matchSync",
-        short_name: "matchSync",
+        name: "MatchCalender",
+        short_name: "MatchCalender",
         description:
           "Live, always-updated calendars for football and hockey fans",
         theme_color: "#1d4ed8",

@@ -224,6 +224,7 @@ import {
     fetchMatches,
     fetchLastUpdated,
 } from "@/services/sports";
+import { cachedFeaturedMatch, refreshFeaturedMatch } from "@/services/featuredMatchCache";
 import Navbar from "@/components/Navbar.vue";
 import Icon from "@/components/Icon.vue";
 import TeamBadge from "@/components/TeamBadge.vue";
@@ -572,9 +573,25 @@ onMounted(async () => {
     const leagueParam = route.query.league as string | undefined;
     const filterParam = route.query.filter as string | undefined;
 
+    // No explicit ?league= given — default to whatever the hero is currently
+    // spotlighting (same scoring as the featured match), so "See all matches"
+    // lands somewhere relevant instead of always the first league in the list.
+    let defaultLeague = leagueOptions.value[0];
+    if (!leagueParam) {
+        if (cachedFeaturedMatch.value === undefined) {
+            await refreshFeaturedMatch();
+        }
+        const fm = cachedFeaturedMatch.value;
+        if (fm) {
+            const match = leagueOptions.value.find(
+                (l) => l.sport === fm.sport && l.slug === fm.league.slug,
+            );
+            if (match) defaultLeague = match;
+        }
+    }
+
     selectedLeague.value =
-        leagueOptions.value.find((l) => l.slug === leagueParam) ??
-        leagueOptions.value[0];
+        leagueOptions.value.find((l) => l.slug === leagueParam) ?? defaultLeague;
 
     await loadTeams();
 
