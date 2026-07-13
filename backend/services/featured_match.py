@@ -11,10 +11,9 @@ as extra terms later.
 import time
 from datetime import datetime, timedelta, timezone
 
-from sqlmodel import Session, select
-
 from models.models import League, Match, Sport, Team
 from schemas.schemas import LeagueOut, MatchOut
+from sqlmodel import Session, select
 
 # Candidate pre-filter — cheap enough to avoid scoring the whole table.
 LOOKBACK = timedelta(hours=3)
@@ -25,27 +24,40 @@ LIVE_WINDOW = timedelta(hours=2, minutes=30)  # approx match + stoppage time
 # to a static promo instead.
 MIN_SCORE = 0
 
+# --- How scores are built (see _score_match) --------------------------------
+#
+#   score = time_component + LEAGUE_WEIGHTS[league]
+#
+# time_component is one of:
+#   live match:            flat 1000            (always wins — nothing below
+#                                                 gets remotely close)
+#   upcoming (start > now): 200 - hours_until*4  (linear decay, hits 0 at 50h
+#                                                 out; flat 0 beyond that)
+#   just finished (<3h):    150 - hours_since*40 (decays fast — stale results
+#                                                 drop out within 3h)
+#
+# Both terms share the same 0-200-ish scale, so a gap between two league
+# weights converts directly to a gap in kickoff proximity:
+#
+#   equivalent_hours = weight_gap / 4
+#
+
 LEAGUE_WEIGHTS: dict[str, float] = {
     "fifa-world-cup-2026": 200,
     "uefa-champions-league": 150,
-    "premier-league": 120,
+    "premier-league": 140,
+    "iihf-world-championship": 130,
     "uefa-europa-league": 90,
-    "uefa-conference-league": 80,
     "allsvenskan": 90,
-    "shl": 80,
-    "sdhl": 70,
+    "shl": 75,
+    "uefa-conference-league": 65,
     "fa-cup": 60,
-    "efl-cup": 50,
-    "sbl-herrar": 50,
-    "sbl-damer": 45,
-    "iihf-world-championship": 110,
+    "sdhl": 55,
+    "efl-cup": 40,
+    "sbl-herrar": 40,
+    "sbl-damer": 35,
 }
 DEFAULT_LEAGUE_WEIGHT = 10
-
-# This is a Swedish product — Swedish leagues get a fixed boost.
-# (Would become per-request locale detection if the audience broadens.)
-SE_BOOST_LEAGUES = {"allsvenskan", "shl", "sdhl", "sbl-herrar", "sbl-damer"}
-SE_BOOST = 80
 
 _cache: dict[str, object] = {"result": None, "computed_at": 0.0}
 _CACHE_TTL_SECONDS = 300
@@ -74,8 +86,6 @@ def _score_match(match: Match, league_slug: str, now: datetime) -> float:
         return -1
 
     score += LEAGUE_WEIGHTS.get(league_slug, DEFAULT_LEAGUE_WEIGHT)
-    if league_slug in SE_BOOST_LEAGUES:
-        score += SE_BOOST
 
     return score
 
