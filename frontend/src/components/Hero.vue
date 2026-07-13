@@ -69,7 +69,7 @@
           Choose your team
         </button>
         <RouterLink
-          to="/matches?league=fifa-world-cup-2026"
+          :to="seeAllRoute"
           class="ms-btn-secondary rounded-2xl py-3.5 font-bold text-[16px] text-center"
         >
           See all matches
@@ -116,7 +116,7 @@
             Choose your team
           </button>
           <RouterLink
-            to="/matches?league=fifa-world-cup-2026"
+            :to="seeAllRoute"
             class="ms-btn-secondary rounded-2xl px-6 py-3.5 font-bold text-[15px] text-center"
           >
             See all matches
@@ -319,12 +319,19 @@ const spotlight = computed(() => {
     homeTeam: m.home_team,
     awayTeam: m.away_team,
     leagueName: m.league.name,
+    leagueSlug: m.league.slug,
     timeLabel: new Date(m.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
     dayLabel: dayLabelFor(m.start_time),
     homeIcon: m.home_icon ?? null,
     awayIcon: m.away_icon ?? null,
   }
 })
+
+// "See all matches" should always land on the league the hero is currently
+// showing — not whatever the user last browsed to on the Matches page.
+const seeAllRoute = computed(() =>
+  hasFeatured.value ? { path: '/matches', query: { league: spotlight.value.leagueSlug } } : '/matches',
+)
 
 let searchTimer: number | null = null
 

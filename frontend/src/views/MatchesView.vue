@@ -266,6 +266,23 @@ const ChevronDown = (
 
 type LeagueOption = League & { sport: string; sportLabel: string };
 
+// Remembers the user's last explicit league pick (Navbar's "Matches" tab has no
+// query, so without this it would keep bouncing back to the featured league).
+const LAST_LEAGUE_KEY = "ms:last-league";
+
+function saveLastLeague(opt: LeagueOption) {
+    localStorage.setItem(LAST_LEAGUE_KEY, JSON.stringify({ sport: opt.sport, slug: opt.slug }));
+}
+
+function readLastLeague(): { sport: string; slug: string } | null {
+    try {
+        const raw = localStorage.getItem(LAST_LEAGUE_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch {
+        return null;
+    }
+}
+
 const route = useRoute();
 const router = useRouter();
 
@@ -402,6 +419,7 @@ async function selectLeague(opt: LeagueOption) {
         return;
     selectedLeague.value = opt;
     selectedTeamSlug.value = null;
+    saveLastLeague(opt);
     pushQuery(opt, null);
     await Promise.all([loadTeams(), loadMatches(), loadSeasonStats()]);
 }
@@ -685,20 +703,28 @@ onMounted(async () => {
     const leagueParam = route.query.league as string | undefined;
     const filterParam = route.query.filter as string | undefined;
 
-    // No explicit ?league= given — default to whatever the hero is currently
-    // spotlighting (same scoring as the featured match), so "See all matches"
-    // lands somewhere relevant instead of always the first league in the list.
+    // No explicit ?league= given (e.g. the Navbar's plain "Matches" tab) —
+    // prefer whatever league the user last picked; only fall back to the
+    // hero's featured league if they've never picked one.
     let defaultLeague = leagueOptions.value[0];
     if (!leagueParam) {
-        if (cachedFeaturedMatch.value === undefined) {
-            await refreshFeaturedMatch();
-        }
-        const fm = cachedFeaturedMatch.value;
-        if (fm) {
-            const match = leagueOptions.value.find(
-                (l) => l.sport === fm.sport && l.slug === fm.league.slug,
-            );
-            if (match) defaultLeague = match;
+        const last = readLastLeague();
+        const lastMatch = last
+            ? leagueOptions.value.find((l) => l.sport === last.sport && l.slug === last.slug)
+            : undefined;
+        if (lastMatch) {
+            defaultLeague = lastMatch;
+        } else {
+            if (cachedFeaturedMatch.value === undefined) {
+                await refreshFeaturedMatch();
+            }
+            const fm = cachedFeaturedMatch.value;
+            if (fm) {
+                const match = leagueOptions.value.find(
+                    (l) => l.sport === fm.sport && l.slug === fm.league.slug,
+                );
+                if (match) defaultLeague = match;
+            }
         }
     }
 
