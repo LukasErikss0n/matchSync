@@ -53,8 +53,9 @@ export async function fetchSeasonStats(leagueSlug: string): Promise<SeasonStats>
   return res.json()
 }
 
-export async function fetchFeaturedMatch(): Promise<Match | null> {
-  const res = await fetch(`${API_BASE}/matches/featured`)
+export async function fetchFeaturedMatch(region?: string): Promise<Match | null> {
+  const qs = region ? `?region=${encodeURIComponent(region)}` : ''
+  const res = await fetch(`${API_BASE}/matches/featured${qs}`)
   if (!res.ok) throw new Error(`Failed to fetch featured match: ${res.status}`)
   return res.json()
 }

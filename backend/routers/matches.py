@@ -12,9 +12,18 @@ router = APIRouter()
 
 
 @router.get("/matches/featured", response_model=MatchOut | None)
-def featured_match(session: Session = Depends(get_session)):
+def featured_match(
+    region: str | None = Query(
+        default=None,
+        min_length=2,
+        max_length=2,
+        pattern="^[A-Za-z]{2}$",
+        description="ISO 3166-1 alpha-2 country code, guessed client-side, to nudge the visitor's domestic league",
+    ),
+    session: Session = Depends(get_session),
+):
     """The single highest-scoring live/upcoming/recent match, for the hero card."""
-    return get_featured_match(session)
+    return get_featured_match(session, region)
 
 
 @router.get("/matches", response_model=list[MatchOut])

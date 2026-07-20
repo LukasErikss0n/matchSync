@@ -2,10 +2,12 @@
 
 Scores every candidate in a cheap time window and returns the highest.
 No status field exists on Match — "live"/"finished" is inferred from
-start_time and whether scores have been recorded. Team-popularity,
-rivalry, and per-user personalization aren't implemented (no such data
-exists yet) but the scoring function is structured so they can be added
-as extra terms later.
+start_time and whether scores have been recorded. Team-popularity and
+rivalry aren't implemented (no such data exists yet) but the scoring
+function is structured so they can be added as extra terms later.
+Region is a light personalization signal: an optional ISO country code
+guessed client-side from timezone/locale (never IP — see
+frontend/src/utils/region.ts) that nudges a visitor's domestic league.
 """
 
 import time
@@ -28,7 +30,7 @@ MIN_SCORE = 0
 
 # --- How scores are built (see _score_match) --------------------------------
 #
-#   score = time_component + LEAGUE_WEIGHTS[league]
+#   score = time_component + LEAGUE_WEIGHTS[league] + (REGION_BOOST if domestic)
 #
 # time_component is one of:
 #   live match:            flat 1000                     (always wins —
@@ -69,11 +71,22 @@ LEAGUE_WEIGHTS: dict[str, float] = {
 }
 DEFAULT_LEAGUE_WEIGHT = 10
 
-_cache: dict[str, object] = {"result": None, "computed_at": 0.0}
+# Client-guessed region (from timezone/locale, see frontend/src/utils/region.ts —
+# there's no IP geolocation here) nudges the domestic league for that country
+# above the global weights, without ever excluding other leagues. Chosen so it
+# beats the gap between adjacent LEAGUE_WEIGHTS tiers but not a live match.
+REGION_BOOST = 60
+REGION_LEAGUES: dict[str, set[str]] = {
+    "SE": {"allsvenskan", "shl", "sdhl", "sbl-herrar", "sbl-damer"},
+    "GB": {"premier-league", "fa-cup", "efl-cup"},
+}
+
+# Cached per region so one visitor's boost doesn't leak into another's result.
+_cache: dict[str, tuple[float, MatchOut | None]] = {}
 _CACHE_TTL_SECONDS = 300
 
 
-def _score_match(match: Match, league_slug: str, now: datetime) -> float:
+def _score_match(match: Match, league_slug: str, now: datetime, region: str | None) -> float:
     score = 0.0
     has_score = match.home_score is not None and match.away_score is not None
     start = match.start_time
@@ -96,14 +109,19 @@ def _score_match(match: Match, league_slug: str, now: datetime) -> float:
         return -1
 
     score += LEAGUE_WEIGHTS.get(league_slug, DEFAULT_LEAGUE_WEIGHT)
+    if region and league_slug in REGION_LEAGUES.get(region, ()):
+        score += REGION_BOOST
 
     return score
 
 
-def get_featured_match(session: Session) -> MatchOut | None:
+def get_featured_match(session: Session, region: str | None = None) -> MatchOut | None:
+    region = region.upper() if region else None
+    cache_key = region or "global"
     now_ts = time.monotonic()
-    if now_ts - _cache["computed_at"] < _CACHE_TTL_SECONDS:
-        return _cache["result"]  # type: ignore[return-value]
+    cached = _cache.get(cache_key)
+    if cached is not None and now_ts - cached[0] < _CACHE_TTL_SECONDS:
+        return cached[1]
 
     now = datetime.now(timezone.utc)
     stmt = (
@@ -121,7 +139,7 @@ def get_featured_match(session: Session) -> MatchOut | None:
 
     best: tuple[float, Match, Team, League, Sport] | None = None
     for match, home_team, lg, sp in rows:
-        s = _score_match(match, lg.slug, now)
+        s = _score_match(match, lg.slug, now, region)
         if s <= MIN_SCORE:
             continue
         if best is None or s > best[0]:
@@ -154,6 +172,5 @@ def get_featured_match(session: Session) -> MatchOut | None:
             start_time=start,
         )
 
-    _cache["result"] = result
-    _cache["computed_at"] = now_ts
+    _cache[cache_key] = (now_ts, result)
     return result
