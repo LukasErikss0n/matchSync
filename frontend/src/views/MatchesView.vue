@@ -207,8 +207,19 @@
             <div v-if="seasonFaq" class="mt-6 glass-card rounded-2xl px-5 py-5">
                 <p class="section-label mb-3">FAQ</p>
                 <div v-for="item in seasonFaq.items" :key="item.question" class="mb-4 last:mb-0">
-                    <p class="font-bold text-sm mb-1">{{ item.question }}</p>
-                    <p class="text-sm" style="color: var(--ms-muted)">{{ item.answer }}</p>
+                    <p class="font-bold text-sm mb-3">{{ item.question }}</p>
+                    <div v-if="item.rows" class="rounded-2xl border border-white/[0.08] overflow-hidden">
+                        <div
+                            v-for="(row, index) in item.rows"
+                            :key="row.label"
+                            class="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] last:border-b-0"
+                            :class="index % 2 === 0 ? 'bg-white/[0.03]' : 'bg-white/[0.06]'"
+                        >
+                            <span class="font-bold text-sm">{{ row.label }}</span>
+                            <span class="font-bold text-sm ms-text-accent">{{ row.value }}</span>
+                        </div>
+                    </div>
+                    <p v-else class="text-sm" style="color: var(--ms-muted)">{{ item.answer }}</p>
                 </div>
             </div>
         </div>
@@ -590,6 +601,61 @@ const windowSubtitle = computed(
     () => `${visibleMatches.value.length} matches this week`,
 );
 
+// World Cup winners are historical fact, not something the fetcher's live
+// season-stats source tracks — hardcoded here rather than derived from the DB,
+// which only ever holds the current tournament's fixtures.
+const WORLD_CUP_WINNERS: { year: number; country: string }[] = [
+    { year: 1930, country: "Uruguay" },
+    { year: 1934, country: "Italy" },
+    { year: 1938, country: "Italy" },
+    { year: 1950, country: "Uruguay" },
+    { year: 1954, country: "West Germany" },
+    { year: 1958, country: "Brazil" },
+    { year: 1962, country: "Brazil" },
+    { year: 1966, country: "England" },
+    { year: 1970, country: "Brazil" },
+    { year: 1974, country: "West Germany" },
+    { year: 1978, country: "Argentina" },
+    { year: 1982, country: "Italy" },
+    { year: 1986, country: "Argentina" },
+    { year: 1990, country: "West Germany" },
+    { year: 1994, country: "Brazil" },
+    { year: 1998, country: "France" },
+    { year: 2002, country: "Brazil" },
+    { year: 2006, country: "Italy" },
+    { year: 2010, country: "Spain" },
+    { year: 2014, country: "Germany" },
+    { year: 2018, country: "France" },
+    { year: 2022, country: "Argentina" },
+    { year: 2026, country: "Spain" },
+];
+
+function worldCupFaqItems() {
+    const winCounts = new Map<string, number>();
+    for (const { country } of WORLD_CUP_WINNERS) {
+        winCounts.set(country, (winCounts.get(country) ?? 0) + 1);
+    }
+    const winnersByCount = [...winCounts.entries()].sort((a, b) => b[1] - a[1]);
+    const winnersRows = winnersByCount.map(([country, count]) => ({
+        label: country,
+        value: String(count),
+    }));
+
+    const last = WORLD_CUP_WINNERS[WORLD_CUP_WINNERS.length - 1];
+
+    return [
+        {
+            question: "Who has won the FIFA World Cup?",
+            answer: winnersByCount.map(([country, count]) => `${country} — ${count}`).join(", "),
+            rows: winnersRows,
+        },
+        {
+            question: "Who won the last FIFA World Cup?",
+            answer: `${last.country} won the ${last.year} FIFA World Cup.`,
+        },
+    ];
+}
+
 // ── Season FAQ ───────────────────────────────────────────────────────────────
 // Backed by GET /api/leagues/{slug}/season-stats, which queries the same
 // external providers the fetcher uses (see backend/services/season_stats.py) —
@@ -599,6 +665,10 @@ const seasonFaq = computed(() => {
     if (!selectedLeague.value || !seasonStats.value) return null;
     const name = selectedLeague.value.name;
     const stats = seasonStats.value;
+
+    if (selectedLeague.value.slug === "fifa-world-cup-2026" && stats.published) {
+        return { items: worldCupFaqItems() };
+    }
 
     if (!stats.published) {
         return {
