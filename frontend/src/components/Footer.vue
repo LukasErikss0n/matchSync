@@ -8,7 +8,7 @@
               class="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center"
               style="background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark))"
             >
-              <img src="/matchSync_bg.png" alt="MatchCalender" class="w-full h-full rounded-[9px] object-cover" loading="lazy" decoding="async" />
+              <img src="/logo.svg" alt="MatchCalender" class="w-full h-full object-contain" loading="lazy" decoding="async" />
             </div>
             <span class="font-extrabold text-[15px]">
               Match<span class="ms-text-accent">Calender</span>
