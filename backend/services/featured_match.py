@@ -17,11 +17,13 @@ from sqlmodel import Session, select
 
 # Candidate pre-filter — cheap enough to avoid scoring the whole table.
 LOOKBACK = timedelta(hours=3)
-LOOKAHEAD = timedelta(hours=72)
+LOOKAHEAD = timedelta(days=14)
 LIVE_WINDOW = timedelta(hours=2, minutes=30)  # approx match + stoppage time
 
 # Below this score a match isn't worth featuring — caller should fall back
-# to a static promo instead.
+# to a static promo instead. League weight alone always clears this, so the
+# only way to get nothing back is an empty candidate window (no match in
+# LOOKBACK..LOOKAHEAD at all).
 MIN_SCORE = 0
 
 # --- How scores are built (see _score_match) --------------------------------
@@ -29,18 +31,26 @@ MIN_SCORE = 0
 #   score = time_component + LEAGUE_WEIGHTS[league]
 #
 # time_component is one of:
-#   live match:            flat 1000            (always wins — nothing below
-#                                                 gets remotely close)
-#   upcoming (start > now): 200 - hours_until*4  (linear decay, hits 0 at 50h
-#                                                 out; flat 0 beyond that)
-#   just finished (<3h):    150 - hours_since*40 (decays fast — stale results
-#                                                 drop out within 3h)
+#   live match:            flat 1000                     (always wins —
+#                                                          nothing below gets
+#                                                          remotely close)
+#   upcoming (start > now): 200 - hours_until*UPCOMING_DECAY
+#                                                          (linear decay to 0
+#                                                          right at LOOKAHEAD,
+#                                                          so the soonest
+#                                                          match always beats
+#                                                          a later one in the
+#                                                          same league)
+#   just finished (<3h):    150 - hours_since*40          (decays fast —
+#                                                          stale results drop
+#                                                          out within 3h)
 #
 # Both terms share the same 0-200-ish scale, so a gap between two league
 # weights converts directly to a gap in kickoff proximity:
 #
-#   equivalent_hours = weight_gap / 4
+#   equivalent_hours = weight_gap / UPCOMING_DECAY
 #
+UPCOMING_DECAY = 200 / (LOOKAHEAD.total_seconds() / 3600)
 
 LEAGUE_WEIGHTS: dict[str, float] = {
     "fifa-world-cup-2026": 200,
@@ -74,7 +84,7 @@ def _score_match(match: Match, league_slug: str, now: datetime) -> float:
         score += 1000
     elif start > now:
         hours_until = (start - now).total_seconds() / 3600
-        score += max(0, 200 - hours_until * 4)
+        score += max(0, 200 - hours_until * UPCOMING_DECAY)
     elif has_score:
         hours_since = (now - start).total_seconds() / 3600
         if hours_since < 3:
