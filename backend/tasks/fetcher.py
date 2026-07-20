@@ -477,38 +477,69 @@ class SwedishFootballFilter:
         season = self.time.get_active_season_year("03")
         for league_key, competition_id in self.LEAGUES.items():
             events: dict = {}
-            next_url = f"/api/upcoming-games/?competitionId={competition_id}&from=0"
-            while next_url:
-                page = self.api.get(self.BASE_URL + next_url)
-                soup = BeautifulSoup(page["data"], "html.parser")
-                for match in soup.select(".match-list__match"):
-                    home = match.select_one(
-                        ".match-list__home .match-list__team-name"
-                    ).text.strip()
-                    away = match.select_one(
-                        ".match-list__away .match-list__team-name"
-                    ).text.strip()
-                    home_img = match.select_one(".match-list__home .team-logo__img")
-                    away_img = match.select_one(".match-list__away .team-logo__img")
-                    home_icon = home_img.get("src") if home_img else None
-                    away_icon = away_img.get("src") if away_img else None
-                    start = self.time.convert_to_utc(
-                        match.select_one("time").get("datetime")
-                    )
-                    href = match.select_one(".match-list__link").get("href")
-                    event_id = parse_qs(urlparse(href).query).get("fmid", [None])[0]
-                    if not self.time.is_recent_or_future(start) or not event_id:
-                        continue
-                    events[str(event_id)] = {
+            self._collect(
+                events, f"/api/upcoming-games/?competitionId={competition_id}&from=0"
+            )
+            # Separate endpoint for finished matches — this is where scores live;
+            # upcoming-games never carries a result even for matches that have
+            # since been played. Ordered most-recent-first, so once a match
+            # falls outside the results window everything after it is older
+            # still — safe to stop paginating instead of walking full history.
+            self._collect(
+                events,
+                f"/api/played-games/?competitionId={competition_id}&from=0",
+                stop_when_old=True,
+            )
+            self.store.save("football", league_key, events)
+
+    def _collect(self, events: dict, start_url: str, stop_when_old: bool = False) -> None:
+        next_url: str | None = start_url
+        while next_url:
+            page = self.api.get(self.BASE_URL + next_url)
+            soup = BeautifulSoup(page["data"], "html.parser")
+            hit_old = False
+            for match in soup.select(".match-list__match"):
+                home = match.select_one(
+                    ".match-list__home .match-list__team-name"
+                ).text.strip()
+                away = match.select_one(
+                    ".match-list__away .match-list__team-name"
+                ).text.strip()
+                home_img = match.select_one(".match-list__home .team-logo__img")
+                away_img = match.select_one(".match-list__away .team-logo__img")
+                home_icon = home_img.get("src") if home_img else None
+                away_icon = away_img.get("src") if away_img else None
+                start = self.time.convert_to_utc(
+                    match.select_one("time").get("datetime")
+                )
+                href = match.select_one(".match-list__link").get("href")
+                event_id = parse_qs(urlparse(href).query).get("fmid", [None])[0]
+                if not event_id:
+                    continue
+                if not self.time.is_recent_or_future(start):
+                    if stop_when_old:
+                        hit_old = True
+                        break
+                    continue
+
+                event = events.setdefault(
+                    str(event_id),
+                    {
                         "eventId":          str(event_id),
                         "homeTeam":         home,
                         "awayTeam":         away,
                         "startDateAndTime": start,
                         "homeIcon":         home_icon,
                         "awayIcon":         away_icon,
-                    }
-                next_url = page.get("nextUrl")
-            self.store.save("football", league_key, events)
+                    },
+                )
+                home_score_el = match.select_one(".match-list__home .match-list__score")
+                away_score_el = match.select_one(".match-list__away .match-list__score")
+                if home_score_el is not None:
+                    event["homeScore"] = home_score_el.text.strip()
+                if away_score_el is not None:
+                    event["awayScore"] = away_score_el.text.strip()
+            next_url = None if hit_old else page.get("nextUrl")
 
 
 class IIHFFilter:
