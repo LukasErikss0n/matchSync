@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import MatchesView from '@/views/MatchesView.vue'
 import PlaceholderPageView from '@/views/PlaceholderPageView.vue'
+import PrivacyPolicyView from '@/views/PrivacyPolicyView.vue'
+import TermsOfServiceView from '@/views/TermsOfServiceView.vue'
 import { applyPageMeta } from '@/utils/seo'
 
 const HOME_DESCRIPTION =
@@ -11,9 +13,9 @@ const MATCHES_DESCRIPTION =
 const API_DOCS_DESCRIPTION =
   'Full API reference is coming soon. In the meantime, every calendar link you generate is a standard iCal feed you can subscribe to from any calendar app.'
 const PRIVACY_DESCRIPTION =
-  'Our full privacy policy is being finalized. MatchCalender only stores the sport, team and league selections needed to generate your calendar link.'
+  'MatchCalender only stores the sport, team and league selections needed to generate your calendar link — no accounts, no tracking, no ads.'
 const TERMS_DESCRIPTION =
-  'Our full terms of service are being finalized. Check back soon for the complete terms covering use of MatchCalender.'
+  'Read the terms covering personal use of MatchCalender, including sharing calendar links with friends and the restriction on commercial redistribution.'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -59,12 +61,7 @@ const router = createRouter({
     {
       path: '/privacy',
       name: 'privacy',
-      component: PlaceholderPageView,
-      props: {
-        label: 'Legal',
-        title: 'Privacy policy',
-        description: PRIVACY_DESCRIPTION,
-      },
+      component: PrivacyPolicyView,
       meta: {
         title: 'Privacy policy | MatchCalender',
         description: PRIVACY_DESCRIPTION,
@@ -73,12 +70,7 @@ const router = createRouter({
     {
       path: '/terms',
       name: 'terms',
-      component: PlaceholderPageView,
-      props: {
-        label: 'Legal',
-        title: 'Terms of service',
-        description: TERMS_DESCRIPTION,
-      },
+      component: TermsOfServiceView,
       meta: {
         title: 'Terms of service | MatchCalender',
         description: TERMS_DESCRIPTION,

@@ -43,10 +43,10 @@
             {{ l.label }}
           </RouterLink>
           <a
-            href="mailto:hello@matchcalender.io"
+            href="mailto:info@matchcalender.io"
             class="text-[13.5px] font-semibold hover:opacity-80 transition-opacity ms-text-accent"
           >
-            hello@matchcalender.io
+            info@matchcalender.io
           </a>
         </div>
       </div>
