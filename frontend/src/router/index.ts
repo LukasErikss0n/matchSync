@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import MatchesView from '@/views/MatchesView.vue'
-import PlaceholderPageView from '@/views/PlaceholderPageView.vue'
+import ApiDocsView from '@/views/ApiDocsView.vue'
 import PrivacyPolicyView from '@/views/PrivacyPolicyView.vue'
 import TermsOfServiceView from '@/views/TermsOfServiceView.vue'
 import { applyPageMeta } from '@/utils/seo'
@@ -11,7 +11,7 @@ const HOME_DESCRIPTION =
 const MATCHES_DESCRIPTION =
   'Browse every fixture and result by league or team, updated live and ready to sync to your calendar.'
 const API_DOCS_DESCRIPTION =
-  'Full API reference is coming soon. In the meantime, every calendar link you generate is a standard iCal feed you can subscribe to from any calendar app.'
+  'Every calendar link generated on MatchCalender is a standard iCal feed you can subscribe to from any calendar app — see the feed URL format and parameters.'
 const PRIVACY_DESCRIPTION =
   'MatchCalender only stores the sport, team and league selections needed to generate your calendar link — no accounts, no tracking, no ads.'
 const TERMS_DESCRIPTION =
@@ -47,12 +47,7 @@ const router = createRouter({
     {
       path: '/api-docs',
       name: 'api-docs',
-      component: PlaceholderPageView,
-      props: {
-        label: 'Developers',
-        title: 'API docs',
-        description: API_DOCS_DESCRIPTION,
-      },
+      component: ApiDocsView,
       meta: {
         title: 'API docs | MatchCalender',
         description: API_DOCS_DESCRIPTION,
