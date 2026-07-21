@@ -219,14 +219,52 @@
               title="Click to copy"
               @click="handleCopy"
             >{{ calLink.url }}</button>
-            <button
-              class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 transition-all"
-              style="background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16); color: var(--ms-text)"
-              @click="handleCopy"
-            >
-              Copy link
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 transition-all"
+                style="background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16); color: var(--ms-text)"
+                @click="handleCopy"
+              >
+                <svg viewBox="0 0 16 16" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4.5" y="4.5" width="9" height="9" rx="1.5"/><path d="M2.5 10V3a1 1 0 0 1 1-1h7"/></svg>
+                Copy link
+              </button>
+              <button
+                class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 transition-all"
+                style="background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16); color: var(--ms-text)"
+                @click="togglePreview"
+              >
+                <svg viewBox="0 0 16 16" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8Z"/><circle cx="8" cy="8" r="2"/></svg>
+                {{ showPreview ? 'Hide preview' : 'Preview all matches' }}
+              </button>
+            </div>
           </div>
+
+          <Transition name="preview">
+            <div v-if="showPreview" class="rounded-2xl overflow-hidden mb-5" style="background: rgba(0,0,0,.2); border: 1px solid rgba(255,255,255,.12)">
+              <div v-if="previewLoading" class="py-6 text-center text-sm" style="color: rgba(244,247,251,.5)">
+                Loading matches…
+              </div>
+              <div v-else-if="previewMatches.length === 0" class="py-6 text-center text-sm" style="color: rgba(244,247,251,.5)">
+                No upcoming matches found.
+              </div>
+              <div v-else style="max-height: 260px; overflow-y: auto">
+                <div
+                  v-for="m in previewMatches"
+                  :key="m.id"
+                  class="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] last:border-b-0"
+                >
+                  <div class="w-12 flex-shrink-0 text-xs font-bold" style="color: rgba(244,247,251,.4)">
+                    {{ formatMatchDate(m.start_time) }}
+                  </div>
+                  <div class="flex-1 min-w-0 text-sm font-semibold truncate">
+                    {{ m.home_team }} <span style="color: rgba(244,247,251,.45)">vs</span> {{ m.away_team }}
+                  </div>
+                  <div class="flex-shrink-0 text-xs font-bold ms-text-accent">{{ m.league.name }}</div>
+                </div>
+              </div>
+            </div>
+          </Transition>
+
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
             <a
               :href="calLink.url"
@@ -271,8 +309,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { CalendarLink, Sport, Team } from '@/types'
-import { fetchSports, fetchTeams, fetchTeam, fetchCalendarLink } from '@/services/sports'
+import type { CalendarLink, Match, Sport, Team } from '@/types'
+import { fetchSports, fetchTeams, fetchTeam, fetchCalendarLink, fetchMatches } from '@/services/sports'
 import SportCard from './SportCard.vue'
 import TeamBadge from './TeamBadge.vue'
 
@@ -314,6 +352,11 @@ const sports = ref<Sport[]>([])
 const teamResults = ref<Team[]>([])
 const teamsLoading = ref(false)
 const calLink = ref<CalendarLink | null>(null)
+
+const showPreview = ref(false)
+const previewMatches = ref<Match[]>([])
+const previewLoading = ref(false)
+let previewLoaded = false
 
 const stepLabels = ['Sport', 'Team', 'Leagues', 'Link']
 
@@ -455,6 +498,32 @@ async function goToLink() {
   step.value = 4
 }
 
+function formatMatchDate(iso: string): string {
+  return new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric' })
+}
+
+async function togglePreview() {
+  showPreview.value = !showPreview.value
+  if (!showPreview.value || previewLoaded) return
+
+  previewLoaded = true
+  previewLoading.value = true
+  try {
+    const perLeague = await Promise.all(
+      chosenLeagues.value.map((league) =>
+        fetchMatches({ sport: sportId.value ?? undefined, league, team: teamSlug.value ?? undefined }),
+      ),
+    )
+    const now = Date.now()
+    previewMatches.value = perLeague
+      .flat()
+      .filter((m) => new Date(m.start_time).getTime() >= now)
+      .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
+  } finally {
+    previewLoading.value = false
+  }
+}
+
 function handleCopy() {
   if (!calLink.value) return
   navigator.clipboard.writeText(calLink.value.url).catch(() => {})
@@ -469,6 +538,9 @@ function reset() {
   chosenLeagues.value = []
   search.value = ''
   calLink.value = null
+  showPreview.value = false
+  previewMatches.value = []
+  previewLoaded = false
   step.value = 1
 }
 </script>
@@ -481,5 +553,15 @@ function reset() {
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
+}
+
+.preview-enter-active,
+.preview-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.preview-enter-from,
+.preview-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 </style>
