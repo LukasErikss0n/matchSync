@@ -6,7 +6,7 @@
             <RouterLink to="/" class="flex items-center gap-2.5 flex-shrink-0 pl-1">
                 <div
                     class="w-8 h-8 rounded-[10px] flex items-center justify-center flex-shrink-0"
-                    style="background: #131c2e"
+                    style="background: #131c2e; border: 1px solid rgba(142, 205, 242, 0.35)"
                 >
                     <img
                         src="/logo.svg"

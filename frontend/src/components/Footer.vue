@@ -6,7 +6,7 @@
           <div class="flex items-center gap-2.5 mb-3">
             <div
               class="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center"
-              style="background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark))"
+              style="background: rgb(19, 28, 46); border: 1px solid rgba(142, 205, 242, 0.35)"
             >
               <img src="/logo.svg" alt="MatchCalender" class="w-full h-full object-contain" loading="lazy" decoding="async" />
             </div>
