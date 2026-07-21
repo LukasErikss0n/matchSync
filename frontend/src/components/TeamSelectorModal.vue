@@ -205,7 +205,7 @@
             </div>
             <h3 class="text-xl font-extrabold mb-1" style="letter-spacing: -0.3px">Your calendar is ready!</h3>
             <p class="text-sm font-medium" style="color: rgba(244,247,251,.6)">
-              <strong style="color: var(--ms-text)">{{ calLink.team }}</strong> — {{ calLink.leagues.map(l => l.name).join(', ') }}.
+              <strong style="color: var(--ms-text)">{{ calLink.team }}</strong> , {{ calLink.leagues.map(l => l.name).join(', ') }}.
               Every match syncs automatically.
             </p>
           </div>
@@ -243,7 +243,7 @@
             style="background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: rgba(244,247,251,.6)"
           >
             <strong style="color: var(--ms-text)">How it stays updated:</strong> Your calendar app checks
-            this link automatically. Every reschedule and playoff round appears instantly — nothing
+            this link automatically. Every reschedule and playoff round appears instantly, nothing
             to do on your end.
           </div>
           <button
@@ -367,7 +367,7 @@ onMounted(async () => {
         teamSlug.value = urlTeam
         chosenLeagues.value = team.leagues.map(l => l.slug)
       } catch {
-        /* team no longer resolvable — fall back to sport step */
+        /* team no longer resolvable, fall back to sport step */
       }
       await loadTeams()
       // Step 4 needs a freshly generated link, so cap the restore at step 3.

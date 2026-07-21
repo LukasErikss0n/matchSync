@@ -1,0 +1,132 @@
+[
+  {
+    "path": "/premier-league",
+    "slug": "premier-league",
+    "sport": "football",
+    "name": "Premier League",
+    "title": "Premier League Fixtures Calendar - Sync to Your Calendar | MatchCalender",
+    "description": "Every Premier League fixture, kickoff time and result. Subscribe once and the full schedule auto-syncs to your Google, Apple or Outlook calendar.",
+    "h1": "Premier League fixtures & calendar",
+    "intro": "The complete Premier League schedule. Subscribe once and every fixture and kickoff time syncs straight to your calendar."
+  },
+  {
+    "path": "/champions-league",
+    "slug": "uefa-champions-league",
+    "sport": "football",
+    "name": "Champions League",
+    "title": "Champions League Fixtures Calendar - Sync to Your Calendar | MatchCalender",
+    "description": "All UEFA Champions League fixtures, kickoff times and results. Subscribe once and sync the full schedule to Google, Apple or Outlook calendar.",
+    "h1": "Champions League fixtures & calendar",
+    "intro": "Every UEFA Champions League fixture. Subscribe once and the whole schedule stays synced in your calendar."
+  },
+  {
+    "path": "/europa-league",
+    "slug": "uefa-europa-league",
+    "sport": "football",
+    "name": "Europa League",
+    "title": "Europa League Fixtures Calendar - Sync to Your Calendar | MatchCalender",
+    "description": "All UEFA Europa League fixtures, kickoff times and results. Subscribe once and sync the full schedule to Google, Apple or Outlook calendar.",
+    "h1": "Europa League fixtures & calendar",
+    "intro": "Every UEFA Europa League fixture. Subscribe once and the whole schedule stays synced in your calendar."
+  },
+  {
+    "path": "/conference-league",
+    "slug": "uefa-conference-league",
+    "sport": "football",
+    "name": "Conference League",
+    "title": "Conference League Fixtures Calendar - Sync to Your Calendar | MatchCalender",
+    "description": "All UEFA Conference League fixtures, kickoff times and results. Subscribe once and sync the full schedule to Google, Apple or Outlook calendar.",
+    "h1": "Conference League fixtures & calendar",
+    "intro": "Every UEFA Conference League fixture. Subscribe once and the whole schedule stays synced in your calendar."
+  },
+  {
+    "path": "/fa-cup",
+    "slug": "fa-cup",
+    "sport": "football",
+    "name": "FA Cup",
+    "title": "FA Cup Fixtures Calendar - Sync to Your Calendar | MatchCalender",
+    "description": "Every FA Cup fixture, round and kickoff time. Subscribe once and each new round auto-syncs to your Google, Apple or Outlook calendar as it's drawn.",
+    "h1": "FA Cup fixtures & calendar",
+    "intro": "Every FA Cup round. Subscribe once and each new draw syncs straight to your calendar as it's announced."
+  },
+  {
+    "path": "/efl-cup",
+    "slug": "efl-cup",
+    "sport": "football",
+    "name": "EFL Cup",
+    "title": "EFL Cup (Carabao Cup) Fixtures Calendar - Sync | MatchCalender",
+    "description": "Every EFL Cup / Carabao Cup fixture and kickoff time. Subscribe once and each new round auto-syncs to your Google, Apple or Outlook calendar.",
+    "h1": "EFL Cup fixtures & calendar",
+    "intro": "Every EFL Cup (Carabao Cup) round. Subscribe once and each new draw syncs straight to your calendar."
+  },
+  {
+    "path": "/allsvenskan",
+    "slug": "allsvenskan",
+    "sport": "football",
+    "name": "Allsvenskan",
+    "title": "Allsvenskan Matchkalender & Spelschema - Sync to Calendar | MatchCalender",
+    "description": "Hela Allsvenskan spelschema, every fixture and kickoff time. Subscribe once and the full Allsvenskan calendar auto-syncs to Google, Apple or Outlook.",
+    "h1": "Allsvenskan fixtures & calendar",
+    "intro": "The complete Allsvenskan schedule. Subscribe once and every match syncs straight to your calendar."
+  },
+  {
+    "path": "/world-cup-2026",
+    "slug": "fifa-world-cup-2026",
+    "sport": "football",
+    "name": "FIFA World Cup 2026",
+    "title": "World Cup 2026 Fixtures Calendar - Sync to Your Calendar | MatchCalender",
+    "description": "Every FIFA World Cup 2026 fixture, kickoff time and result. Subscribe once and the full tournament schedule auto-syncs to your calendar.",
+    "h1": "World Cup 2026 fixtures & calendar",
+    "intro": "Every FIFA World Cup 2026 match. Subscribe once and the full tournament schedule stays synced in your calendar."
+  },
+  {
+    "path": "/shl",
+    "slug": "shl",
+    "sport": "hockey",
+    "name": "SHL",
+    "title": "SHL Matchschema & Kalender - Sync to Your Calendar | MatchCalender",
+    "description": "Hela SHL matchschema, every game and face-off time. Subscribe once and the full SHL calendar auto-syncs to your Google, Apple or Outlook calendar.",
+    "h1": "SHL fixtures & calendar",
+    "intro": "The complete SHL schedule. Subscribe once and every game syncs straight to your calendar."
+  },
+  {
+    "path": "/sdhl",
+    "slug": "sdhl",
+    "sport": "hockey",
+    "name": "SDHL",
+    "title": "SDHL Matchschema & Kalender - Sync to Your Calendar | MatchCalender",
+    "description": "Hela SDHL matchschema, every game and face-off time. Subscribe once and the full SDHL calendar auto-syncs to your Google, Apple or Outlook calendar.",
+    "h1": "SDHL fixtures & calendar",
+    "intro": "The complete SDHL schedule. Subscribe once and every game syncs straight to your calendar."
+  },
+  {
+    "path": "/iihf-world-championship",
+    "slug": "iihf-world-championship",
+    "sport": "hockey",
+    "name": "IIHF World Championship",
+    "title": "IIHF World Championship Fixtures Calendar - Sync | MatchCalender",
+    "description": "Every IIHF World Championship game and face-off time. Subscribe once and the full tournament schedule auto-syncs to your calendar.",
+    "h1": "IIHF World Championship fixtures & calendar",
+    "intro": "Every IIHF World Championship game. Subscribe once and the full tournament schedule stays synced in your calendar."
+  },
+  {
+    "path": "/sbl-herrar",
+    "slug": "sbl-herrar",
+    "sport": "basketball",
+    "name": "SBL Herrar",
+    "title": "SBL Herrar Matchschema & Kalender - Sync to Calendar | MatchCalender",
+    "description": "Hela SBL Herrar matchschema, every game and tip-off time. Subscribe once and the full SBL calendar auto-syncs to your Google, Apple or Outlook calendar.",
+    "h1": "SBL Herrar fixtures & calendar",
+    "intro": "The complete SBL Herrar schedule. Subscribe once and every game syncs straight to your calendar."
+  },
+  {
+    "path": "/sbl-damer",
+    "slug": "sbl-damer",
+    "sport": "basketball",
+    "name": "SBL Damer",
+    "title": "SBL Damer Matchschema & Kalender - Sync to Calendar | MatchCalender",
+    "description": "Hela SBL Damer matchschema, every game and tip-off time. Subscribe once and the full SBL calendar auto-syncs to your Google, Apple or Outlook calendar.",
+    "h1": "SBL Damer fixtures & calendar",
+    "intro": "The complete SBL Damer schedule. Subscribe once and every game syncs straight to your calendar."
+  }
+]

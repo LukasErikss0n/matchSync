@@ -28,7 +28,7 @@ const feats: { icon: IconName; title: string; desc: string }[] = [
   {
     icon: 'refresh',
     title: 'Auto-reschedules',
-    desc: 'Postponed or moved matches? Your calendar updates automatically — no manual edits, ever.',
+    desc: 'Postponed or moved matches? Your calendar updates automatically, no manual edits, ever.',
   },
   {
     icon: 'trophy',
@@ -38,7 +38,7 @@ const feats: { icon: IconName; title: string; desc: string }[] = [
   {
     icon: 'devices',
     title: 'Works everywhere',
-    desc: 'Apple Calendar, Google Calendar, Outlook — any app that supports the open iCal standard.',
+    desc: 'Apple Calendar, Google Calendar, Outlook, any app that supports the open iCal standard.',
   },
   {
     icon: 'globe',

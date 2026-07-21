@@ -51,7 +51,7 @@ const steps: { n: string; title: string; desc: string; icon: IconName }[] = [
   {
     n: '3',
     title: 'Subscribe once',
-    desc: 'Tap "Add to Apple Calendar" or "Add to Google Calendar". Every match syncs automatically — for the whole season.',
+    desc: 'Tap "Add to Apple Calendar" or "Add to Google Calendar". Every match syncs automatically, for the whole season.',
     icon: 'calendar',
   },
 ]

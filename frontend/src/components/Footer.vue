@@ -1,7 +1,7 @@
 <template>
   <footer class="border-t border-white/10 bg-black/25">
     <div class="max-w-6xl mx-auto px-6 py-12">
-      <div class="grid md:grid-cols-3 gap-10 pb-10 border-b border-white/10">
+      <div class="grid md:grid-cols-4 gap-10 pb-10 border-b border-white/10">
         <div>
           <div class="flex items-center gap-2.5 mb-3">
             <div
@@ -29,6 +29,18 @@
             style="color: rgba(244,247,251,.65)"
           >
             {{ l.label }}
+          </RouterLink>
+        </div>
+        <div class="flex flex-col gap-2.5">
+          <div class="text-[11px] font-bold uppercase tracking-widest mb-1" style="color: var(--ms-muted-dim)">Leagues</div>
+          <RouterLink
+            v-for="l in leagueLinks"
+            :key="l.to"
+            :to="l.to"
+            class="text-[13.5px] font-semibold transition-colors"
+            style="color: rgba(244,247,251,.65)"
+          >
+            {{ l.label }} calendar
           </RouterLink>
         </div>
         <div class="flex flex-col gap-2.5">
@@ -60,12 +72,18 @@
 
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import leaguePages from '@/data/leaguePages.json'
 
 const productLinks = [
   { label: 'How it works', to: '/#how-it-works' },
   { label: 'Supported sports', to: '/#sports' },
   { label: 'API docs', to: '/api-docs' },
 ]
+// A handful of the highest-intent leagues, linked so crawlers reach the landing
+// pages through the site (not only via sitemap.xml). Full list is in leaguePages.json.
+const leagueLinks = leaguePages
+  .filter((p) => ['premier-league', 'uefa-champions-league', 'allsvenskan', 'shl', 'fifa-world-cup-2026'].includes(p.slug))
+  .map((p) => ({ label: p.name, to: p.path }))
 const companyLinks = [
   { label: 'Privacy policy', to: '/privacy' },
   { label: 'Terms of service', to: '/terms' },

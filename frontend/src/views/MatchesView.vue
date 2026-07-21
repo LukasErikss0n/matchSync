@@ -9,10 +9,10 @@
                 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2"
                 style="letter-spacing: -0.02em"
             >
-                All matches
+                {{ pageH1 }}
             </h1>
             <p class="mb-2 max-w-xl" style="color: var(--ms-muted)">
-                Browse every fixture by league or team.
+                {{ pageIntro }}
             </p>
             <div
                 v-if="lastUpdatedText"
@@ -25,8 +25,11 @@
 
             <!-- Filters -->
             <div class="flex flex-wrap items-center gap-2.5 mb-8">
-                <!-- League -->
-                <div class="relative">
+                <!-- League — a fixed label on league landing pages, a picker elsewhere -->
+                <span v-if="leagueLock" class="filter-pill active cursor-default">
+                    {{ selectedLeague?.name ?? "League" }}
+                </span>
+                <div v-else class="relative">
                     <button
                         class="filter-pill active"
                         @click="toggle('league')"
@@ -297,6 +300,15 @@ function readLastLeague(): { sport: string; slug: string } | null {
 const route = useRoute();
 const router = useRouter();
 
+// League landing pages (e.g. /premier-league) reuse this view but lock it to a
+// single league and swap in their own SEO copy — see src/data/leaguePages.json
+// and the route meta in src/router/index.ts.
+const leagueLock = computed(() => (route.meta.leagueSlug as string | undefined) ?? null);
+const pageH1 = computed(() => (route.meta.h1 as string | undefined) ?? "All matches");
+const pageIntro = computed(
+    () => (route.meta.intro as string | undefined) ?? "Browse every fixture by league or team.",
+);
+
 const sports = ref<Sport[]>([]);
 const selectedLeague = ref<LeagueOption | null>(null);
 const teamOptions = ref<Team[]>([]);
@@ -406,7 +418,8 @@ function pushQuery(league: LeagueOption | null, team: string | null) {
     // Merge so the subscribe-wizard params (wstep/wsport/wteam) survive when the
     // modal is open on top of the matches page.
     const query: Record<string, string> = { ...(route.query as Record<string, string>) };
-    if (league?.slug) query.league = league.slug;
+    // On a locked league page the league lives in the path, not the query.
+    if (league?.slug && !leagueLock.value) query.league = league.slug;
     else delete query.league;
     if (team) query.filter = team;
     else delete query.filter;
@@ -730,6 +743,52 @@ watch(
     { immediate: true },
 );
 
+// ── SportsEvent structured data (league landing pages only) ──────────────────
+// An ItemList of upcoming fixtures as schema.org SportsEvent — drives event
+// rich results and, unlike the FAQ schema, isn't the kind of single-answer
+// query an AI Overview swallows.
+watch(
+    [matches, leagueLock],
+    () => {
+        if (!leagueLock.value) {
+            removeJsonLd("league-events-jsonld");
+            return;
+        }
+        const DAY_MS = 86_400_000;
+        const now = Date.now();
+        const upcoming = [...matches.value]
+            .filter((m) => new Date(m.start_time).getTime() >= now - 3 * DAY_MS)
+            .sort(
+                (a, b) =>
+                    new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
+            )
+            .slice(0, 25);
+        if (!upcoming.length) {
+            removeJsonLd("league-events-jsonld");
+            return;
+        }
+        setJsonLd("league-events-jsonld", {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            itemListElement: upcoming.map((m, i) => ({
+                "@type": "ListItem",
+                position: i + 1,
+                item: {
+                    "@type": "SportsEvent",
+                    name: `${m.home_team} vs ${m.away_team}`,
+                    startDate: m.start_time,
+                    eventStatus: "https://schema.org/EventScheduled",
+                    competitor: [
+                        { "@type": "SportsTeam", name: m.home_team },
+                        { "@type": "SportsTeam", name: m.away_team },
+                    ],
+                },
+            })),
+        });
+    },
+    { immediate: true },
+);
+
 // ── Modal ────────────────────────────────────────────────────────────────────
 function openSportModal() {
     modalTeam.value = null;
@@ -770,7 +829,9 @@ onMounted(async () => {
     sports.value = await fetchSports();
     if (!leagueOptions.value.length) return;
 
-    const leagueParam = route.query.league as string | undefined;
+    // Locked league pages take the league from route meta; everywhere else it
+    // comes from ?league= (falling back to last-picked / featured below).
+    const leagueParam = leagueLock.value ?? (route.query.league as string | undefined);
     const filterParam = route.query.filter as string | undefined;
 
     // No explicit ?league= given (e.g. the Navbar's plain "Matches" tab) —
@@ -798,8 +859,10 @@ onMounted(async () => {
         }
     }
 
-    selectedLeague.value =
-        leagueOptions.value.find((l) => l.slug === leagueParam) ?? defaultLeague;
+    // On a locked league page, never silently fall back to another league — if
+    // its fixtures aren't loaded yet, show an empty state under the right title.
+    const matchedLeague = leagueOptions.value.find((l) => l.slug === leagueParam);
+    selectedLeague.value = matchedLeague ?? (leagueLock.value ? null : defaultLeague);
 
     await loadTeams();
 
@@ -822,6 +885,7 @@ onMounted(async () => {
 onUnmounted(() => {
     if (clockTimer !== null) window.clearInterval(clockTimer);
     removeJsonLd("faq-jsonld");
+    removeJsonLd("league-events-jsonld");
 });
 
 watch(weekOffset, () => {

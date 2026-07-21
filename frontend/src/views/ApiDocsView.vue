@@ -8,7 +8,7 @@
         API docs
       </h1>
       <p class="text-sm mb-10" style="color: var(--ms-muted-dim)">
-        The calendar feed is the only public, unauthenticated endpoint — everything else powers the
+        The calendar feed is the only public, unauthenticated endpoint, everything else powers the
         site itself and isn't open for third-party use yet.
       </p>
 
@@ -18,7 +18,7 @@
           <p>
             Every calendar link generated on this site is a standard iCal (<code>.ics</code>) feed.
             You can subscribe to it in Google Calendar, Apple Calendar, Outlook or any app that
-            supports iCal/webcal URLs, and it stays in sync on its own — no polling logic or auth
+            supports iCal/webcal URLs, and it stays in sync on its own, no polling logic or auth
             needed on your end.
           </p>
           <pre><code>GET /api/calendar/{sport}/{team_slug}.ics?leagues={league_slug,...}</code></pre>

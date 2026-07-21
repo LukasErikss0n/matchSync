@@ -4,6 +4,7 @@ import MatchesView from '@/views/MatchesView.vue'
 import ApiDocsView from '@/views/ApiDocsView.vue'
 import PrivacyPolicyView from '@/views/PrivacyPolicyView.vue'
 import TermsOfServiceView from '@/views/TermsOfServiceView.vue'
+import leaguePages from '@/data/leaguePages.json'
 import { applyPageMeta } from '@/utils/seo'
 
 const HOME_DESCRIPTION =
@@ -31,7 +32,7 @@ const router = createRouter({
       name: 'home',
       component: HomeView,
       meta: {
-        title: 'MatchCalender — Live sports calendars that stay in sync',
+        title: 'MatchCalender, live sports calendars that stay in sync',
         description: HOME_DESCRIPTION,
       },
     },
@@ -40,7 +41,7 @@ const router = createRouter({
       name: 'matches',
       component: MatchesView,
       meta: {
-        title: 'All matches — Fixtures & Results | MatchCalender',
+        title: 'All matches, Fixtures & Results | MatchCalender',
         description: MATCHES_DESCRIPTION,
       },
     },
@@ -71,6 +72,21 @@ const router = createRouter({
         description: TERMS_DESCRIPTION,
       },
     },
+    // Per-league landing pages — each reuses MatchesView, locked to one league
+    // and given its own SEO title/description/H1 (see src/data/leaguePages.json).
+    ...leaguePages.map((p) => ({
+      path: p.path,
+      name: `league-${p.slug}`,
+      component: MatchesView,
+      meta: {
+        title: p.title,
+        description: p.description,
+        leagueSlug: p.slug,
+        h1: p.h1,
+        intro: p.intro,
+        isLeaguePage: true,
+      },
+    })),
   ]
 })
 

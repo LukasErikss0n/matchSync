@@ -10,18 +10,24 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.join(__dirname, '..', 'dist')
 const SITE_URL = 'https://matchcalender.com'
 
+// Single source of truth for the per-league landing pages (also drives the
+// router and sitemap). Read as JSON so this plain-Node script needs no build.
+const leaguePages = JSON.parse(
+  await readFile(path.join(__dirname, '..', 'src', 'data', 'leaguePages.json'), 'utf-8'),
+)
+
 const HOME_DESCRIPTION =
   'Subscribe once and get every fixture, reschedule and playoff round auto-synced to your calendar for football, hockey, basketball and more.'
 
 const routes = [
   {
     path: '/',
-    title: 'MatchCalender — Live sports calendars that stay in sync',
+    title: 'MatchCalender, live sports calendars that stay in sync',
     description: HOME_DESCRIPTION,
   },
   {
     path: '/matches',
-    title: 'All matches — Fixtures & Results | MatchCalender',
+    title: 'All matches, fixtures & Results | MatchCalender',
     description:
       'Browse every fixture and result by league or team, updated live and ready to sync to your calendar.',
   },
@@ -29,13 +35,13 @@ const routes = [
     path: '/api-docs',
     title: 'API docs | MatchCalender',
     description:
-      'Every calendar link generated on MatchCalender is a standard iCal feed you can subscribe to from any calendar app — see the feed URL format and parameters.',
+      'Every calendar link generated on MatchCalender is a standard iCal feed you can subscribe to from any calendar app, see the feed URL format and parameters.',
   },
   {
     path: '/privacy',
     title: 'Privacy policy | MatchCalender',
     description:
-      'MatchCalender only stores the sport, team and league selections needed to generate your calendar link — no accounts, no tracking, no ads.',
+      'MatchCalender only stores the sport, team and league selections needed to generate your calendar link, no accounts, no tracking, no ads.',
   },
   {
     path: '/terms',
@@ -43,6 +49,11 @@ const routes = [
     description:
       'Read the terms covering personal use of MatchCalender, including sharing calendar links with friends and the restriction on commercial redistribution.',
   },
+  ...leaguePages.map((p) => ({
+    path: p.path,
+    title: p.title,
+    description: p.description,
+  })),
 ]
 
 function applyRouteMeta(html, route) {

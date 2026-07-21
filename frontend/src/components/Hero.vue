@@ -57,7 +57,7 @@
       </div>
 
       <p class="text-[15px] font-medium mt-3.5 leading-relaxed" style="color: var(--ms-muted)">
-        Pick your team and get a live calendar link. Rescheduled matches, playoffs and cups — everything updates itself for free.
+        Pick your team and get a live calendar link. Rescheduled matches, playoffs and cups, everything updates itself for free.
       </p>
 
       <div class="flex flex-col gap-3 mt-5.5">
@@ -105,7 +105,7 @@
           The whole season.<br />One subscription.
         </h1>
         <p class="text-base font-medium mb-7 max-w-md leading-relaxed" style="color: var(--ms-muted)">
-          Pick your team and get a live calendar link. Rescheduled matches, playoffs and cups — everything updates itself.
+          Pick your team and get a live calendar link. Rescheduled matches and playoffs, everything updates itself.
         </p>
         <div class="flex flex-row gap-3">
           <button
