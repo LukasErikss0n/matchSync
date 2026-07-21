@@ -8,6 +8,11 @@ from services.season_stats import get_season_stats
 
 router = APIRouter()
 
+# National teams only ever show up here as one-off World Cup entries with no
+# club-level league — they clutter the team search/picker without being
+# useful there (the tournament still has its own SEO landing page).
+TEAM_SEARCH_EXCLUDED_LEAGUE_SLUGS = {"fifa-world-cup-2026"}
+
 
 @router.get("/sports", response_model=list[SportOut])
 def get_sports(session: Session = Depends(get_session)):
@@ -62,6 +67,7 @@ def list_teams(
         select(Team, League, Sport)
         .join(League, Team.league_id == League.id)
         .join(Sport, League.sport_id == Sport.id)
+        .where(League.slug.not_in(TEAM_SEARCH_EXCLUDED_LEAGUE_SLUGS))
     )
     if sport:
         stmt = stmt.where(Sport.slug == sport)
