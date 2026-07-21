@@ -20,10 +20,14 @@ const TERMS_DESCRIPTION =
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  scrollBehavior(to) {
+  scrollBehavior(to, from) {
     if (to.hash) {
       return { el: to.hash, behavior: 'smooth', top: 96 }
     }
+    // Query-only updates on the same path (e.g. the team-selector wizard
+    // syncing its step/sport/team into the URL) shouldn't jerk the page
+    // back to the top — only an actual page change should.
+    if (to.path === from.path) return false
     return { top: 0 }
   },
   routes: [

@@ -338,7 +338,11 @@ async function loadTeams() {
 
 onMounted(async () => {
   window.addEventListener('keydown', onKey)
+  // Locking scroll removes the scrollbar, which shrinks the viewport and
+  // shifts everything left of it — pad the gap back in so nothing jumps.
+  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
   document.body.style.overflow = 'hidden'
+  if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`
   sports.value = await fetchSports()
 
   if (props.initialTeam) {
@@ -388,6 +392,7 @@ watch([step, sportId, teamSlug], syncUrl)
 onUnmounted(() => {
   window.removeEventListener('keydown', onKey)
   document.body.style.overflow = ''
+  document.body.style.paddingRight = ''
   if (searchTimer !== null) window.clearTimeout(searchTimer)
 })
 
