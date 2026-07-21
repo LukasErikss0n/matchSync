@@ -251,15 +251,15 @@
                 <div
                   v-for="m in previewMatches"
                   :key="m.id"
-                  class="flex items-center gap-3 px-4 py-3 border-b border-white/[0.06] last:border-b-0"
+                  class="flex items-start gap-3 px-4 py-3 border-b border-white/[0.06] last:border-b-0"
                 >
-                  <div class="w-12 flex-shrink-0 text-xs font-bold" style="color: rgba(244,247,251,.4)">
+                  <div class="w-11 flex-shrink-0 pt-px text-xs font-bold" style="color: rgba(244,247,251,.4)">
                     {{ formatMatchDate(m.start_time) }}
                   </div>
-                  <div class="flex-1 min-w-0 text-sm font-semibold truncate">
+                  <div class="flex-1 min-w-0 text-sm font-semibold break-words">
                     {{ m.home_team }} <span style="color: rgba(244,247,251,.45)">vs</span> {{ m.away_team }}
+                    <div class="text-xs font-bold ms-text-accent mt-0.5">{{ m.league.name }}</div>
                   </div>
-                  <div class="flex-shrink-0 text-xs font-bold ms-text-accent">{{ m.league.name }}</div>
                 </div>
               </div>
             </div>
