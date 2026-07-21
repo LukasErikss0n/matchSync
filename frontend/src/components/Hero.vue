@@ -204,14 +204,13 @@
 
         <!-- Sport tabs -->
         <div class="relative flex rounded-[14px] p-1 mb-3.5 bg-white/[0.08] border border-white/[0.14]">
+          <div class="ms-tab-slider" :style="sportSliderStyle"></div>
           <button
             v-for="s in sports"
             :key="s.id"
-            class="relative flex-1 text-center text-sm py-2.5 rounded-[11px] font-semibold transition-colors"
+            ref="sportTabRefs"
+            class="relative z-[1] flex-1 text-center text-sm py-2.5 rounded-[11px] font-semibold transition-colors"
             :class="sportFilter === s.id ? 'text-[var(--ms-text)]' : 'text-[rgba(244,247,251,.55)] hover:text-[var(--ms-text)]'"
-            :style="sportFilter === s.id
-              ? 'background: rgba(142,205,242,.18); border: 1px solid rgba(142,205,242,.35); box-shadow: inset 0 1px 0 rgba(255,255,255,.14)'
-              : ''"
             @click="onSportTabClick(s.id)"
           >
             {{ s.label }}
@@ -271,7 +270,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Sport, Team } from '@/types'
 import { fetchSports, fetchTeams } from '@/services/sports'
@@ -348,17 +347,40 @@ async function loadTeams() {
   }
 }
 
+const sportTabRefs = ref<HTMLElement[]>([])
+const sportSliderStyle = reactive({ width: '0px', transform: 'translateX(0px)', opacity: '0' })
+
+function updateSportSlider() {
+  const i = sports.value.findIndex((s) => s.id === sportFilter.value)
+  const el = i === -1 ? null : sportTabRefs.value[i]
+  if (!el) return
+  sportSliderStyle.width = `${el.offsetWidth}px`
+  sportSliderStyle.transform = `translateX(${el.offsetLeft}px)`
+  sportSliderStyle.opacity = '1'
+}
+
+// One frame isn't always enough — layout can still be settling right after
+// nextTick, so measure again on the following frame.
+function updateSportSliderNextFrame() {
+  requestAnimationFrame(() => requestAnimationFrame(updateSportSlider))
+}
+
 onMounted(async () => {
   sports.value = await fetchSports()
   if (sports.value.length > 0) sportFilter.value = sports.value[0].id
   await loadTeams()
+  await nextTick()
+  updateSportSliderNextFrame()
+  window.addEventListener('resize', updateSportSlider)
   // Cached value (if any) is already showing instantly; this just keeps it fresh.
   refreshFeaturedMatch()
 })
 
-watch(sportFilter, () => {
+watch(sportFilter, async () => {
   selectedTeam.value = null
   loadTeams()
+  await nextTick()
+  updateSportSliderNextFrame()
 })
 
 watch(search, () => {

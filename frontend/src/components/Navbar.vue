@@ -20,11 +20,16 @@
             </RouterLink>
 
             <nav
-                class="flex items-center ml-auto rounded-2xl p-1 bg-white/5 border border-white/10"
+                class="relative flex items-center ml-auto rounded-2xl p-1 bg-white/5 border border-white/10"
             >
+                <div
+                    class="ms-tab-slider"
+                    :style="sliderStyle"
+                ></div>
                 <RouterLink
                     v-for="tab in tabs"
                     :key="tab.to"
+                    ref="tabRefs"
                     :to="tab.to"
                     class="ms-tab text-[12.5px] sm:text-[13.5px] font-semibold px-3 sm:px-4 py-2 rounded-[11px] transition-colors whitespace-nowrap"
                     exact-active-class="ms-tab-active"
@@ -43,8 +48,19 @@
     </div>
 </template>
 
+<script lang="ts">
+// The router keys each view by path, so Navbar itself is fully remounted on
+// every navigation. Module scope (unlike <script setup>'s per-instance scope)
+// survives that remount, so the pill can snap to where it "already was"
+// before animating to the new tab, instead of every navigation looking like
+// a fresh slide-in from the left.
+let lastActiveIndex = 0;
+let everMounted = false;
+</script>
+
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
+import { RouterLink, useRoute } from "vue-router";
+import { nextTick, onMounted, reactive, ref, watch } from "vue";
 
 const emit = defineEmits<{ getStarted: [] }>();
 
@@ -52,4 +68,53 @@ const tabs = [
     { label: "Home", to: "/" }, //home
     { label: "Matches", to: "/matches" }, //matches — league defaults to the featured match's league
 ];
+
+const route = useRoute();
+const activeIndex = ref(0);
+const tabRefs = ref<{ $el: HTMLElement }[]>([]);
+const sliderStyle = reactive({ width: "0px", transform: "translateX(0px)", opacity: "0", transition: "none" });
+
+function targetIndex(): number {
+    const i = tabs.findIndex((t) => t.to === route.path);
+    return i === -1 ? 0 : i;
+}
+
+function applyStyle(i: number, animate: boolean) {
+    const el = tabRefs.value[i]?.$el as HTMLElement | undefined;
+    if (!el) return;
+    sliderStyle.transition = animate ? "" : "none";
+    sliderStyle.width = `${el.offsetWidth}px`;
+    sliderStyle.transform = `translateX(${el.offsetLeft}px)`;
+    sliderStyle.opacity = "1";
+}
+
+watch(
+    () => route.path,
+    async () => {
+        const target = targetIndex();
+        activeIndex.value = target;
+        lastActiveIndex = target;
+        await nextTick();
+        requestAnimationFrame(() => applyStyle(target, true));
+    },
+);
+
+onMounted(async () => {
+    await nextTick();
+    const target = targetIndex();
+    activeIndex.value = target;
+
+    if (everMounted) {
+        // Snap instantly to the previous instance's last position, then let
+        // the browser paint that before animating to the real target.
+        applyStyle(lastActiveIndex, false);
+        requestAnimationFrame(() => requestAnimationFrame(() => applyStyle(target, true)));
+    } else {
+        applyStyle(target, false);
+    }
+
+    everMounted = true;
+    lastActiveIndex = target;
+    window.addEventListener("resize", () => applyStyle(activeIndex.value, false));
+});
 </script>
