@@ -310,6 +310,12 @@ body::before {
     font-family: "Courier New", monospace;
     font-size: 0.78rem;
     color: #bfe2f7;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+button.link-box:hover {
+    background: rgba(0, 0, 0, 0.45);
+    border-color: rgba(142, 205, 242, 0.6);
 }
 
 /* ── Toast ─────────────────────────────────────────────────────────────────── */

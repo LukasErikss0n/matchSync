@@ -213,7 +213,12 @@
             <div class="text-[10.5px] font-bold uppercase tracking-widest mb-2" style="color: rgba(244,247,251,.45)">
               Your personal calendar link
             </div>
-            <div class="link-box rounded-2xl px-4 py-3 break-all mb-2">{{ calLink.url }}</div>
+            <button
+              type="button"
+              class="link-box rounded-2xl px-4 py-3 break-all mb-2 text-left w-full cursor-pointer"
+              title="Click to copy"
+              @click="handleCopy"
+            >{{ calLink.url }}</button>
             <button
               class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 transition-all"
               style="background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16); color: var(--ms-text)"
@@ -251,7 +256,7 @@
             style="color: rgba(244,247,251,.45)"
             @click="reset"
           >
-            Add another team
+            Pick a diffrent team
           </button>
         </div>
       </div>
