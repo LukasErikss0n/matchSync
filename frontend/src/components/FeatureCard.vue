@@ -2,7 +2,7 @@
   <div class="glass-card rounded-[24px] p-6 relative overflow-hidden transition-colors hover:border-[rgba(142,205,242,.4)]">
     <div
       class="absolute inset-0 pointer-events-none"
-      style="background-image: linear-gradient(115deg, rgba(142,205,242,.08) 0 34%, transparent 34%)"
+      style="background-image: linear-gradient(100deg, rgba(142,205,242,.03) 0 40%, transparent 50%); background-size: 324px 257px; background-repeat: no-repeat; background-position: top left"
     ></div>
     <div class="relative w-[46px] h-[46px] rounded-[14px] feature-icon flex items-center justify-center mb-4">
       <Icon :name="icon" class="!w-[21px] !h-[21px]" />

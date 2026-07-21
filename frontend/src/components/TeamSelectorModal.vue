@@ -10,7 +10,7 @@
     >
       <div
         class="absolute inset-0 pointer-events-none"
-        style="background: linear-gradient(115deg, rgba(255,255,255,.08) 0 34%, transparent 34%)"
+        style="background: linear-gradient(100deg, rgba(142,205,242,.03) 0 50%, transparent 50%)"
       ></div>
 
       <!-- Header -->
