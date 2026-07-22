@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 
 from database import create_db_and_tables, engine
 from routers import calendar, leagues, matches
+from scripts.backfill_full_history import main as backfill_full_history
 from security import require_api_key
 from tasks.fetcher import run_fetch, fetcher_state
 
@@ -14,6 +15,15 @@ from tasks.fetcher import run_fetch, fetcher_state
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+
+    # Idempotent (upserts by external_id), so it's safe to run on every
+    # startup — guarantees local standings (services/standings_local.py) have
+    # a full season's history even after a fresh DB, instead of relying on
+    # someone remembering to run this by hand. The regular fetcher below stays
+    # a cheap 10-day window on purpose (see that script's docstring for why
+    # always-full-history there would mean re-scraping svenskfotboll.se's
+    # entire season every 30 minutes).
+    threading.Thread(target=backfill_full_history, args=(None,), daemon=True).start()
 
     # Scheduler runs in Europe/Stockholm time (UTC+2 CEST / UTC+1 CET).
     scheduler = BackgroundScheduler(timezone="Europe/Stockholm")
