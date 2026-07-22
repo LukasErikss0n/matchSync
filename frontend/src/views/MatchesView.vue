@@ -291,8 +291,12 @@ const ChevronDown = (
 
 type LeagueOption = League & { sport: string; sportLabel: string };
 
-// Remembers the user's last explicit league pick (Navbar's "Matches" tab has no
-// query, so without this it would keep bouncing back to the featured league).
+// Remembers whichever league was last actually shown here — set both by a
+// manual pick from the dropdown and by arriving via an explicit ?league=
+// (e.g. the hero's "See all matches" link) — so the plain "Matches" nav tab
+// (no query at all) resumes wherever you last were, instead of always
+// resetting to the hero's current pick. Only the hero link and the very
+// first-ever visit fall back to the featured league.
 const LAST_LEAGUE_KEY = "ms:last-league";
 
 function saveLastLeague(opt: LeagueOption) {
@@ -851,8 +855,8 @@ onMounted(async () => {
     const filterParam = route.query.filter as string | undefined;
 
     // No explicit ?league= given (e.g. the Navbar's plain "Matches" tab) —
-    // prefer whatever league the user last picked; only fall back to the
-    // hero's featured league if they've never picked one.
+    // resume whatever league was last actually shown here; only fall back to
+    // the hero's featured league if nothing's ever been shown yet.
     let defaultLeague = leagueOptions.value[0];
     if (!leagueParam) {
         const last = readLastLeague();
@@ -879,6 +883,12 @@ onMounted(async () => {
     // its fixtures aren't loaded yet, show an empty state under the right title.
     const matchedLeague = leagueOptions.value.find((l) => l.slug === leagueParam);
     selectedLeague.value = matchedLeague ?? (leagueLock.value ? null : defaultLeague);
+
+    // An explicit ?league= (e.g. the hero's "See all matches" link) is a real
+    // "show me this league" action too — remember it the same as a manual
+    // pick, so the next plain "Matches" visit resumes here rather than
+    // reverting to whatever was picked before this visit.
+    if (matchedLeague && !leagueLock.value) saveLastLeague(matchedLeague);
 
     await loadTeams();
 
