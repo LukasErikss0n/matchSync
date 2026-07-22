@@ -410,7 +410,16 @@ class FootballFilter:
             if league_keys is not None and league_key not in league_keys:
                 continue
             events = self._fetch_season(league_id, season, full_history=full_history)
-            if not events:
+            if full_history:
+                # full_history means `events` is never empty for an already-
+                # completed season (that's the whole point), so the "fetch
+                # next season if this one's empty" fallback below would never
+                # fire — but we still want next season's fixtures once they're
+                # published, so fetch both and merge rather than either/or.
+                next_season = str(int(season) + 1)
+                next_events = self._fetch_season(league_id, next_season, full_history=full_history)
+                events = {**events, **next_events}
+            elif not events:
                 # Providers usually publish next season's full fixture list well
                 # before our month-threshold flips (e.g. the PL releases fixtures
                 # in June, ~2 months before the August kickoff) — if the season we
