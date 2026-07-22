@@ -354,6 +354,9 @@ class FootballFilter:
         "efl_cup": 2,
         "uefa_europa_league": 6,
     }
+    # Also read by services/standings_local.py to draw the season-cutoff line
+    # — keep in sync with the get_active_season_year() call in filter() below.
+    SEASON_START_MONTH = 8
 
     def __init__(self, api: FetchAPI, time: TimeManagement, store: DBStore):
         self.api = api
@@ -402,7 +405,7 @@ class FootballFilter:
         """`full_history=True` ignores the recency filter entirely — used by
         scripts/backfill_full_history.py to pull a whole season's results.
         `league_keys` restricts which leagues to sync (also backfill-only)."""
-        season = self.time.get_active_season_year("08")
+        season = self.time.get_active_season_year(f"{self.SEASON_START_MONTH:02d}")
         for league_key, league_id in self.LEAGUES.items():
             if league_keys is not None and league_key not in league_keys:
                 continue
@@ -506,6 +509,9 @@ class HockeyBasketballFilter:
 class SwedishFootballFilter:
     BASE_URL = "https://www.svenskfotboll.se"
     LEAGUES = {"allsvenskan": 133348}
+    # Also read by services/standings_local.py to draw the season-cutoff line
+    # — keep in sync with the get_active_season_year() call in filter() below.
+    SEASON_START_MONTH = 3
 
     def __init__(self, api: FetchAPI, time: TimeManagement, store: DBStore):
         self.api = api
@@ -513,7 +519,7 @@ class SwedishFootballFilter:
         self.store = store
 
     def filter(self):
-        season = self.time.get_active_season_year("03")
+        season = self.time.get_active_season_year(f"{self.SEASON_START_MONTH:02d}")
         for league_key, competition_id in self.LEAGUES.items():
             events: dict = {}
             self._collect(
