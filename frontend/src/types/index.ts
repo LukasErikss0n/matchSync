@@ -18,6 +18,7 @@ export type IconName =
 export interface League {
   name: string
   slug: string
+  supports_standings?: boolean
 }
 
 export interface Sport {
@@ -56,6 +57,20 @@ export interface SeasonStats {
   season_start: string | null   // ISO-UTC
   regular_season_count: number
   progressive_knockout: boolean // true for cups like FA Cup/EFL Cup — later rounds aren't drawn yet
+}
+
+export interface StandingEntry {
+  position: number
+  team: string
+  team_slug?: string | null
+  team_icon?: string | null
+  played: number
+  won: number
+  drawn: number
+  lost: number
+  goal_difference: number
+  points: number
+  form: string[]   // oldest → newest, each "W" | "D" | "L"
 }
 
 export interface CalendarLink {

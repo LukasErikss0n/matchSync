@@ -1,4 +1,4 @@
-import type { CalendarLink, Match, SeasonStats, Sport, Team } from '@/types'
+import type { CalendarLink, Match, SeasonStats, StandingEntry, Sport, Team } from '@/types'
 
 const API_BASE = '/api'
 
@@ -44,6 +44,13 @@ export async function fetchMatches(opts: {
   const qs = params.toString()
   const res = await fetch(`${API_BASE}/matches${qs ? `?${qs}` : ''}`)
   if (!res.ok) throw new Error(`Failed to fetch matches: ${res.status}`)
+  return res.json()
+}
+
+export async function fetchStandings(leagueSlug: string): Promise<StandingEntry[] | null> {
+  const res = await fetch(`${API_BASE}/leagues/${encodeURIComponent(leagueSlug)}/standings`)
+  if (res.status === 404) return null   // standings not supported for this league
+  if (!res.ok) throw new Error(`Failed to fetch standings: ${res.status}`)
   return res.json()
 }
 

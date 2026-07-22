@@ -50,6 +50,21 @@ def _is_placeholder(name: str) -> bool:
     return any(frag in lower for frag in _PLACEHOLDER_FRAGMENTS)
 
 
+# Shared with services/season_stats.py (regular-season match counting) and
+# services/standings_local.py (excluding playoff games from the table) — the
+# hockey/basketball game-schedule feed mixes regular-season and playoff games
+# with no other way to tell them apart than this game-type label.
+PLAYOFF_FRAGMENTS = ("playoff", "slutspel", "kvalspel", "playout")
+
+
+def is_playoff_game_type(item: dict) -> bool:
+    for key in ("name", "Name", "description", "Description", "seriesName", "typeName"):
+        val = item.get(key)
+        if isinstance(val, str) and any(frag in val.lower() for frag in PLAYOFF_FRAGMENTS):
+            return True
+    return False
+
+
 # Maps sport string from filters → (db_name, db_slug, icon)
 SPORT_META: dict[str, tuple[str, str, str]] = {
     "football": ("Football", "football", "football"),
@@ -256,6 +271,9 @@ class DBStore:
 
             home_score = _to_int(event.get("homeScore"))
             away_score = _to_int(event.get("awayScore"))
+            is_playoff = bool(event.get("isPlayoff", False))
+            overtime = bool(event.get("overtime", False))
+            shootout = bool(event.get("shootout", False))
 
             # Each match stored twice — once per team — so calendar queries stay simple
             for team, ext_suffix in [(home_team, "home"), (away_team, "away")]:
@@ -271,6 +289,9 @@ class DBStore:
                     existing.start_time = start_time
                     existing.home_score = home_score
                     existing.away_score = away_score
+                    existing.is_playoff = is_playoff
+                    existing.overtime = overtime
+                    existing.shootout = shootout
                     self.session.add(existing)
                 else:
                     self.session.add(
@@ -282,6 +303,9 @@ class DBStore:
                             start_time=start_time,
                             home_score=home_score,
                             away_score=away_score,
+                            is_playoff=is_playoff,
+                            overtime=overtime,
+                            shootout=shootout,
                         )
                     )
 
@@ -345,7 +369,7 @@ class FootballFilter:
         yr = str(season_year)[-2:]
         return f"https://resources.premierleague.com/premierleague{yr}/badges-alt/50/{team_id}.png"
 
-    def _fetch_season(self, league_id: int, season: str) -> dict:
+    def _fetch_season(self, league_id: int, season: str, full_history: bool = False) -> dict:
         events: dict = {}
         for week in range(1, 50):
             url = (
@@ -359,7 +383,7 @@ class FootballFilter:
                 start = self.time.convert_to_utc(
                     match["kickoff"], match["kickoffTimezone"]
                 )
-                if not self.time.is_recent_or_future(start):
+                if not full_history and not self.time.is_recent_or_future(start):
                     continue
                 event_id = str(match["matchId"])
                 events[event_id] = {
@@ -374,17 +398,22 @@ class FootballFilter:
                 }
         return events
 
-    def filter(self):
+    def filter(self, full_history: bool = False, league_keys: set[str] | None = None):
+        """`full_history=True` ignores the recency filter entirely — used by
+        scripts/backfill_full_history.py to pull a whole season's results.
+        `league_keys` restricts which leagues to sync (also backfill-only)."""
         season = self.time.get_active_season_year("08")
         for league_key, league_id in self.LEAGUES.items():
-            events = self._fetch_season(league_id, season)
+            if league_keys is not None and league_key not in league_keys:
+                continue
+            events = self._fetch_season(league_id, season, full_history=full_history)
             if not events:
                 # Providers usually publish next season's full fixture list well
                 # before our month-threshold flips (e.g. the PL releases fixtures
                 # in June, ~2 months before the August kickoff) — if the season we
                 # assumed has nothing recent/upcoming, the next one may already be out.
                 next_season = str(int(season) + 1)
-                events = self._fetch_season(league_id, next_season)
+                events = self._fetch_season(league_id, next_season, full_history=full_history)
             self.store.save("football", league_key, events)
 
 
@@ -412,10 +441,15 @@ class HockeyBasketballFilter:
         self.store = store
         self.helpers = helpers
 
-    def filter(self):
+    def filter(self, full_history: bool = False, league_keys: set[str] | None = None):
+        """`full_history=True` ignores the recency filter entirely — used by
+        scripts/backfill_full_history.py to pull a whole season's results.
+        `league_keys` restricts which leagues to sync (also backfill-only)."""
         season = self.time.get_active_season_year("09")
         for sport_key, leagues in self.LEAGUES.items():
             for league_key, league_data in leagues.items():
+                if league_keys is not None and league_key not in league_keys:
+                    continue
                 events: dict = {}
                 url_slug = league_data["url_slug"]
                 meta = self.api.get(
@@ -426,7 +460,9 @@ class HockeyBasketballFilter:
                 )
 
                 all_icons: dict[str, str] = {}
-                for game_type in [item["uuid"] for item in game_type_uuid]:
+                for game_type_item in game_type_uuid:
+                    game_type = game_type_item["uuid"]
+                    is_playoff = is_playoff_game_type(game_type_item)
                     url = (
                         f"https://www.{url_slug}.se/api/sports-v2/game-schedule"
                         f"?seasonUuid={season_uuid}&seriesUuid={series_uuid}"
@@ -446,7 +482,7 @@ class HockeyBasketballFilter:
                             if icon:
                                 all_icons[info["names"]["full"]] = icon
 
-                        if not self.time.is_recent_or_future(match["rawStartDateTime"]):
+                        if not full_history and not self.time.is_recent_or_future(match["rawStartDateTime"]):
                             continue
                         event_id = match["uuid"]
                         events[event_id] = {
@@ -458,6 +494,9 @@ class HockeyBasketballFilter:
                             "awayIcon": match["awayTeamInfo"].get("icon"),
                             "homeScore": match["homeTeamInfo"].get("score"),
                             "awayScore": match["awayTeamInfo"].get("score"),
+                            "isPlayoff": is_playoff,
+                            "overtime": bool(match.get("overtime")),
+                            "shootout": bool(match.get("shootout")),
                         }
                 if all_icons:
                     self.store.backfill_icons(sport_key, league_key, all_icons)
@@ -492,7 +531,17 @@ class SwedishFootballFilter:
             )
             self.store.save("football", league_key, events)
 
-    def _collect(self, events: dict, start_url: str, stop_when_old: bool = False) -> None:
+    def _collect(
+        self,
+        events: dict,
+        start_url: str,
+        stop_when_old: bool = False,
+        full_history: bool = False,
+    ) -> None:
+        """`full_history=True` ignores the recency filter entirely — used by
+        the one-off backfill script (scripts/backfill_full_history.py) to pull
+        a whole season's results, since the regular sync only ever needs the
+        last RESULTS_WINDOW_DAYS."""
         next_url: str | None = start_url
         while next_url:
             page = self.api.get(self.BASE_URL + next_url)
@@ -516,7 +565,7 @@ class SwedishFootballFilter:
                 event_id = parse_qs(urlparse(href).query).get("fmid", [None])[0]
                 if not event_id:
                     continue
-                if not self.time.is_recent_or_future(start):
+                if not full_history and not self.time.is_recent_or_future(start):
                     if stop_when_old:
                         hit_old = True
                         break

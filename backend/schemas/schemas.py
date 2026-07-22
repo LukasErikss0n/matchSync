@@ -64,6 +64,15 @@ class MatchBase(SQLModel):
     home_score: Optional[int] = None   # nullable — only set once a match is played
     away_score: Optional[int] = None
     team_id: int
+    # Hockey/basketball only — their game-schedule feed mixes regular-season
+    # and playoff games with no other way to tell them apart (see
+    # tasks/fetcher.py's is_playoff_game_type). Always False elsewhere.
+    is_playoff: bool = False
+    # Hockey only — needed for the 3-2-1-0 points system (regulation win/
+    # OT-or-shootout win/OT-or-shootout loss/regulation loss), which a plain
+    # score can't tell apart from a normal win. Always False elsewhere.
+    overtime: bool = False
+    shootout: bool = False
 
 
 class MatchCreate(MatchBase):
@@ -80,6 +89,7 @@ class LeagueOut(SQLModel):
     """League info exposed to frontend."""
     name: str
     slug: str
+    supports_standings: bool = False
 
 
 class SportOut(SQLModel):
@@ -129,6 +139,22 @@ class SeasonStatsOut(SQLModel):
     # only once earlier ones finish — `regular_season_count` there means "matches
     # currently scheduled", not a fixed season total.
     progressive_knockout: bool = False
+
+
+class StandingEntryOut(SQLModel):
+    """One row of a league table, enriched with our own team slug/icon (when
+    we have a matching Team row) so the frontend can reuse TeamBadge."""
+    position: int
+    team: str
+    team_slug: Optional[str] = None
+    team_icon: Optional[str] = None
+    played: int
+    won: int
+    drawn: int
+    lost: int
+    goal_difference: int
+    points: int
+    form: list[str] = []   # last few results, oldest → newest, each "W"/"D"/"L"
 
 
 class CalendarLink(SQLModel):

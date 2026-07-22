@@ -24,13 +24,12 @@ from tasks.fetcher import (
     LEAGUE_DISPLAY,
     SwedishFootballFilter,
     TimeManagement,
+    is_playoff_game_type,
     slugify,
 )
 
 _CACHE_TTL_SECONDS = 6 * 60 * 60  # these calls are expensive (PL: up to 49 requests/league)
 _cache: dict[str, tuple[float, "SeasonStats"]] = {}
-
-_PLAYOFF_FRAGMENTS = ("playoff", "slutspel", "kvalspel", "playout")
 
 # Pure knockout cups whose pairings are drawn round-by-round as the competition
 # progresses (the next round isn't fixed until the previous one finishes) — so
@@ -107,14 +106,6 @@ def _football_starts(api: FetchAPI, time: TimeManagement, league_id: int) -> lis
     return starts
 
 
-def _is_playoff_game_type(item: dict) -> bool:
-    for key in ("name", "Name", "description", "Description", "seriesName", "typeName"):
-        val = item.get(key)
-        if isinstance(val, str) and any(frag in val.lower() for frag in _PLAYOFF_FRAGMENTS):
-            return True
-    return False
-
-
 def _hockey_basketball_starts(
     api: FetchAPI, helpers: HelpFunctions, url_slug: str
 ) -> tuple[list[datetime], list[datetime]]:
@@ -126,7 +117,7 @@ def _hockey_basketball_starts(
     all_starts: list[datetime] = []
     regular_starts: list[datetime] = []
     for item in game_types:
-        is_playoff = _is_playoff_game_type(item)
+        is_playoff = is_playoff_game_type(item)
         url = (
             f"https://www.{url_slug}.se/api/sports-v2/game-schedule"
             f"?seasonUuid={season_uuid}&seriesUuid={series_uuid}"

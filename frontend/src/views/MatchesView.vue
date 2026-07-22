@@ -173,6 +173,7 @@
                             :key="m.id"
                             :match="m"
                             @add="onAddToCalendar"
+                            @view-standings="onViewStandings"
                         />
                     </div>
                 </div>
@@ -234,6 +235,15 @@
         :initial-team="modalTeam"
         @close="closeModal"
     />
+
+    <StandingsModal
+        v-if="standingsMatch"
+        :league-slug="standingsMatch.league.slug"
+        :league-name="standingsMatch.league.name"
+        :home-team="standingsMatch.home_team"
+        :away-team="standingsMatch.away_team"
+        @close="standingsMatch = null"
+    />
 </template>
 
 <script setup lang="ts">
@@ -255,6 +265,7 @@ import Icon from "@/components/Icon.vue";
 import TeamBadge from "@/components/TeamBadge.vue";
 import MatchRow from "@/components/MatchRow.vue";
 import TeamSelectorModal from "@/components/TeamSelectorModal.vue";
+import StandingsModal from "@/components/StandingsModal.vue";
 
 // Tiny inline chevron so we don't have to extend the Icon registry
 const ChevronDown = (
@@ -322,6 +333,7 @@ const weekOffset = ref(0);
 const showModal = ref(false);
 const modalSport = ref<string | null>(null);
 const modalTeam = ref<Team | null>(null);
+const standingsMatch = ref<Match | null>(null);
 
 // "Updated X ago" badge — reflects the fetcher's last successful run, not page load
 const lastUpdatedAt = ref<Date | null>(null);
@@ -818,6 +830,10 @@ function closeModal() {
     modalSport.value = null;
     modalTeam.value = null;
     clearWizardQuery();
+}
+
+function onViewStandings(m: Match) {
+    standingsMatch.value = m;
 }
 
 onMounted(async () => {

@@ -7,6 +7,7 @@ from database import get_session
 from models.models import League, Match, Sport, Team
 from schemas.schemas import LeagueOut, MatchOut
 from services.featured_match import get_featured_match
+from services.standings import standings_supported
 
 router = APIRouter()
 
@@ -76,7 +77,7 @@ def list_matches(
             id=match.id,
             external_id=match.external_id,
             sport=sp.slug,
-            league=LeagueOut(name=lg.name, slug=lg.slug),
+            league=LeagueOut(name=lg.name, slug=lg.slug, supports_standings=standings_supported(lg.slug)),
             home_team=match.home_team,
             away_team=match.away_team,
             home_slug=home_team.slug,

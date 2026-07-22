@@ -1,0 +1,184 @@
+<template>
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    style="background: rgba(5, 8, 14, 0.6); backdrop-filter: blur(8px)"
+    @click.self="emit('close')"
+  >
+    <div
+      class="glass-panel relative rounded-[30px] w-full max-w-xl fade-up overflow-hidden"
+      style="max-height: 90vh; overflow-y: auto; background: rgba(22,32,52,.9); backdrop-filter: blur(32px) saturate(150%); border: 1px solid rgba(255,255,255,.2)"
+    >
+      <div
+        class="absolute inset-0 pointer-events-none"
+        style="background: linear-gradient(100deg, rgba(142,205,242,.05) 0%, rgba(142,205,242,.02) 35%, transparent 65%)"
+      ></div>
+
+      <!-- Header -->
+      <div class="relative flex items-center justify-between px-7 pt-7 pb-5 border-b border-white/10">
+        <div>
+          <div class="text-[11.5px] font-bold uppercase mb-1 ms-text-accent" style="letter-spacing: 1.8px">
+            Standings · {{ leagueName }}
+          </div>
+          <h2 class="text-2xl font-extrabold" style="letter-spacing: -0.5px">{{ homeTeam }} vs {{ awayTeam }}</h2>
+        </div>
+        <button
+          class="w-8 h-8 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+          style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16)"
+          @click="emit('close')"
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+
+      <div class="relative px-3 sm:px-4 pb-5 pt-2">
+        <div v-if="loading" class="py-14 text-center text-sm" style="color: rgba(244,247,251,.5)">
+          Loading standings…
+        </div>
+        <div v-else-if="standings === null" class="py-14 text-center text-sm px-4" style="color: rgba(244,247,251,.5)">
+          Standings aren't available for this league yet.
+        </div>
+        <div v-else-if="standings.length === 0" class="py-14 text-center text-sm" style="color: rgba(244,247,251,.5)">
+          No table data found.
+        </div>
+        <template v-else>
+          <div class="grid px-4 py-2 text-[10.5px] font-bold uppercase tracking-widest" style="grid-template-columns: 28px 1fr 52px 44px; color: rgba(244,247,251,.4)">
+            <span>#</span>
+            <span>Team</span>
+            <span class="text-right">GD</span>
+            <span class="text-right">Pts</span>
+          </div>
+          <template v-for="row in visibleRows" :key="row.type === 'gap' ? `gap-${row.key}` : row.entry.position">
+            <div v-if="row.type === 'gap'" class="text-center text-sm py-1.5" style="color: rgba(244,247,251,.35)">
+              &hellip;
+            </div>
+            <div
+              v-else
+              class="grid items-start px-4 py-3 rounded-2xl mb-1.5 transition-colors"
+              :style="`grid-template-columns: 28px 1fr 52px 44px; ${isFocusTeam(row.entry.team)
+                ? 'background: rgba(142,205,242,.12); border: 1px solid rgba(142,205,242,.35)'
+                : 'border: 1px solid transparent'}`"
+            >
+              <span class="text-sm font-bold" style="color: rgba(244,247,251,.5)">{{ row.entry.position }}</span>
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 min-w-0">
+                  <TeamBadge :name="row.entry.team" :icon="row.entry.team_icon" :size="22" />
+                  <span class="font-bold text-sm truncate">{{ row.entry.team }}</span>
+                </div>
+                <div class="flex gap-1 mt-1.5 ml-[30px]">
+                  <span
+                    v-for="(r, i) in row.entry.form"
+                    :key="i"
+                    class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold"
+                    :style="formStyle(r)"
+                  >{{ r }}</span>
+                </div>
+              </div>
+              <span class="text-sm font-bold text-right" :style="row.entry.goal_difference > 0 ? 'color: var(--ms-green)' : 'color: rgba(244,247,251,.7)'">
+                {{ row.entry.goal_difference > 0 ? '+' : '' }}{{ row.entry.goal_difference }}
+              </span>
+              <span class="text-sm font-extrabold text-right ms-text-accent">{{ row.entry.points }}</span>
+            </div>
+          </template>
+        </template>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import type { StandingEntry } from '@/types'
+import { fetchStandings } from '@/services/sports'
+import TeamBadge from './TeamBadge.vue'
+
+const props = defineProps<{
+  leagueSlug: string
+  leagueName: string
+  homeTeam: string
+  awayTeam: string
+}>()
+
+const emit = defineEmits<{ close: [] }>()
+
+const loading = ref(true)
+const standings = ref<StandingEntry[] | null>(null)
+
+function onKey(e: KeyboardEvent) {
+  if (e.key === 'Escape') emit('close')
+}
+
+onMounted(async () => {
+  window.addEventListener('keydown', onKey)
+  // Locking scroll removes the scrollbar, which shrinks the viewport and
+  // shifts everything left of it — pad the gap back in so nothing jumps.
+  const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+  document.body.style.overflow = 'hidden'
+  if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`
+
+  try {
+    standings.value = await fetchStandings(props.leagueSlug)
+  } finally {
+    loading.value = false
+  }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKey)
+  document.body.style.overflow = ''
+  document.body.style.paddingRight = ''
+})
+
+function isFocusTeam(name: string): boolean {
+  return name === props.homeTeam || name === props.awayTeam
+}
+
+function formStyle(result: string): string {
+  if (result === 'W') return 'background: rgba(78,201,144,.22); color: #7de3ab'
+  if (result === 'L') return 'background: rgba(232,93,117,.22); color: #f596a8'
+  return 'background: rgba(255,255,255,.14); color: rgba(244,247,251,.7)'
+}
+
+type Row = { type: 'entry'; entry: StandingEntry } | { type: 'gap'; key: number }
+
+// Shows a 3-row window (one above/below) around each highlighted team, merging
+// the windows if they overlap/touch, otherwise separating them with a "…" gap
+// — mirrors how broadcasters trim a full table down to "what matters here".
+const visibleRows = computed<Row[]>(() => {
+  const rows = standings.value
+  if (!rows || rows.length === 0) return []
+
+  const focusPositions = rows
+    .filter((r) => isFocusTeam(r.team))
+    .map((r) => r.position)
+    .sort((a, b) => a - b)
+
+  if (focusPositions.length === 0) {
+    return rows.map((entry) => ({ type: 'entry', entry }))
+  }
+
+  const ranges: [number, number][] = focusPositions.map((p) => [
+    Math.max(1, p - 1),
+    Math.min(rows.length, p + 1),
+  ])
+
+  const merged: [number, number][] = []
+  for (const range of ranges) {
+    const last = merged[merged.length - 1]
+    if (last && range[0] <= last[1] + 1) {
+      last[1] = Math.max(last[1], range[1])
+    } else {
+      merged.push([...range])
+    }
+  }
+
+  const result: Row[] = []
+  merged.forEach(([start, end], i) => {
+    if (i > 0) result.push({ type: 'gap', key: i })
+    for (let pos = start; pos <= end; pos++) {
+      const entry = rows.find((r) => r.position === pos)
+      if (entry) result.push({ type: 'entry', entry })
+    }
+  })
+  return result
+})
+</script>

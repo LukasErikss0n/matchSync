@@ -1,5 +1,10 @@
 <template>
-  <div class="group relative flex items-center gap-2 sm:gap-3 px-3 sm:px-6 py-4 border-b border-white/[0.06] transition-colors hover:bg-white/[0.04]">
+  <div
+    class="group relative flex items-center gap-2 sm:gap-3 px-3 sm:px-6 py-4 border-b border-white/[0.06] transition-colors hover:bg-white/[0.04]"
+    :class="{ 'cursor-pointer': supportsStandings }"
+    :title="supportsStandings ? 'View standings' : undefined"
+    @click="supportsStandings && emit('view-standings', match)"
+  >
     <!-- Status -->
     <div class="flex-shrink-0 flex items-center" :class="isLive ? '' : 'w-8 sm:w-12'">
       <span
@@ -50,7 +55,7 @@
         class="flex items-center gap-1.5 rounded-full transition-all opacity-0 group-hover:opacity-100 px-3.5 py-2 text-xs font-bold"
         style="background: rgba(21,30,48,.95); border: 1px solid rgba(255,255,255,.14); color: rgba(244,247,251,.75)"
         title="Add to calendar"
-        @click="emit('add', match)"
+        @click.stop="emit('add', match)"
       >
         <Icon name="calendar" class="!w-4 !h-4" />
         <span>Add to calendar</span>
@@ -67,7 +72,9 @@ import TeamBadge from './TeamBadge.vue'
 import Icon from './Icon.vue'
 
 const props = defineProps<{ match: Match }>()
-const emit = defineEmits<{ add: [match: Match] }>()
+const emit = defineEmits<{ add: [match: Match]; 'view-standings': [match: Match] }>()
+
+const supportsStandings = computed(() => !!props.match.league.supports_standings)
 
 const hasScore = computed(
   () => props.match.home_score != null && props.match.away_score != null,

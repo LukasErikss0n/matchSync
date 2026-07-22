@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select
 from database import get_session
 from models.models import League, Sport, Team
-from schemas.schemas import LeagueOut, SeasonStatsOut, SportOut, TeamOut
+from schemas.schemas import LeagueOut, SeasonStatsOut, SportOut, StandingEntryOut, TeamOut
 from services.season_stats import get_season_stats
+from services.standings import get_standings
 
 
 router = APIRouter()
@@ -106,6 +107,38 @@ def get_team(
     teams = _collect_teams(rows)
     teams.sort(key=lambda t: -len(t.leagues))
     return teams[0]
+
+
+@router.get("/leagues/{league_slug}/standings", response_model=list[StandingEntryOut])
+def league_standings(league_slug: str, session: Session = Depends(get_session)):
+    """Current league table, computed from our own DB for leagues we've
+    backfilled full match history for (see services/standings_local.py)."""
+    rows = get_standings(league_slug)
+    if rows is None:
+        raise HTTPException(status_code=404, detail="Standings not available for this league")
+
+    league = session.exec(select(League).where(League.slug == league_slug)).first()
+    teams_by_name: dict[str, Team] = {}
+    if league:
+        teams = session.exec(select(Team).where(Team.league_id == league.id)).all()
+        teams_by_name = {t.name: t for t in teams}
+
+    return [
+        StandingEntryOut(
+            position=row["position"],
+            team=row["team"],
+            team_slug=(teams_by_name[row["team"]].slug if row["team"] in teams_by_name else None),
+            team_icon=(teams_by_name[row["team"]].icon if row["team"] in teams_by_name else None),
+            played=row["played"],
+            won=row["won"],
+            drawn=row["drawn"],
+            lost=row["lost"],
+            goal_difference=row["goal_difference"],
+            points=row["points"],
+            form=row["form"],
+        )
+        for row in rows
+    ]
 
 
 @router.get("/leagues/{league_slug}/season-stats", response_model=SeasonStatsOut)
