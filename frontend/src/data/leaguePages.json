@@ -128,5 +128,15 @@
     "description": "Hela SBL Damer matchschema, every game and tip-off time. Subscribe once and the full SBL calendar auto-syncs to your Google, Apple or Outlook calendar.",
     "h1": "SBL Damer fixtures & calendar",
     "intro": "The complete SBL Damer schedule. Subscribe once and every game syncs straight to your calendar."
+  },
+  {
+    "path": "/f1",
+    "slug": "formula-1",
+    "sport": "motorsport",
+    "name": "F1",
+    "title": "F1 Calendar - Every Race Session Synced to Your Calendar | MatchCalender",
+    "description": "Every Formula 1 race weekend, practice, qualifying and race start time. Subscribe once and the full F1 calendar auto-syncs to your Google, Apple or Outlook calendar.",
+    "h1": "F1 calendar & race schedule",
+    "intro": "The complete Formula 1 season. Subscribe once and every session start time syncs straight to your calendar."
   }
 ]

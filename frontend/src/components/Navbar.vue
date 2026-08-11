@@ -75,6 +75,7 @@ const tabRefs = ref<{ $el: HTMLElement }[]>([]);
 const sliderStyle = reactive({ width: "0px", transform: "translateX(0px)", opacity: "0", transition: "none" });
 
 function targetIndex(): number {
+    if (route.meta.isLeaguePage) return tabs.findIndex((t) => t.to === "/matches");
     const i = tabs.findIndex((t) => t.to === route.path);
     return i === -1 ? 0 : i;
 }
