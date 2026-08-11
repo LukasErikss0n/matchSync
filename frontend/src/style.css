@@ -130,6 +130,14 @@ body::before {
     color: var(--ms-text) !important;
 }
 
+.ms-no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.ms-no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
 .ms-tab-slider {
     position: absolute;
     top: 4px;

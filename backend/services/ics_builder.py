@@ -13,6 +13,16 @@ LEAGUE_SHORT_NAMES: dict[str, str] = {
     "FIFA World Cup 2026": "World Cup",
 }
 
+# F1 isn't a two-competitor match ("home_team" is the Grand Prix, "away_team"
+# is the session, see tasks/fetcher.py's F1Filter) — "vs" reads wrong for it.
+_NON_MATCH_LEAGUES = {"Formula 1"}
+
+
+def _title(league: str | None, home_team: str, away_team: str) -> str:
+    if league in _NON_MATCH_LEAGUES:
+        return f"{home_team} – {away_team}"
+    return f"{home_team} vs {away_team}"
+
 
 def build_ics(
     team_name: str,
@@ -42,7 +52,8 @@ def build_ics(
         event = Event()
         # Stable UID derived from external_id — must not change between refreshes
         event.add("uid", f"{match.external_id}@matchcalender.com")
-        event.add("summary", f"{prefix}{match.home_team} vs {match.away_team}")
+        title = _title(league, match.home_team, match.away_team)
+        event.add("summary", f"{prefix}{title}")
         event.add("dtstart", start)
         event.add("dtend", end)
         if match.venue:
@@ -50,9 +61,7 @@ def build_ics(
 
         alarm = Alarm()
         alarm.add("action", "DISPLAY")
-        alarm.add(
-            "description", f"{match.home_team} vs {match.away_team} starts in 1 hour"
-        )
+        alarm.add("description", f"{title} starts in 1 hour")
         alarm.add("trigger", timedelta(hours=-1))
         event.add_component(alarm)
 

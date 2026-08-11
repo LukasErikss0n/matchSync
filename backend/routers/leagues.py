@@ -12,7 +12,14 @@ router = APIRouter()
 # National teams only ever show up here as one-off World Cup entries with no
 # club-level league — they clutter the team search/picker without being
 # useful there (the tournament still has its own SEO landing page).
-TEAM_SEARCH_EXCLUDED_LEAGUE_SLUGS = {"fifa-world-cup-2026"}
+TEAM_SEARCH_EXCLUDED_LEAGUE_SLUGS = {"fifa-world-cup-2026", "IIHF World Championship"}
+
+# Leagues where "team" rows are really just per-event/per-session pseudo-
+# entries (see tasks/fetcher.py's F1Filter — home_team is the Grand Prix,
+# away_team is the session) rather than things fans pick individually. Only
+# the mapped team slug (the "Formula 1" pseudo-team) should be pickable;
+# the rest exist purely to give each match its home/away rows.
+TEAM_SEARCH_SINGLE_PICKABLE: dict[str, str] = {"formula-1": "formula-1"}
 
 
 @router.get("/sports", response_model=list[SportOut])
@@ -74,6 +81,10 @@ def list_teams(
         stmt = stmt.where(Sport.slug == sport)
 
     rows = session.exec(stmt).all()
+    rows = [
+        (t, l, s) for (t, l, s) in rows
+        if TEAM_SEARCH_SINGLE_PICKABLE.get(l.slug, t.slug) == t.slug
+    ]
     teams = _collect_teams(rows)
 
     if q:

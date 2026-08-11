@@ -160,14 +160,27 @@
                         <span class="font-extrabold text-sm">{{
                             group.label
                         }}</span>
-                        <span class="text-xs font-semibold" style="color: rgba(244,247,251,.45)"
+                        <span
+                            v-if="!isMotorsportLeague"
+                            class="text-xs font-semibold"
+                            style="color: rgba(244,247,251,.45)"
                             >{{ group.matches.length }}
                             {{
                                 group.matches.length === 1 ? "match" : "matches"
                             }}</span
                         >
                     </div>
-                    <div>
+                    <div v-if="isMotorsportLeague">
+                        <div
+                            v-for="m in group.matches"
+                            :key="m.id"
+                            class="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-white/[0.06] last:border-b-0"
+                        >
+                            <span class="font-bold text-sm" style="color: rgba(244,247,251,.6)">{{ m.away_team }}</span>
+                            <span class="font-bold text-sm">{{ formatSessionTime(m.start_time) }}</span>
+                        </div>
+                    </div>
+                    <div v-else>
                         <MatchRow
                             v-for="m in group.matches"
                             :key="m.id"
@@ -400,6 +413,10 @@ const LEAGUE_SEASON: Record<string, SeasonCfg> = {
         atStart: false,
         singleYear: false,
     },
+    // F1's season doesn't roll over mid-year like the others — it's just
+    // whatever the current calendar year is, always (threshold: 0 + atStart
+    // means "current month >= 0" is always true, so `start` is always `y`).
+    "formula-1": { threshold: 0, atStart: true, singleYear: true },
 };
 
 const season = computed(() => {
@@ -585,7 +602,66 @@ function dayLabel(d: Date): string {
     });
 }
 
+// Motorsport isn't a day-by-day fixture list — each Grand Prix is a single
+// weekend of sessions (Practice/Qualifying/Race), so it groups by "home_team"
+// (the Grand Prix — see tasks/fetcher.py's F1Filter) instead of by day.
+const isMotorsportLeague = computed(() => selectedLeague.value?.sport === "motorsport");
+
+function formatSessionTime(iso: string): string {
+    return new Date(iso).toLocaleString([], {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+    }).replace(",", "");
+}
+
+// Round numbers aren't in the API response — derived from the full season's
+// fetch (not just the visible week) so "R7" stays correct regardless of which
+// week you're currently looking at.
+const meetingRounds = computed(() => {
+    const earliest = new Map<string, number>();
+    for (const m of matches.value) {
+        const t = new Date(m.start_time).getTime();
+        const prev = earliest.get(m.home_team);
+        if (prev === undefined || t < prev) earliest.set(m.home_team, t);
+    }
+    const ordered = [...earliest.entries()].sort((a, b) => a[1] - b[1]);
+    return new Map(ordered.map(([name], i) => [name, i + 1]));
+});
+
 const visibleGroups = computed(() => {
+    if (isMotorsportLeague.value) {
+        const groups = new Map<
+            string,
+            { key: string; label: string; date: number; matches: Match[] }
+        >();
+        for (const m of visibleMatches.value) {
+            const key = m.home_team;
+            if (!groups.has(key)) {
+                const round = meetingRounds.value.get(m.home_team);
+                groups.set(key, {
+                    key,
+                    label: round ? `Round ${round} · ${m.home_team}` : m.home_team,
+                    date: new Date(m.start_time).getTime(),
+                    matches: [],
+                });
+            }
+            const g = groups.get(key)!;
+            g.matches.push(m);
+            g.date = Math.min(g.date, new Date(m.start_time).getTime());
+        }
+        const arr = [...groups.values()].sort((a, b) => a.date - b.date);
+        for (const g of arr) {
+            g.matches.sort(
+                (a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
+            );
+        }
+        return arr;
+    }
+
     const groups = new Map<
         string,
         { key: string; label: string; date: number; matches: Match[] }

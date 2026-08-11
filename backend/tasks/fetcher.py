@@ -1,4 +1,5 @@
 import re
+import time as time_module
 from datetime import datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlparse
 from zoneinfo import ZoneInfo
@@ -70,6 +71,7 @@ SPORT_META: dict[str, tuple[str, str, str]] = {
     "football": ("Football", "football", "football"),
     "hockey": ("Hockey", "hockey", "hockey"),
     "basketball": ("Basketball", "basketball", "basketball"),
+    "motorsport": ("Motorsport", "motorsport", "car"),
 }
 
 # Maps raw league key → display name
@@ -87,6 +89,7 @@ LEAGUE_DISPLAY: dict[str, str] = {
     "sbldamer": "SBL Damer",
     "iihf_world_championship": "IIHF World Championship",
     "fifa_world_cup_2026": "FIFA World Cup 2026",
+    "f1": "Formula 1",
 }
 
 
@@ -116,6 +119,39 @@ class FetchAPI:
         r = self.session.get(url, headers=self.HEADERS, timeout=(5, 30))
         r.raise_for_status()
         return r.json()
+
+
+# Premier League's own date-based season cutover (used for fixtures/standings,
+# see FootballFilter.SEASON_START_MONTH) flips well before their badge CDN
+# actually publishes the new season's crest folder — historically the gap has
+# been ~2 weeks around each kickoff. Requesting the not-yet-published folder
+# 502s for every single team, so probe for it and fall back to last season's
+# folder (which keeps 200-ing fine) until the new one is confirmed live.
+# Cached with a short TTL so it picks up the real folder soon after PL
+# publishes it, without re-probing on every ~30 min fetcher run.
+_PL_BADGE_YEAR_CACHE: dict[int, tuple[float, str]] = {}
+_PL_BADGE_YEAR_CACHE_TTL_SECONDS = 3 * 60 * 60
+
+
+def _resolve_pl_badge_year() -> str:
+    now = datetime.now()
+    candidate_year = now.year if now.month >= 8 else now.year - 1
+
+    cached = _PL_BADGE_YEAR_CACHE.get(candidate_year)
+    now_monotonic = time_module.monotonic()
+    if cached and now_monotonic - cached[0] < _PL_BADGE_YEAR_CACHE_TTL_SECONDS:
+        return cached[1]
+
+    candidate = str(candidate_year)[-2:]
+    probe_url = f"https://resources.premierleague.com/premierleague{candidate}/badges-alt/50/1.png"
+    try:
+        resp = requests.head(probe_url, headers=FetchAPI.HEADERS, timeout=(3, 5))
+        yr = candidate if resp.status_code == 200 else str(candidate_year - 1)[-2:]
+    except requests.RequestException:
+        yr = str(candidate_year - 1)[-2:]
+
+    _PL_BADGE_YEAR_CACHE[candidate_year] = (now_monotonic, yr)
+    return yr
 
 
 # ── Time helpers ──────────────────────────────────────────────────────────────
@@ -275,8 +311,17 @@ class DBStore:
             overtime = bool(event.get("overtime", False))
             shootout = bool(event.get("shootout", False))
 
-            # Each match stored twice — once per team — so calendar queries stay simple
-            for team, ext_suffix in [(home_team, "home"), (away_team, "away")]:
+            # Each match stored twice — once per team — so calendar queries stay simple.
+            # A third "extra" perspective is opt-in (only F1Filter sets it, for a
+            # season-long pseudo-team so users can subscribe to every session at
+            # once instead of picking one Grand Prix or session type).
+            perspectives = [(home_team, "home"), (away_team, "away")]
+            extra_name = event.get("extraTeam")
+            if extra_name:
+                extra_team = self._get_or_create_team(extra_name, league.id, event.get("extraIcon"))
+                perspectives.append((extra_team, "extra"))
+
+            for team, ext_suffix in perspectives:
                 external_id = f"{event_id}_{ext_suffix}"
                 expected_external_ids.add(external_id)
                 existing = self.session.exec(
@@ -367,9 +412,7 @@ class FootballFilter:
         team_id = team.get("id")
         if not team_id:
             return None
-        now = datetime.now()
-        season_year = now.year if now.month >= 8 else now.year - 1
-        yr = str(season_year)[-2:]
+        yr = _resolve_pl_badge_year()
         return f"https://resources.premierleague.com/premierleague{yr}/badges-alt/50/{team_id}.png"
 
     def _fetch_season(self, league_id: int, season: str, full_history: bool = False) -> dict:
@@ -736,6 +779,100 @@ class FifaFilter:
             self.store.save("football", tournament_key, events)
 
 
+class F1Filter:
+    """Formula 1 via OpenF1 (api.openf1.org, free/unauthenticated). F1 doesn't
+    have a two-competitor "match" like the other sports here — every session
+    is one field of ~20 drivers — so this reuses the home/away Match shape
+    loosely: "home_team" is the Grand Prix (e.g. "Australian Grand Prix"),
+    "away_team" is the session (e.g. "Practice 1", "Qualifying", "Race").
+    That gives the team-picker two useful, genuinely distinct things to
+    subscribe by — a specific Grand Prix weekend, or a session type across
+    the whole season (e.g. every "Race") — without needing driver/constructor
+    data this app has nowhere else to use. Every session also gets a third
+    "Formula 1" pseudo-team (via DBStore.save's optional extraTeam) — the only
+    one actually exposed in the team picker (see routers/leagues.py's
+    TEAM_SEARCH_SINGLE_PICKABLE) — for subscribing to the entire calendar
+    at once instead of one Grand Prix or session type."""
+
+    BASE_URL = "https://api.openf1.org/v1"
+    LEAGUES = {"f1": None}
+    # Stable public asset (Wikimedia Commons) — OpenF1 doesn't serve a series logo.
+    LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/3/33/F1.svg"
+    # OpenF1 still returns these as 2026 meetings even though the official
+    # 2026 calendar (formula1.com) dropped them — verified 2026-07-23: without
+    # excluding them the round count runs 2 rounds ahead of reality (e.g. the
+    # Hungarian GP came out as "round 13" instead of the real round 11).
+    #
+    # This is keyed by YEAR, not a blanket name exclusion — checked OpenF1's
+    # own data for 2023/2024/2025 and Bahrain + Saudi Arabia are legitimate,
+    # present every one of those seasons. They're near-permanent calendar
+    # fixtures that just happen to be missing for 2026 specifically; a name-
+    # only exclusion would wrongly keep skipping them once they're back for
+    # 2027, which is why this is scoped to the exact year it's needed.
+    EXCLUDED_MEETINGS_BY_YEAR: dict[int, set[str]] = {
+        2026: {"Bahrain Grand Prix", "Saudi Arabian Grand Prix"},
+    }
+
+    def __init__(self, api: FetchAPI, time: TimeManagement, store: DBStore):
+        self.api = api
+        self.time = time
+        self.store = store
+
+    def _get_list(self, url: str) -> list:
+        # OpenF1 404s (rather than returning []) for a year/meeting it has no
+        # data for yet (e.g. next season, before the calendar's published).
+        try:
+            data = self.api.get(url)
+        except requests.HTTPError:
+            return []
+        return data if isinstance(data, list) else []
+
+    def filter(self, full_history: bool = False):
+        """`full_history=True` ignores the recency filter entirely — used by
+        scripts/backfill_full_history.py. OpenF1 doesn't expose a round
+        number, so the frontend derives "Round N" by counting meetings in
+        chronological order from whatever's in our DB — without a full-season
+        backfill that count starts from whatever the rolling window happens
+        to still have, not the real round 1.
+
+        Only the current calendar year — unlike Premier League etc., an F1
+        season doesn't cross a year boundary, so there's no "next season"
+        lookahead needed here. Pulling in next year's meetings too (once
+        published) would mix two seasons into the same chronological round
+        count instead of resetting at the new season's round 1."""
+        year = datetime.now().year
+        excluded = self.EXCLUDED_MEETINGS_BY_YEAR.get(year, set())
+        events: dict = {}
+        meetings = self._get_list(f"{self.BASE_URL}/meetings?year={year}")
+        for meeting in meetings:
+            name = meeting.get("meeting_name")
+            meeting_key = meeting.get("meeting_key")
+            if not name or meeting_key is None or "testing" in name.lower() or name in excluded:
+                continue
+            sessions = self._get_list(f"{self.BASE_URL}/sessions?meeting_key={meeting_key}")
+            for session in sessions:
+                start = session.get("date_start")
+                session_key = session.get("session_key")
+                if not start or session_key is None:
+                    continue
+                if not full_history and not self.time.is_recent_or_future(start):
+                    continue
+                event_id = str(session_key)
+                events[event_id] = {
+                    "eventId": event_id,
+                    "homeTeam": name,
+                    "awayTeam": session.get("session_name") or session.get("session_type") or "Session",
+                    "startDateAndTime": start,
+                    "homeIcon": meeting.get("country_flag"),
+                    # Third pseudo-team every session also belongs to, so
+                    # subscribing to it gives the whole season at once
+                    # instead of one Grand Prix or one session type.
+                    "extraTeam": "Formula 1",
+                    "extraIcon": self.LOGO_URL,
+                }
+        self.store.save("motorsport", "f1", events)
+
+
 class FootballIconsFetcher:
     """Fetches Premier League team crests via the FPL bootstrap API and stores
     them for every football team (PL, UCL, UEL, etc.) matched by name."""
@@ -767,10 +904,7 @@ class FootballIconsFetcher:
         self.store = store
 
     def _badge_url(self, code: int) -> str:
-        # Badge directory year matches the PL season start year (e.g. "25" for 2025/26).
-        now = datetime.now()
-        season_year = now.year if now.month >= 8 else now.year - 1
-        yr = str(season_year)[-2:]
+        yr = _resolve_pl_badge_year()
         return f"https://resources.premierleague.com/premierleague{yr}/badges-alt/{code}.svg"
 
     def filter(self):
@@ -836,6 +970,7 @@ def run_fetch() -> None:
             SwedishFootballFilter(api, time, store).filter()
             IIHFFilter(api, time, store).filter()
             FifaFilter(api, time, store).filter()
+            F1Filter(api, time, store).filter()
             FootballIconsFetcher(api, store).filter()
 
         fetcher_state["status"] = "ok"

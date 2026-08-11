@@ -15,7 +15,10 @@
         <div class="relative flex-none w-[132px] h-[132px] rounded-[22px] overflow-hidden border border-white/20 flex items-center justify-center gap-1.5">
           <div class="absolute inset-0" style="background: linear-gradient(160deg, #bfe2f7 0%, #8ecdf2 55%, #5eb2e6 100%)"></div>
           <div class="absolute inset-0" style="background: linear-gradient(118deg, rgba(255,255,255,.5) 0 50%, transparent 50%)"></div>
-          <template v-if="hasFeatured">
+          <template v-if="hasFeatured && spotlight.isMotorsport">
+            <TeamBadge class="relative flex-none" :name="spotlight.homeTeam" :icon="spotlight.homeIcon" :size="64" />
+          </template>
+          <template v-else-if="hasFeatured">
             <TeamBadge class="relative flex-none" :name="spotlight.homeTeam" :icon="spotlight.homeIcon" :size="42" />
             <div
               class="relative flex-none w-[22px] h-[22px] rounded-md flex items-center justify-center font-black text-[8px] italic"
@@ -78,11 +81,11 @@
 
       <div class="flex justify-center gap-2 mt-5.5 flex-wrap">
         <div class="glass-panel rounded-[14px] px-3.5 py-2.5 text-center">
-          <div class="text-[15px] font-extrabold">13+</div>
+          <div class="text-[15px] font-extrabold">14+</div>
           <div class="text-[10.5px] font-semibold uppercase tracking-wide mt-0.5" style="color: var(--ms-muted-dim)">Leagues</div>
         </div>
         <div class="glass-panel rounded-[14px] px-3.5 py-2.5 text-center">
-          <div class="text-[15px] font-extrabold">3</div>
+          <div class="text-[15px] font-extrabold">4</div>
           <div class="text-[10.5px] font-semibold uppercase tracking-wide mt-0.5" style="color: var(--ms-muted-dim)">Sports</div>
         </div>
         <div class="glass-panel rounded-[14px] px-3.5 py-2.5 text-center">
@@ -149,7 +152,10 @@
           style="background: linear-gradient(118deg, rgba(255,255,255,.5) 0 50%, transparent 50%)"
         ></div>
         <template v-if="hasFeatured">
-          <div class="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-4">
+          <div v-if="spotlight.isMotorsport" class="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 flex items-center">
+            <TeamBadge :name="spotlight.homeTeam" :icon="spotlight.homeIcon" :size="140" />
+          </div>
+          <div v-else class="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-4">
             <TeamBadge :name="spotlight.homeTeam" :icon="spotlight.homeIcon" :size="96" />
             <div
               class="flex-none w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm italic"
@@ -202,19 +208,37 @@
           style="background: linear-gradient(115deg, rgba(255,255,255,.055) 0%, rgba(255,255,255,.02) 30%, transparent 46%)"
         ></div>
 
-        <!-- Sport tabs -->
-        <div class="relative flex rounded-[14px] p-1 mb-3.5 bg-white/[0.08] border border-white/[0.14]">
-          <div class="ms-tab-slider" :style="sportSliderStyle"></div>
-          <button
-            v-for="s in sports"
-            :key="s.id"
-            ref="sportTabRefs"
-            class="relative z-[1] flex-1 text-center text-sm py-2.5 rounded-[11px] font-semibold transition-colors"
-            :class="sportFilter === s.id ? 'text-[var(--ms-text)]' : 'text-[rgba(244,247,251,.55)] hover:text-[var(--ms-text)]'"
-            @click="onSportTabClick(s.id)"
+        <!-- Sport tabs — horizontally scrollable so 4+ sports don't get
+             squeezed into unreadable equal-width columns on a phone. Scroll-
+             snap so a swipe settles on a tab instead of stopping mid-way, and
+             a fading chevron on the right hints that it scrolls at all. -->
+        <div class="relative mb-3.5">
+          <div
+            ref="sportTabsScrollEl"
+            class="relative flex gap-1 rounded-[14px] p-1 bg-white/[0.08] border border-white/[0.14] overflow-x-auto ms-no-scrollbar"
+            :class="showSportsScrollHint ? 'justify-start' : 'justify-center'"
+            style="scroll-snap-type: x mandatory"
           >
-            {{ s.label }}
-          </button>
+            <div class="ms-tab-slider" :style="sportSliderStyle"></div>
+            <button
+              v-for="s in sports"
+              :key="s.id"
+              ref="sportTabRefs"
+              class="relative z-[1] flex-shrink-0 whitespace-nowrap text-center text-sm py-2.5 px-4 rounded-[11px] font-semibold transition-colors"
+              :class="sportFilter === s.id ? 'text-[var(--ms-text)]' : 'text-[rgba(244,247,251,.55)] hover:text-[var(--ms-text)]'"
+              style="scroll-snap-align: start"
+              @click="onSportTabClick(s.id)"
+            >
+              {{ s.label }}
+            </button>
+          </div>
+          <div
+            v-if="showSportsScrollHint"
+            class="absolute right-0 top-0 bottom-0 w-9 rounded-r-[14px] pointer-events-none flex items-center justify-end pr-1.5"
+            style="background: linear-gradient(to right, transparent, rgba(20,28,45,.75) 65%)"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(244,247,251,.6)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+          </div>
         </div>
 
         <!-- Search -->
@@ -323,6 +347,7 @@ const spotlight = computed(() => {
     dayLabel: dayLabelFor(m.start_time),
     homeIcon: m.home_icon ?? null,
     awayIcon: m.away_icon ?? null,
+    isMotorsport: m.sport === 'motorsport',
   }
 })
 
@@ -348,7 +373,11 @@ async function loadTeams() {
 }
 
 const sportTabRefs = ref<HTMLElement[]>([])
+const sportTabsScrollEl = ref<HTMLElement | null>(null)
 const sportSliderStyle = reactive({ width: '0px', transform: 'translateX(0px)', opacity: '0' })
+// Only meaningful (and only shown) once the tabs actually overflow — on a
+// wide screen all of them fit already, so there's nothing to hint at.
+const showSportsScrollHint = ref(false)
 
 function updateSportSlider() {
   const i = sports.value.findIndex((s) => s.id === sportFilter.value)
@@ -359,10 +388,18 @@ function updateSportSlider() {
   sportSliderStyle.opacity = '1'
 }
 
+function updateSportsScrollHint() {
+  const el = sportTabsScrollEl.value
+  showSportsScrollHint.value = !!el && el.scrollWidth > el.clientWidth + 1
+}
+
 // One frame isn't always enough — layout can still be settling right after
 // nextTick, so measure again on the following frame.
 function updateSportSliderNextFrame() {
-  requestAnimationFrame(() => requestAnimationFrame(updateSportSlider))
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    updateSportSlider()
+    updateSportsScrollHint()
+  }))
 }
 
 onMounted(async () => {
@@ -372,6 +409,7 @@ onMounted(async () => {
   await nextTick()
   updateSportSliderNextFrame()
   window.addEventListener('resize', updateSportSlider)
+  window.addEventListener('resize', updateSportsScrollHint)
   // Cached value (if any) is already showing instantly; this just keeps it fresh.
   refreshFeaturedMatch()
 })

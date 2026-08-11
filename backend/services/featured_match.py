@@ -56,6 +56,7 @@ UPCOMING_DECAY = 200 / (LOOKAHEAD.total_seconds() / 3600)
 
 LEAGUE_WEIGHTS: dict[str, float] = {
     "fifa-world-cup-2026": 200,
+    "formula-1": 145,
     "uefa-champions-league": 150,
     "premier-league": 140,
     "iihf-world-championship": 130,
@@ -70,6 +71,11 @@ LEAGUE_WEIGHTS: dict[str, float] = {
     "sbl-damer": 35,
 }
 DEFAULT_LEAGUE_WEIGHT = 10
+
+# F1 practice sessions (see tasks/fetcher.py's F1Filter — away_team is the
+# session name) aren't worth featuring the way a qualifying or race session
+# is — nobody's checking their calendar for Practice 2.
+F1_LOW_PRIORITY_SESSIONS = ("Practice",)
 
 # Client-guessed region (from timezone/locale, see frontend/src/utils/region.ts —
 # there's no IP geolocation here) nudges the domestic league for that country
@@ -108,7 +114,10 @@ def _score_match(match: Match, league_slug: str, now: datetime, region: str | No
         # Past kickoff, no score yet, outside the live window — stale data, skip.
         return -1
 
-    score += LEAGUE_WEIGHTS.get(league_slug, DEFAULT_LEAGUE_WEIGHT)
+    league_weight = LEAGUE_WEIGHTS.get(league_slug, DEFAULT_LEAGUE_WEIGHT)
+    if league_slug == "formula-1" and any(p in match.away_team for p in F1_LOW_PRIORITY_SESSIONS):
+        league_weight = DEFAULT_LEAGUE_WEIGHT
+    score += league_weight
     if region and league_slug in REGION_LEAGUES.get(region, ()):
         score += REGION_BOOST
 

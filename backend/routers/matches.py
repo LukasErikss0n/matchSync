@@ -61,12 +61,29 @@ def list_matches(
         (t.league_id, t.name): t for t in team_rows
     }
 
+    # `team` normally shows up as a match's home or away text — but a third,
+    # text-less "_extra" perspective also exists (see tasks/fetcher.py's
+    # DBStore.save/F1Filter — e.g. F1's "Formula 1" pseudo-team, which every
+    # session belongs to without being the home_team/Grand-Prix or away_team/
+    # session text). Resolve which events that covers up front.
+    extra_event_ids: set[str] = set()
+    if team:
+        extra_rows = session.exec(
+            select(Match.external_id)
+            .join(Team, Match.team_id == Team.id)
+            .where(Team.slug == team, Match.external_id.endswith("_extra"))
+        ).all()
+        extra_event_ids = {eid.rsplit("_", 1)[0] for eid in extra_rows}
+
     result: list[MatchOut] = []
     for match, home_team, lg, sp in rows:
         away_team = teams_by_league.get((lg.id, match.away_team))
 
-        if team and home_team.slug != team and (away_team is None or away_team.slug != team):
-            continue
+        if team:
+            base_id = match.external_id.rsplit("_", 1)[0]
+            is_home_or_away = home_team.slug == team or (away_team is not None and away_team.slug == team)
+            if not is_home_or_away and base_id not in extra_event_ids:
+                continue
 
         # Stored naive but always UTC — stamp tz so the wire value is ISO-UTC.
         start = match.start_time

@@ -257,7 +257,12 @@
                     {{ formatMatchDate(m.start_time) }}
                   </div>
                   <div class="flex-1 min-w-0 text-sm font-semibold break-words">
-                    {{ m.home_team }} <span style="color: rgba(244,247,251,.45)">vs</span> {{ m.away_team }}
+                    <template v-if="m.sport === 'motorsport'">
+                      {{ m.home_team }} <span style="color: rgba(244,247,251,.45)">·</span> {{ m.away_team }}
+                    </template>
+                    <template v-else>
+                      {{ m.home_team }} <span style="color: rgba(244,247,251,.45)">vs</span> {{ m.away_team }}
+                    </template>
                     <div class="text-xs font-bold ms-text-accent mt-0.5">{{ m.league.name }}</div>
                   </div>
                 </div>

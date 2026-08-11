@@ -12,18 +12,26 @@ from security import require_api_key
 from tasks.fetcher import run_fetch, fetcher_state
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    create_db_and_tables()
-
+def _startup_fetch() -> None:
     # Idempotent (upserts by external_id), so it's safe to run on every
     # startup — guarantees local standings (services/standings_local.py) have
     # a full season's history even after a fresh DB, instead of relying on
-    # someone remembering to run this by hand. The regular fetcher below stays
-    # a cheap 10-day window on purpose (see that script's docstring for why
+    # someone remembering to run this by hand. The regular fetcher stays a
+    # cheap 10-day window on purpose (see that script's docstring for why
     # always-full-history there would mean re-scraping svenskfotboll.se's
     # entire season every 30 minutes).
-    threading.Thread(target=backfill_full_history, args=(None,), daemon=True).start()
+    #
+    # Run sequentially, not as two concurrent threads — both write to
+    # overlapping Team/Match rows (e.g. backfilling premier_league and the
+    # regular fetch both touch the same teams), and running them at once
+    # caused a real Postgres deadlock between the two transactions.
+    backfill_full_history(None)
+    run_fetch()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_db_and_tables()
 
     # Scheduler runs in Europe/Stockholm time (UTC+2 CEST / UTC+1 CET).
     scheduler = BackgroundScheduler(timezone="Europe/Stockholm")
@@ -32,7 +40,7 @@ async def lifespan(app: FastAPI):
     # Rest of day: run every 4 hours (0, 4, 8, 12, 16)
     scheduler.add_job(run_fetch, "cron", hour="0,4,8,12,16", minute=0)
     scheduler.start()
-    threading.Thread(target=run_fetch, daemon=True).start()
+    threading.Thread(target=_startup_fetch, daemon=True).start()
 
     yield
 

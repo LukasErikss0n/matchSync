@@ -8,7 +8,8 @@ Run inside the backend container:
     python3 scripts/backfill_full_history.py                        # everything below
     python3 scripts/backfill_full_history.py allsvenskan premier_league  # just these
 
-Supported league keys: allsvenskan, premier_league, shl, sdhl, sblherrar, sbldamer.
+Supported league keys: allsvenskan, premier_league, shl, sdhl, sblherrar,
+sbldamer, f1.
 (UEFA Champions/Europa/Conference League are deliberately not included: their
 fixture feed mixes league-phase and two-legged knockout matches with no
 reliable way to tell them apart, so a locally-computed table would start
@@ -22,6 +23,7 @@ from sqlmodel import Session
 from database import engine
 from tasks.fetcher import (
     DBStore,
+    F1Filter,
     FetchAPI,
     FootballFilter,
     HelpFunctions,
@@ -32,6 +34,7 @@ from tasks.fetcher import (
 
 _HOCKEY_BASKETBALL_LEAGUE_KEYS = {"shl", "sdhl", "sblherrar", "sbldamer"}
 _FOOTBALL_LEAGUE_KEYS = {"premier_league"}
+_F1_LEAGUE_KEYS = {"f1"}
 
 
 def backfill_swedish_football(store: DBStore, api: FetchAPI, tm: TimeManagement, league_keys: set[str]) -> None:
@@ -72,8 +75,20 @@ def backfill_hockey_basketball(store: DBStore, api: FetchAPI, tm: TimeManagement
     print(f"Backfilled {sorted(keys)}")
 
 
+def backfill_f1(store: DBStore, api: FetchAPI, tm: TimeManagement, league_keys: set[str]) -> None:
+    if "f1" not in league_keys:
+        return
+    F1Filter(api, tm, store).filter(full_history=True)
+    print("Backfilled f1")
+
+
 def main(league_keys: list[str] | None) -> None:
-    all_keys = {"allsvenskan", *_FOOTBALL_LEAGUE_KEYS, *_HOCKEY_BASKETBALL_LEAGUE_KEYS}
+    all_keys = {
+        "allsvenskan",
+        *_FOOTBALL_LEAGUE_KEYS,
+        *_HOCKEY_BASKETBALL_LEAGUE_KEYS,
+        *_F1_LEAGUE_KEYS,
+    }
     keys = set(league_keys) if league_keys else all_keys
     unknown = keys - all_keys
     if unknown:
@@ -87,6 +102,7 @@ def main(league_keys: list[str] | None) -> None:
         backfill_swedish_football(store, api, tm, keys)
         backfill_pulselive_football(store, api, tm, keys)
         backfill_hockey_basketball(store, api, tm, keys)
+        backfill_f1(store, api, tm, keys)
 
 
 if __name__ == "__main__":

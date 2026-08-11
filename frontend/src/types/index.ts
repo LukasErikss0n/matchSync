@@ -5,6 +5,7 @@ export type IconName =
   | 'baseball'
   | 'amfootball'
   | 'rugby'
+  | 'car'
   | 'refresh'
   | 'trophy'
   | 'devices'

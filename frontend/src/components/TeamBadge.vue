@@ -7,7 +7,8 @@
       v-if="icon && !failed"
       :src="icon"
       :alt="name"
-      class="w-full h-full object-cover"
+      class="w-full h-full"
+      :class="fitContain ? 'object-contain p-1' : 'object-cover'"
       loading="lazy"
       decoding="async"
       @error="failed = true"
@@ -33,6 +34,13 @@ const props = withDefaults(
 const failed = ref(false)
 // Reset the error flag if the icon URL changes (component reused across rows)
 watch(() => props.icon, () => (failed.value = false))
+
+// The F1 series logo is a 4:1 wordmark (120x30) — object-cover in a circular
+// badge crops it down to an unrecognizable sliver, so it needs to be
+// letterboxed (object-contain) instead. Every other crest/flag this app uses
+// is close enough to square that cover still looks right, so this is a
+// narrow, name-based exception rather than a global change.
+const fitContain = computed(() => props.name === 'Formula 1')
 
 const initials = computed(() => {
   const words = props.name.trim().split(/\s+/).filter(Boolean)

@@ -33,6 +33,9 @@ const paths: Record<IconName, string> = {
     rugby: svg(
         '<ellipse cx="12" cy="12" rx="8" ry="5" transform="rotate(45 12 12)"/><line x1="12" y1="4.34" x2="12" y2="19.66"/><line x1="4.34" y1="12" x2="19.66" y2="12"/>',
     ),
+    car: svg(
+        '<path d="M5 11l1.5-4.5A2 2 0 018.4 5h7.2a2 2 0 011.9 1.5L19 11"/><path d="M3 11h18v5a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-5z"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/>',
+    ),
     refresh: svg(
         '<path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>',
     ),
