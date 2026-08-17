@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 
 from models.models import League, Match, Sport, Team
 from schemas.schemas import LeagueOut, MatchOut
+from services.crest_url import crest_url
 from sqlmodel import Session, select
 
 # Candidate pre-filter — cheap enough to avoid scoring the whole table.
@@ -198,8 +199,8 @@ def get_featured_matches(
                 away_icon=away_team.icon if away_team else None,
                 home_color=home_team.color,
                 away_color=away_team.color if away_team else None,
-                home_icon_cropped=home_team.icon_cropped,
-                away_icon_cropped=away_team.icon_cropped if away_team else None,
+                home_icon_cropped=crest_url(home_team),
+                away_icon_cropped=crest_url(away_team),
                 home_score=match.home_score,
                 away_score=match.away_score,
                 start_time=start,

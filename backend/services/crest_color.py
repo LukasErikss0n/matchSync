@@ -14,7 +14,6 @@ as text for colour, which is both cheaper and more accurate than rasterising
 them, and are never re-cropped. PNGs are opened with Pillow for both.
 """
 
-import base64
 import re
 from collections import Counter
 from colorsys import hsv_to_rgb, rgb_to_hsv
@@ -36,20 +35,33 @@ _MAX_VALUE = 0.97
 _WASH_MIN_SATURATION = 0.45
 _WASH_MIN_VALUE = 0.55
 
-# Below this fraction of transparent margin, cropping isn't worth the extra
-# stored data URI — the source image is already close to tight.
+# Below this fraction of transparent margin, cropping isn't worth storing a
+# second copy of — the source image is already close to tight.
 _MIN_CROP_GAIN = 0.08
 # Breathing room added back around the trimmed content, as a fraction of its
 # own size, so the crest doesn't sit flush against the tile edge.
 _CROP_MARGIN = 0.06
-_CROP_MAX_SIZE = (200, 200)
+# The hero shows a crest at up to 120x138 CSS px, which is ~324 device px on a
+# 3x phone. Anything smaller than that gets upscaled by the browser and looks
+# soft, which is exactly what this sizing is here to avoid.
+_CROP_MAX_SIZE = (320, 320)
 # Cropping out a source's transparent margin (see above) leaves less actual
-# pixel data than the original file's dimensions suggested — a badge that's
-# only 44px of real artwork inside a 100px canvas renders soft once the hero
-# panel displays it at 90-140px. Below this size the crop is upscaled with a
-# sharpening pass instead of leaving the browser to stretch it at display
-# time, which softens it further with no sharpening at all.
+# pixel data than the original file's dimensions suggested. Below this size the
+# crop is upscaled with a sharpening pass rather than left for the browser to
+# stretch at display time, which softens it further with no sharpening at all.
+# Rarely triggers now that full-resolution sources are preferred (see
+# _HIGHRES_SUBSTITUTIONS) — it's the floor for feeds that only offer thumbnails.
 _CROP_MIN_SIZE = 176
+
+# Some feeds link a deliberately small thumbnail while serving the full-size
+# original from a sibling path. Cropping the thumbnail throws away detail no
+# amount of upscaling recovers, so the larger source is preferred when one is
+# known to exist (falling back to the given URL if it 404s).
+_HIGHRES_SUBSTITUTIONS = (
+    # /img/teamssm/<id>.png is 100x56; /img/teams/<id>.png is the same crest
+    # at 1000x560.
+    ("/img/teamssm/", "/img/teams/"),
+)
 
 _HEX_RE = re.compile(r"#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b")
 _RGB_FN_RE = re.compile(r"rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)")
@@ -97,9 +109,9 @@ def _dominant_color(pixels) -> str | None:
     return _normalise_for_wash(*avg)
 
 
-def _trim_to_data_uri(img) -> str | None:
-    """PNG data URI of `img` cropped to its non-transparent content, or None
-    if the source is already tight enough that cropping wouldn't help."""
+def _trim_to_png(img) -> bytes | None:
+    """PNG bytes of `img` cropped to its non-transparent content, or None if
+    the source is already tight enough that cropping wouldn't help."""
     w, h = img.size
     bbox = img.split()[-1].getbbox()  # alpha channel bounding box
     if not bbox:
@@ -135,7 +147,7 @@ def _trim_to_data_uri(img) -> str | None:
     cropped.thumbnail(_CROP_MAX_SIZE)
     buf = BytesIO()
     cropped.save(buf, format="PNG", optimize=True)
-    return f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode('ascii')}"
+    return buf.getvalue()
 
 
 def _analyze_svg(text: str) -> tuple[str | None, None]:
@@ -162,34 +174,49 @@ def _analyze_svg(text: str) -> tuple[str | None, None]:
     return _normalise_for_wash(r, g, b), None
 
 
-def _analyze_raster(data: bytes) -> tuple[str | None, str | None]:
+def _analyze_raster(data: bytes) -> tuple[str | None, bytes | None]:
     # Imported lazily so the rest of the fetcher still runs if Pillow is missing.
     from PIL import Image
 
     with Image.open(BytesIO(data)) as img:
         img = img.convert("RGBA")
-        cropped_uri = _trim_to_data_uri(img)
+        cropped_png = _trim_to_png(img)
 
-        # Crests are small already; thumbnailing caps the work at a few
-        # thousand pixels and incidentally blends away anti-aliasing fringes.
+        # Thumbnailing caps the colour sampling at a few thousand pixels and
+        # incidentally blends away anti-aliasing fringes.
         thumb = img.copy()
         thumb.thumbnail((64, 64))
         color = _dominant_color(thumb.getdata())
 
-    return color, cropped_uri
+    return color, cropped_png
 
 
-def analyze_crest(url: str) -> tuple[str | None, str | None]:
-    """(primary_color, cropped_data_uri) for the crest at `url`.
-
-    primary_color is #rrggbb or None if undetectable. cropped_data_uri is a
-    PNG data: URI trimmed to the crest's actual artwork, or None if the
-    source doesn't need it (SVG, or already tight).
-    """
+def _fetch(url: str) -> requests.Response | None:
     try:
         resp = requests.get(url, headers=_HEADERS, timeout=_TIMEOUT)
         resp.raise_for_status()
     except requests.RequestException:
+        return None
+    if not resp.headers.get("content-type", "").startswith("image"):
+        return None
+    return resp
+
+
+def analyze_crest(url: str) -> tuple[str | None, bytes | None]:
+    """(primary_color, cropped_png) for the crest at `url`.
+
+    primary_color is #rrggbb or None if undetectable. cropped_png is PNG bytes
+    trimmed to the crest's actual artwork, or None if the source doesn't need
+    it (SVG, which scales losslessly in the browser, or already tight).
+    """
+    resp = None
+    for small, large in _HIGHRES_SUBSTITUTIONS:
+        if small in url:
+            resp = _fetch(url.replace(small, large))
+            break
+    if resp is None:
+        resp = _fetch(url)
+    if resp is None:
         return None, None
 
     content_type = resp.headers.get("content-type", "")

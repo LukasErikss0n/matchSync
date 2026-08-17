@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
-from sqlmodel import SQLModel
+from sqlalchemy import Column, LargeBinary
+from sqlmodel import Field, SQLModel
 
 
 # ── Sport ─────────────────────────────────────────────────────────────────────
@@ -45,10 +46,13 @@ class TeamBase(SQLModel):
     # Primary crest colour as #rrggbb, extracted from `icon` server-side (see
     # services/crest_color.py). Nullable: no icon, or nothing legible in it.
     color: Optional[str] = None
-    # `icon` cropped to its actual artwork, as a data: URI — many source PNGs
-    # ship with a large transparent margin baked in (see crest_color.py).
-    # Nullable: no icon, source is SVG, or already tight enough to skip.
-    icon_cropped: Optional[str] = None
+    # `icon` cropped to its actual artwork, stored as PNG bytes and served by
+    # GET /api/teams/{id}/crest.png — many source PNGs ship with a large
+    # transparent margin baked in (see crest_color.py). Kept out of JSON
+    # responses deliberately: inlining these as data URIs put ~700KB of base64
+    # into a single match list. Nullable: no icon, source is SVG (which scales
+    # losslessly already), or already tight enough to skip.
+    icon_data: Optional[bytes] = Field(default=None, sa_column=Column(LargeBinary))
 
 
 class TeamCreate(TeamBase):
@@ -130,6 +134,8 @@ class MatchOut(SQLModel):
     away_icon: Optional[str] = None
     home_color: Optional[str] = None
     away_color: Optional[str] = None
+    # URLs to the trimmed crest (see TeamBase.icon_data), not the image data —
+    # a match list carries dozens of these and inlining them was ~700KB.
     home_icon_cropped: Optional[str] = None
     away_icon_cropped: Optional[str] = None
     home_score: Optional[int] = None

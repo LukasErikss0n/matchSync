@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlmodel import Session, select
 from database import get_session
 from models.models import League, Sport, Team
@@ -118,6 +118,27 @@ def get_team(
     teams = _collect_teams(rows)
     teams.sort(key=lambda t: -len(t.leagues))
     return teams[0]
+
+
+@router.get("/teams/{team_id}/crest.png")
+def team_crest(team_id: int, session: Session = Depends(get_session)):
+    """The team's crest, trimmed to its artwork (see services/crest_color.py).
+
+    Served as a file rather than inlined into match JSON as a data URI: one
+    week of fixtures references dozens of crests, and inlining them put ~700KB
+    of base64 in a single response. As a URL the browser fetches each crest
+    once and reuses it across every row that shows the same club.
+    """
+    team = session.get(Team, team_id)
+    if team is None or not team.icon_data:
+        raise HTTPException(status_code=404, detail="No crest for this team")
+    return Response(
+        content=team.icon_data,
+        media_type="image/png",
+        # Crests change at most once a season; a day of caching costs nothing
+        # and the fetcher re-derives them whenever the source icon URL changes.
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @router.get("/leagues/{league_slug}/standings", response_model=list[StandingEntryOut])

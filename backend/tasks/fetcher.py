@@ -245,7 +245,7 @@ class DBStore:
             # Backfill / refresh the logo once a source starts providing it
             team.icon = icon
             team.color = None
-            team.icon_cropped = None  # re-derived from the new crest by backfill_team_colors
+            team.icon_data = None  # re-derived from the new crest by backfill_team_colors
             self.session.add(team)
         return team
 
@@ -262,7 +262,7 @@ class DBStore:
             if team and team.icon != icon:
                 team.icon = icon
                 team.color = None
-                team.icon_cropped = None
+                team.icon_data = None
                 self.session.add(team)
         self.session.commit()
 
@@ -286,7 +286,7 @@ class DBStore:
             if icon and team.icon != icon:
                 team.icon = icon
                 team.color = None
-                team.icon_cropped = None
+                team.icon_data = None
                 self.session.add(team)
         self.session.commit()
 
@@ -307,7 +307,7 @@ class DBStore:
             color, cropped = analyze_crest(team.icon)
             if color:
                 team.color = color
-                team.icon_cropped = cropped
+                team.icon_data = cropped
                 self.session.add(team)
                 filled += 1
         self.session.commit()

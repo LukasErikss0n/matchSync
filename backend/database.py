@@ -10,7 +10,12 @@ engine = create_engine(DATABASE_URL)
 _MIGRATIONS = (
     'ALTER TABLE team ADD COLUMN IF NOT EXISTS icon VARCHAR',
     'ALTER TABLE team ADD COLUMN IF NOT EXISTS color VARCHAR',
-    'ALTER TABLE team ADD COLUMN IF NOT EXISTS icon_cropped TEXT',
+    'ALTER TABLE team ADD COLUMN IF NOT EXISTS icon_data BYTEA',
+    # Superseded by icon_data: crests were briefly stored as base64 data URIs
+    # and inlined into match JSON, which pushed a single response to ~700KB.
+    # Purely derived from team.icon, so dropping it loses nothing the fetcher
+    # can't rebuild.
+    'ALTER TABLE team DROP COLUMN IF EXISTS icon_cropped',
     'ALTER TABLE "match" ADD COLUMN IF NOT EXISTS home_score INTEGER',
     'ALTER TABLE "match" ADD COLUMN IF NOT EXISTS away_score INTEGER',
     'ALTER TABLE "match" ADD COLUMN IF NOT EXISTS is_playoff BOOLEAN NOT NULL DEFAULT FALSE',
