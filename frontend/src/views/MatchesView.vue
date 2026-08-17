@@ -101,7 +101,7 @@
                 </div>
 
                 <button
-                    v-if="selectedTeamSlug || weekOffset !== 0"
+                    v-if="selectedTeamSlug || weekOffset !== autoWeekOffset"
                     class="filter-pill flex items-center gap-1.5"
                     @click="resetFilters"
                 >
@@ -345,6 +345,11 @@ const matches = ref<Match[]>([]);
 const loading = ref(false);
 const open = ref<"league" | "team" | null>(null);
 const weekOffset = ref(0);
+// The week jumpToRelevantWeek() picked on its own for the current league.
+// Reset compares against this rather than 0: a league whose next fixture is
+// months out (e.g. the Champions League final) legitimately opens on a
+// non-zero offset, and that isn't something the visitor chose to undo.
+const autoWeekOffset = ref(0);
 
 // Modal state (reuses the home subscribe flow)
 const showModal = ref(false);
@@ -490,7 +495,9 @@ function selectTeam(slug: string | null) {
 
 function resetFilters() {
     selectedTeamSlug.value = null;
-    weekOffset.value = 0;
+    // Back to the week the pager opened on, not week 0 — for an off-season
+    // league that would land the visitor on an empty week.
+    weekOffset.value = autoWeekOffset.value;
     pushQuery(selectedLeague.value, null);
     loadMatches();
 }
@@ -558,6 +565,7 @@ const windowEnd = computed(
 function jumpToRelevantWeek() {
     if (!matches.value.length) {
         weekOffset.value = 0;
+        autoWeekOffset.value = 0;
         return;
     }
     const now = Date.now();
@@ -571,6 +579,7 @@ function jumpToRelevantWeek() {
     const base = startOfWeek(new Date()).getTime();
     const tgt = startOfWeek(new Date(target.start_time)).getTime();
     weekOffset.value = Math.round((tgt - base) / (7 * DAY));
+    autoWeekOffset.value = weekOffset.value;
 }
 
 const visibleMatches = computed(() =>
