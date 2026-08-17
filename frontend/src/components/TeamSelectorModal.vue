@@ -1,11 +1,13 @@
 <template>
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+    :class="{ 'is-closing': closing }"
     style="background: rgba(5, 8, 14, 0.6); backdrop-filter: blur(8px)"
-    @click.self="emit('close')"
+    @click.self="handleClose"
   >
     <div
-      class="glass-panel relative rounded-[30px] w-full max-w-xl fade-up overflow-hidden"
+      class="glass-panel relative rounded-[30px] w-full max-w-xl modal-panel overflow-hidden"
+      :class="{ 'is-closing': closing }"
       style="max-height: 90vh; overflow-y: auto; background: rgba(22,32,52,.9); backdrop-filter: blur(32px) saturate(150%); border: 1px solid rgba(255,255,255,.2)"
     >
       <div
@@ -22,7 +24,7 @@
         <button
           class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
           style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16)"
-          @click="emit('close')"
+          @click="handleClose"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
@@ -54,9 +56,10 @@
       </div>
 
       <!-- Body -->
-      <div class="relative px-7 pb-7">
+      <div class="relative px-7 pb-7 step-viewport">
+      <Transition :name="stepTransitionName" mode="out-in">
         <!-- Step 1: Sport -->
-        <div v-if="step === 1" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div v-if="step === 1" key="step1" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <SportCard
             v-for="s in sports"
             :key="s.id"
@@ -74,7 +77,7 @@
         </div>
 
         <!-- Step 2: Team -->
-        <div v-else-if="step === 2">
+        <div v-else-if="step === 2" key="step2">
           <button
             class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 mb-4 transition-all"
             style="color: rgba(244,247,251,.6); background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16)"
@@ -132,7 +135,7 @@
         </div>
 
         <!-- Step 3: Leagues -->
-        <div v-else-if="step === 3 && selectedTeam">
+        <div v-else-if="step === 3 && selectedTeam" key="step3">
           <button
             class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 mb-3 transition-all"
             style="color: rgba(244,247,251,.6); background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16)"
@@ -183,7 +186,7 @@
         </div>
 
         <!-- Step 4: Link -->
-        <div v-else-if="step === 4 && calLink" class="fade-up">
+        <div v-else-if="step === 4 && calLink" key="step4">
           <button
             class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 mb-4 transition-all"
             style="color: rgba(244,247,251,.6); background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16)"
@@ -302,6 +305,7 @@
             Pick a diffrent team
           </button>
         </div>
+      </Transition>
       </div>
     </div>
 
@@ -346,6 +350,26 @@ function syncUrl() {
 }
 
 const step = ref(1)
+// Direction the wizard is currently moving, so the step-swap transition
+// slides the right way (forward → new content enters from the right;
+// back → from the left) instead of always sliding one direction.
+const stepDirection = ref<'forward' | 'back'>('forward')
+const stepTransitionName = computed(() => `step-${stepDirection.value}`)
+watch(step, (next, prev) => {
+  stepDirection.value = next >= prev ? 'forward' : 'back'
+})
+
+// Closing plays a short reverse animation before the parent actually
+// unmounts the modal — closing the panel by simply vanishing looked abrupt
+// next to its animated entrance.
+const closing = ref(false)
+const CLOSE_ANIMATION_MS = 180
+function handleClose() {
+  if (closing.value) return
+  closing.value = true
+  setTimeout(() => emit('close'), CLOSE_ANIMATION_MS)
+}
+
 const sportId = ref<string | null>(null)
 const teamSlug = ref<string | null>(null)
 const selectedTeam = ref<Team | null>(null)
@@ -372,7 +396,7 @@ const sportLabel = computed(
 let searchTimer: number | null = null
 
 function onKey(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('close')
+  if (e.key === 'Escape') handleClose()
 }
 
 async function loadTeams() {
@@ -551,6 +575,64 @@ function reset() {
 </script>
 
 <style scoped>
+.modal-backdrop {
+  /* Chromium quirk: an element with any active CSS `animation` stops
+     correctly inheriting `color` (computes as transparent) unless it's set
+     explicitly here — even though the animation itself only touches
+     opacity. Reproduces mid-animation too, not just once "forwards" freezes
+     it. Setting `color: inherit` sidesteps it. */
+  color: inherit;
+  animation: backdropIn 0.22s ease forwards;
+}
+.modal-backdrop.is-closing {
+  animation: backdropIn 0.18s ease reverse forwards;
+}
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-panel {
+  color: inherit; /* see .modal-backdrop comment above */
+  animation: panelIn 0.32s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+.modal-panel.is-closing {
+  animation: panelIn 0.18s ease reverse forwards;
+}
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Step swaps use mode="out-in", so only one step is ever mid-transition —
+   no need for absolute positioning to avoid a layout jump between them. */
+.step-viewport {
+  overflow: hidden;
+}
+.step-forward-enter-active,
+.step-forward-leave-active,
+.step-back-enter-active,
+.step-back-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.step-forward-enter-from { opacity: 0; transform: translateX(28px); }
+.step-forward-leave-to { opacity: 0; transform: translateX(-28px); }
+.step-back-enter-from { opacity: 0; transform: translateX(-28px); }
+.step-back-leave-to { opacity: 0; transform: translateX(28px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop,
+  .modal-panel {
+    animation: none;
+  }
+  .step-forward-enter-active,
+  .step-forward-leave-active,
+  .step-back-enter-active,
+  .step-back-leave-active {
+    transition: none;
+  }
+}
+
 .toast-enter-active,
 .toast-leave-active {
   transition: opacity 0.2s ease;
