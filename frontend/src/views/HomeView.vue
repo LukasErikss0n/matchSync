@@ -5,6 +5,7 @@
     @pick-sport="openWithSport"
     @pick-team="openWithTeam"
   />
+  <WeekMatches />
   <SportsGrid @pick-sport="openWithSport" />
   <HowItWorks @get-started="openSport" />
   <Features />
@@ -25,6 +26,7 @@ import Navbar from '@/components/Navbar.vue'
 import Hero from '@/components/Hero.vue'
 import HowItWorks from '@/components/HowItWorks.vue'
 import SportsGrid from '@/components/SportsGrid.vue'
+import WeekMatches from '@/components/WeekMatches.vue'
 import Features from '@/components/Features.vue'
 import Footer from '@/components/Footer.vue'
 import TeamSelectorModal from '@/components/TeamSelectorModal.vue'

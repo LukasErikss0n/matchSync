@@ -59,7 +59,9 @@
       <div class="relative px-7 pb-7 step-viewport">
       <Transition :name="stepTransitionName" mode="out-in">
         <!-- Step 1: Sport -->
-        <div v-if="step === 1" key="step1" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <!-- Two columns at every width: at three, the four sports leave a
+             lone card orphaned on a second row. -->
+        <div v-if="step === 1" key="step1" class="grid grid-cols-2 gap-3">
           <SportCard
             v-for="s in sports"
             :key="s.id"
@@ -69,7 +71,7 @@
           />
           <button
             :disabled="!sportId"
-            class="col-span-2 sm:col-span-3 ms-btn-primary rounded-2xl mt-2 py-3.5 font-bold text-[15px] disabled:opacity-40"
+            class="col-span-2 ms-btn-primary rounded-2xl mt-2 py-3.5 font-bold text-[15px] disabled:opacity-40"
             @click="goToTeams"
           >
             Continue

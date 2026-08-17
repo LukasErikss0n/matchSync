@@ -75,6 +75,15 @@ export async function fetchFeaturedMatches(region?: string, limit = 3): Promise<
   return res.json()
 }
 
+export async function fetchWeekMatches(region?: string): Promise<Match[]> {
+  const params = new URLSearchParams()
+  if (region) params.set('region', region)
+  const qs = params.toString()
+  const res = await fetch(`${API_BASE}/matches/this-week${qs ? `?${qs}` : ''}`)
+  if (!res.ok) throw new Error(`Failed to fetch this week's matches: ${res.status}`)
+  return res.json()
+}
+
 export async function fetchLastUpdated(): Promise<string | null> {
   const res = await fetch(`${API_BASE}/last-updated`)
   if (!res.ok) throw new Error(`Failed to fetch last-updated: ${res.status}`)

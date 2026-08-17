@@ -12,6 +12,7 @@ from services.featured_match import (
     get_featured_matches,
 )
 from services.standings import standings_supported
+from services.week_matches import MAX_WEEK_MATCHES, get_week_matches
 
 router = APIRouter()
 
@@ -41,6 +42,16 @@ def featured_matches(
 ):
     """Top-ranked matches (at most one per league) for the rotating hero card."""
     return get_featured_matches(session, region, limit)
+
+
+@router.get("/matches/this-week", response_model=list[MatchOut])
+def this_week(
+    region: str | None = _REGION_QUERY,
+    limit: int = Query(default=MAX_WEEK_MATCHES, ge=1, le=MAX_WEEK_MATCHES),
+    session: Session = Depends(get_session),
+):
+    """The coming week's matches, ranked by league then kickoff."""
+    return get_week_matches(session, region, limit)
 
 
 @router.get("/matches", response_model=list[MatchOut])
