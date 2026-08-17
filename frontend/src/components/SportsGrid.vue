@@ -7,7 +7,7 @@
           Your sport? We've got it.
         </h2>
       </div>
-      <div class="grid grid-cols-3 sm:flex sm:flex-wrap sm:justify-center gap-3 sm:gap-4 max-w-md sm:max-w-none mx-auto">
+      <div class="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-3 sm:gap-4 max-w-md sm:max-w-none mx-auto">
         <div v-for="s in sports" :key="s.id" class="sm:w-40">
           <SportCard :sport="s" show-leagues @click="emit('pickSport', s.id)" />
         </div>

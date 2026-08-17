@@ -12,6 +12,7 @@ from database import engine
 from dateutil.parser import parse
 from models.models import League, Match, Sport, Team
 from requests.adapters import HTTPAdapter
+from services.crest_color import analyze_crest
 from sqlmodel import Session, select
 from urllib3.util.retry import Retry
 
@@ -243,6 +244,8 @@ class DBStore:
         elif icon and team.icon != icon:
             # Backfill / refresh the logo once a source starts providing it
             team.icon = icon
+            team.color = None
+            team.icon_cropped = None  # re-derived from the new crest by backfill_team_colors
             self.session.add(team)
         return team
 
@@ -258,6 +261,8 @@ class DBStore:
             ).first()
             if team and team.icon != icon:
                 team.icon = icon
+                team.color = None
+                team.icon_cropped = None
                 self.session.add(team)
         self.session.commit()
 
@@ -280,8 +285,33 @@ class DBStore:
             icon = icons.get(team.name)
             if icon and team.icon != icon:
                 team.icon = icon
+                team.color = None
+                team.icon_cropped = None
                 self.session.add(team)
         self.session.commit()
+
+    def backfill_team_colors(self) -> None:
+        """Derive the primary crest colour and a trimmed crest for teams that
+        don't have them yet.
+
+        Only touches teams whose colour is missing (new team, or icon changed
+        since the last run), so a steady-state run downloads nothing.
+        """
+        teams = self.session.exec(
+            select(Team).where(Team.icon.is_not(None), Team.color.is_(None))
+        ).all()
+        if not teams:
+            return
+        filled = 0
+        for team in teams:
+            color, cropped = analyze_crest(team.icon)
+            if color:
+                team.color = color
+                team.icon_cropped = cropped
+                self.session.add(team)
+                filled += 1
+        self.session.commit()
+        print(f"[crest-colors] derived {filled}/{len(teams)} team colours")
 
     def save(self, sport_key: str, league_key: str, events: dict) -> None:
         sport = self._get_or_create_sport(sport_key)
@@ -798,21 +828,6 @@ class F1Filter:
     LEAGUES = {"f1": None}
     # Stable public asset (Wikimedia Commons) — OpenF1 doesn't serve a series logo.
     LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/3/33/F1.svg"
-    # OpenF1 still returns these as 2026 meetings even though the official
-    # 2026 calendar (formula1.com) dropped them — verified 2026-07-23: without
-    # excluding them the round count runs 2 rounds ahead of reality (e.g. the
-    # Hungarian GP came out as "round 13" instead of the real round 11).
-    #
-    # This is keyed by YEAR, not a blanket name exclusion — checked OpenF1's
-    # own data for 2023/2024/2025 and Bahrain + Saudi Arabia are legitimate,
-    # present every one of those seasons. They're near-permanent calendar
-    # fixtures that just happen to be missing for 2026 specifically; a name-
-    # only exclusion would wrongly keep skipping them once they're back for
-    # 2027, which is why this is scoped to the exact year it's needed.
-    EXCLUDED_MEETINGS_BY_YEAR: dict[int, set[str]] = {
-        2026: {"Bahrain Grand Prix", "Saudi Arabian Grand Prix"},
-    }
-
     def __init__(self, api: FetchAPI, time: TimeManagement, store: DBStore):
         self.api = api
         self.time = time
@@ -841,13 +856,22 @@ class F1Filter:
         published) would mix two seasons into the same chronological round
         count instead of resetting at the new season's round 1."""
         year = datetime.now().year
-        excluded = self.EXCLUDED_MEETINGS_BY_YEAR.get(year, set())
         events: dict = {}
         meetings = self._get_list(f"{self.BASE_URL}/meetings?year={year}")
         for meeting in meetings:
             name = meeting.get("meeting_name")
             meeting_key = meeting.get("meeting_key")
-            if not name or meeting_key is None or "testing" in name.lower() or name in excluded:
+            # is_cancelled catches dropped/rescheduled-away meetings (e.g. the
+            # 2026 Bahrain GP at Sakhir). It's per-meeting, not per-name — a
+            # cancelled Grand Prix that gets rescheduled elsewhere reuses the
+            # same meeting_name for its new meeting, which is NOT cancelled,
+            # so a name-based exclusion would wrongly drop that one too.
+            if (
+                not name
+                or meeting_key is None
+                or "testing" in name.lower()
+                or meeting.get("is_cancelled")
+            ):
                 continue
             sessions = self._get_list(f"{self.BASE_URL}/sessions?meeting_key={meeting_key}")
             for session in sessions:
@@ -972,6 +996,8 @@ def run_fetch() -> None:
             FifaFilter(api, time, store).filter()
             F1Filter(api, time, store).filter()
             FootballIconsFetcher(api, store).filter()
+            # Last, so every icon written above gets a colour in the same run.
+            store.backfill_team_colors()
 
         fetcher_state["status"] = "ok"
         fetcher_state["last_run"] = datetime.now(_LOCAL_TZ).isoformat()

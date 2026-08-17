@@ -42,6 +42,13 @@ class TeamBase(SQLModel):
     slug: str
     league_id: int
     icon: Optional[str] = None   # team logo URL — nullable (not every source provides one)
+    # Primary crest colour as #rrggbb, extracted from `icon` server-side (see
+    # services/crest_color.py). Nullable: no icon, or nothing legible in it.
+    color: Optional[str] = None
+    # `icon` cropped to its actual artwork, as a data: URI — many source PNGs
+    # ship with a large transparent margin baked in (see crest_color.py).
+    # Nullable: no icon, source is SVG, or already tight enough to skip.
+    icon_cropped: Optional[str] = None
 
 
 class TeamCreate(TeamBase):
@@ -121,9 +128,14 @@ class MatchOut(SQLModel):
     away_slug: Optional[str] = None
     home_icon: Optional[str] = None
     away_icon: Optional[str] = None
+    home_color: Optional[str] = None
+    away_color: Optional[str] = None
+    home_icon_cropped: Optional[str] = None
+    away_icon_cropped: Optional[str] = None
     home_score: Optional[int] = None
     away_score: Optional[int] = None
     start_time: datetime
+    venue: Optional[str] = None
 
 
 class SeasonStatsOut(SQLModel):

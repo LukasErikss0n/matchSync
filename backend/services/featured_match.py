@@ -1,6 +1,8 @@
-"""Picks the single "featured" match for the hero card.
+"""Picks the "featured" matches for the hero card.
 
-Scores every candidate in a cheap time window and returns the highest.
+Scores every candidate in a cheap time window and returns the highest-ranked
+few (the hero rotates through them), or just the top one for callers that
+want a single fixture.
 No status field exists on Match — "live"/"finished" is inferred from
 start_time and whether scores have been recorded. Team-popularity and
 rivalry aren't implemented (no such data exists yet) but the scoring
@@ -87,8 +89,15 @@ REGION_LEAGUES: dict[str, set[str]] = {
     "GB": {"premier-league", "fa-cup", "efl-cup"},
 }
 
+# The hero rotates through a handful of fixtures. Ranked candidates are
+# deduplicated by league first, so the rotation shows off the breadth of the
+# catalogue instead of three sessions of the same F1 weekend.
+MAX_FEATURED = 6
+
 # Cached per region so one visitor's boost doesn't leak into another's result.
-_cache: dict[str, tuple[float, MatchOut | None]] = {}
+# Always holds the full MAX_FEATURED list; callers slice it down to what they
+# asked for, so a limit=1 and a limit=3 request share one cache entry.
+_cache: dict[str, tuple[float, list[MatchOut]]] = {}
 _CACHE_TTL_SECONDS = 300
 
 
@@ -124,13 +133,16 @@ def _score_match(match: Match, league_slug: str, now: datetime, region: str | No
     return score
 
 
-def get_featured_match(session: Session, region: str | None = None) -> MatchOut | None:
+def get_featured_matches(
+    session: Session, region: str | None = None, limit: int = MAX_FEATURED
+) -> list[MatchOut]:
+    """The top-scoring live/upcoming/recent matches, at most one per league."""
     region = region.upper() if region else None
     cache_key = region or "global"
     now_ts = time.monotonic()
     cached = _cache.get(cache_key)
     if cached is not None and now_ts - cached[0] < _CACHE_TTL_SECONDS:
-        return cached[1]
+        return cached[1][:limit]
 
     now = datetime.now(timezone.utc)
     stmt = (
@@ -146,17 +158,24 @@ def get_featured_match(session: Session, region: str | None = None) -> MatchOut 
     )
     rows = session.exec(stmt).all()
 
-    best: tuple[float, Match, Team, League, Sport] | None = None
+    scored: list[tuple[float, Match, Team, League, Sport]] = []
     for match, home_team, lg, sp in rows:
         s = _score_match(match, lg.slug, now, region)
         if s <= MIN_SCORE:
             continue
-        if best is None or s > best[0]:
-            best = (s, match, home_team, lg, sp)
+        scored.append((s, match, home_team, lg, sp))
 
-    result: MatchOut | None = None
-    if best is not None:
-        _, match, home_team, lg, sp = best
+    # Highest score first; ties broken by earliest kickoff so the ordering is
+    # stable rather than dependent on row order.
+    scored.sort(key=lambda r: (-r[0], r[1].start_time))
+
+    results: list[MatchOut] = []
+    seen_leagues: set[str] = set()
+    for _, match, home_team, lg, sp in scored:
+        if lg.slug in seen_leagues:
+            continue
+        seen_leagues.add(lg.slug)
+
         away_team = session.exec(
             select(Team).where(Team.league_id == lg.id, Team.name == match.away_team)
         ).first()
@@ -165,21 +184,36 @@ def get_featured_match(session: Session, region: str | None = None) -> MatchOut 
         if start.tzinfo is None:
             start = start.replace(tzinfo=timezone.utc)
 
-        result = MatchOut(
-            id=match.id,
-            external_id=match.external_id,
-            sport=sp.slug,
-            league=LeagueOut(name=lg.name, slug=lg.slug),
-            home_team=match.home_team,
-            away_team=match.away_team,
-            home_slug=home_team.slug,
-            away_slug=away_team.slug if away_team else None,
-            home_icon=home_team.icon,
-            away_icon=away_team.icon if away_team else None,
-            home_score=match.home_score,
-            away_score=match.away_score,
-            start_time=start,
+        results.append(
+            MatchOut(
+                id=match.id,
+                external_id=match.external_id,
+                sport=sp.slug,
+                league=LeagueOut(name=lg.name, slug=lg.slug),
+                home_team=match.home_team,
+                away_team=match.away_team,
+                home_slug=home_team.slug,
+                away_slug=away_team.slug if away_team else None,
+                home_icon=home_team.icon,
+                away_icon=away_team.icon if away_team else None,
+                home_color=home_team.color,
+                away_color=away_team.color if away_team else None,
+                home_icon_cropped=home_team.icon_cropped,
+                away_icon_cropped=away_team.icon_cropped if away_team else None,
+                home_score=match.home_score,
+                away_score=match.away_score,
+                start_time=start,
+                venue=match.venue,
+            )
         )
+        if len(results) >= MAX_FEATURED:
+            break
 
-    _cache[cache_key] = (now_ts, result)
-    return result
+    _cache[cache_key] = (now_ts, results)
+    return results[:limit]
+
+
+def get_featured_match(session: Session, region: str | None = None) -> MatchOut | None:
+    """The single highest-scoring match, for callers that want just one."""
+    matches = get_featured_matches(session, region, limit=1)
+    return matches[0] if matches else None

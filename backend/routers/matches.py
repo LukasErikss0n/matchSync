@@ -6,25 +6,41 @@ from sqlmodel import Session, select
 from database import get_session
 from models.models import League, Match, Sport, Team
 from schemas.schemas import LeagueOut, MatchOut
-from services.featured_match import get_featured_match
+from services.featured_match import (
+    MAX_FEATURED,
+    get_featured_match,
+    get_featured_matches,
+)
 from services.standings import standings_supported
 
 router = APIRouter()
 
+_REGION_QUERY = Query(
+    default=None,
+    min_length=2,
+    max_length=2,
+    pattern="^[A-Za-z]{2}$",
+    description="ISO 3166-1 alpha-2 country code, guessed client-side, to nudge the visitor's domestic league",
+)
+
 
 @router.get("/matches/featured", response_model=MatchOut | None)
 def featured_match(
-    region: str | None = Query(
-        default=None,
-        min_length=2,
-        max_length=2,
-        pattern="^[A-Za-z]{2}$",
-        description="ISO 3166-1 alpha-2 country code, guessed client-side, to nudge the visitor's domestic league",
-    ),
+    region: str | None = _REGION_QUERY,
     session: Session = Depends(get_session),
 ):
     """The single highest-scoring live/upcoming/recent match, for the hero card."""
     return get_featured_match(session, region)
+
+
+@router.get("/matches/featured/list", response_model=list[MatchOut])
+def featured_matches(
+    region: str | None = _REGION_QUERY,
+    limit: int = Query(default=3, ge=1, le=MAX_FEATURED),
+    session: Session = Depends(get_session),
+):
+    """Top-ranked matches (at most one per league) for the rotating hero card."""
+    return get_featured_matches(session, region, limit)
 
 
 @router.get("/matches", response_model=list[MatchOut])

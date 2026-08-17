@@ -67,6 +67,14 @@ export async function fetchFeaturedMatch(region?: string): Promise<Match | null>
   return res.json()
 }
 
+export async function fetchFeaturedMatches(region?: string, limit = 3): Promise<Match[]> {
+  const params = new URLSearchParams({ limit: String(limit) })
+  if (region) params.set('region', region)
+  const res = await fetch(`${API_BASE}/matches/featured/list?${params}`)
+  if (!res.ok) throw new Error(`Failed to fetch featured matches: ${res.status}`)
+  return res.json()
+}
+
 export async function fetchLastUpdated(): Promise<string | null> {
   const res = await fetch(`${API_BASE}/last-updated`)
   if (!res.ok) throw new Error(`Failed to fetch last-updated: ${res.status}`)

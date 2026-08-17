@@ -9,6 +9,8 @@ engine = create_engine(DATABASE_URL)
 # create_all() never ALTERs existing tables, so we add them idempotently here.
 _MIGRATIONS = (
     'ALTER TABLE team ADD COLUMN IF NOT EXISTS icon VARCHAR',
+    'ALTER TABLE team ADD COLUMN IF NOT EXISTS color VARCHAR',
+    'ALTER TABLE team ADD COLUMN IF NOT EXISTS icon_cropped TEXT',
     'ALTER TABLE "match" ADD COLUMN IF NOT EXISTS home_score INTEGER',
     'ALTER TABLE "match" ADD COLUMN IF NOT EXISTS away_score INTEGER',
     'ALTER TABLE "match" ADD COLUMN IF NOT EXISTS is_playoff BOOLEAN NOT NULL DEFAULT FALSE',

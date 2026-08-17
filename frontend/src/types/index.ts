@@ -6,6 +6,7 @@ export type IconName =
   | 'amfootball'
   | 'rugby'
   | 'car'
+  | 'flag'
   | 'refresh'
   | 'trophy'
   | 'devices'
@@ -48,9 +49,14 @@ export interface Match {
   away_slug?: string | null
   home_icon?: string | null
   away_icon?: string | null
+  home_color?: string | null   // #rrggbb, extracted from the crest server-side
+  away_color?: string | null
+  home_icon_cropped?: string | null   // home_icon trimmed to its artwork, as a data: URI
+  away_icon_cropped?: string | null
   home_score?: number | null
   away_score?: number | null
   start_time: string   // ISO-UTC (with Z) — rendered in the viewer's local time
+  venue?: string | null
 }
 
 export interface SeasonStats {

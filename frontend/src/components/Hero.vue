@@ -1,65 +1,17 @@
 <template>
   <section class="relative px-4 sm:px-6 pt-8 sm:pt-14 pb-6">
-    <!-- MOBILE: headline + compact badge share the top row -->
+    <!-- MOBILE: headline, then the same duotone panel scaled down -->
     <div class="lg:hidden max-w-5xl mx-auto">
-      <div class="grid gap-3" style="grid-template-columns: 1fr 132px">
-        <div>
-          <p class="text-[11px] font-bold uppercase mb-2.5 ms-text-accent" style="letter-spacing: 0.15em">
-            Auto-sync
-          </p>
-          <h1 class="text-[29px] font-extrabold leading-[1.08]" style="letter-spacing: -0.02em">
-            The whole season.<br />One subscription.
-          </h1>
-        </div>
-        <!-- compact pastel badge: both crests + VS chip, or a generic promo when nothing's featured -->
-        <div class="relative flex-none w-[132px] h-[132px] rounded-[22px] overflow-hidden border border-white/20 flex items-center justify-center gap-1.5">
-          <div class="absolute inset-0" style="background: linear-gradient(160deg, #bfe2f7 0%, #8ecdf2 55%, #5eb2e6 100%)"></div>
-          <div class="absolute inset-0" style="background: linear-gradient(118deg, rgba(255,255,255,.5) 0 50%, transparent 50%)"></div>
-          <template v-if="hasFeatured && spotlight.isMotorsport">
-            <TeamBadge class="relative flex-none" :name="spotlight.homeTeam" :icon="spotlight.homeIcon" :size="64" />
-          </template>
-          <template v-else-if="hasFeatured">
-            <TeamBadge class="relative flex-none" :name="spotlight.homeTeam" :icon="spotlight.homeIcon" :size="42" />
-            <div
-              class="relative flex-none w-[22px] h-[22px] rounded-md flex items-center justify-center font-black text-[8px] italic"
-              style="background: rgba(11,26,43,.55); border: 1px solid rgba(255,255,255,.5); backdrop-filter: blur(8px); color: #f4f7fb"
-            >
-              VS
-            </div>
-            <TeamBadge class="relative flex-none" :name="spotlight.awayTeam" :icon="spotlight.awayIcon" :size="42" />
-          </template>
-          <div
-            v-else
-            class="relative w-14 h-14 rounded-2xl flex items-center justify-center"
-            style="background: rgba(255,255,255,.32); border: 1.5px solid rgba(255,255,255,.7); backdrop-filter: blur(8px); box-shadow: 0 10px 20px -8px rgba(9,30,50,.45), inset 0 1px 0 rgba(255,255,255,.6)"
-          >
-            <Icon name="calendar" class="!w-6 !h-6" style="color: white" />
-          </div>
-        </div>
-      </div>
+      <p class="text-[11px] font-bold uppercase mb-2.5 ms-text-accent" style="letter-spacing: 0.15em">
+        Auto-sync
+      </p>
+      <h1 class="text-[29px] font-extrabold leading-[1.08]" style="letter-spacing: -0.02em">
+        The whole season.<br />One subscription.
+      </h1>
 
-      <RouterLink
-        v-if="!hasFeatured"
-        to="/matches"
-        class="flex items-center gap-3.5 rounded-2xl px-4 py-3.5 mt-3.5 glass-panel"
-      >
-        <div class="min-w-0">
-          <div class="text-sm font-bold">More matches today</div>
-          <div class="text-[11.5px] font-semibold mt-0.5" style="color: rgba(244,247,251,.55)">Browse every league and fixture</div>
-        </div>
-      </RouterLink>
-      <div v-else class="flex items-center gap-3.5 rounded-2xl px-4 py-3.5 mt-3.5 glass-panel">
-        <div class="w-12 text-center flex-shrink-0">
-          <div class="text-[15px] font-extrabold">{{ spotlight.timeLabel }}</div>
-          <div class="text-[10.5px] font-semibold mt-px" style="color: rgba(244,247,251,.55)">{{ spotlight.dayLabel }}</div>
-        </div>
-        <div class="min-w-0">
-          <div class="text-sm font-bold truncate">{{ spotlight.homeTeam }} – {{ spotlight.awayTeam }}</div>
-          <div class="text-[11.5px] font-semibold mt-0.5 truncate" style="color: rgba(244,247,251,.55)">{{ spotlight.leagueName }}</div>
-        </div>
-      </div>
+      <FixtureHeroPanel :matches="featuredMatches" class="mt-4" />
 
-      <p class="text-[15px] font-medium mt-3.5 leading-relaxed" style="color: var(--ms-muted)">
+      <p class="text-[15px] font-medium mt-3.5 leading-relaxed" style="color: var(--ms-muted); text-align: center;">
         Pick your team and get a live calendar link. Rescheduled matches, playoffs and cups, everything updates itself for free.
       </p>
 
@@ -141,63 +93,9 @@
         </div>
       </div>
 
-      <!-- Pastel stage: real featured match, or a generic promo card when nothing's featured -->
-      <div class="relative rounded-[28px] overflow-hidden h-[340px] border border-white/15">
-        <div
-          class="absolute inset-0"
-          style="background: linear-gradient(160deg, #bfe2f7 0%, #8ecdf2 60%, #5eb2e6 100%)"
-        ></div>
-        <div
-          class="absolute inset-0"
-          style="background: linear-gradient(118deg, rgba(255,255,255,.5) 0 50%, transparent 50%)"
-        ></div>
-        <template v-if="hasFeatured">
-          <div v-if="spotlight.isMotorsport" class="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 flex items-center">
-            <TeamBadge :name="spotlight.homeTeam" :icon="spotlight.homeIcon" :size="140" />
-          </div>
-          <div v-else class="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 flex items-center gap-4">
-            <TeamBadge :name="spotlight.homeTeam" :icon="spotlight.homeIcon" :size="96" />
-            <div
-              class="flex-none w-11 h-11 rounded-2xl flex items-center justify-center font-black text-sm italic"
-              style="background: rgba(11,26,43,.55); border: 1px solid rgba(255,255,255,.5); backdrop-filter: blur(8px); color: #f4f7fb"
-            >
-              VS
-            </div>
-            <TeamBadge :name="spotlight.awayTeam" :icon="spotlight.awayIcon" :size="96" />
-          </div>
-          <div
-            class="absolute left-3.5 right-3.5 bottom-3.5 flex items-center gap-3.5 rounded-2xl px-4 py-3.5"
-            style="background: rgba(11,26,43,.55); border: 1px solid rgba(255,255,255,.2); backdrop-filter: blur(20px)"
-          >
-            <div class="w-13 text-center flex-shrink-0">
-              <div class="text-base font-extrabold">{{ spotlight.timeLabel }}</div>
-              <div class="text-[11px] font-semibold mt-0.5" style="color: rgba(244,247,251,.55)">{{ spotlight.dayLabel }}</div>
-            </div>
-            <div class="min-w-0">
-              <div class="text-[15px] font-bold truncate">{{ spotlight.homeTeam }} – {{ spotlight.awayTeam }}</div>
-              <div class="text-xs font-semibold mt-0.5" style="color: rgba(244,247,251,.55)">{{ spotlight.leagueName }}</div>
-            </div>
-          </div>
-        </template>
-        <template v-else>
-          <div
-            class="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 w-[110px] h-[110px] rounded-[24px] flex items-center justify-center"
-            style="background: rgba(255,255,255,.30); border: 1.5px solid rgba(255,255,255,.65); backdrop-filter: blur(10px); box-shadow: 0 30px 50px -18px rgba(9,30,50,.45), inset 0 1px 0 rgba(255,255,255,.6)"
-          >
-            <Icon name="calendar" class="!w-10 !h-10" style="color: white" />
-          </div>
-          <RouterLink
-            to="/matches"
-            class="absolute left-3.5 right-3.5 bottom-3.5 flex items-center rounded-2xl px-4 py-3.5"
-            style="background: rgba(11,26,43,.55); border: 1px solid rgba(255,255,255,.2); backdrop-filter: blur(20px)"
-          >
-            <div class="min-w-0">
-              <div class="text-[15px] font-bold">More matches today</div>
-              <div class="text-xs font-semibold mt-0.5" style="color: rgba(244,247,251,.55)">Browse every league and fixture</div>
-            </div>
-          </RouterLink>
-        </template>
-      </div>
+      <!-- Duotone stage: rotates through the top featured fixtures, or a
+           generic promo card when nothing scores high enough. -->
+      <FixtureHeroPanel :matches="featuredMatches" />
     </div>
 
     <!-- TEAM PICKER PANEL -->
@@ -215,7 +113,7 @@
         <div class="relative mb-3.5">
           <div
             ref="sportTabsScrollEl"
-            class="relative flex gap-1 rounded-[14px] p-1 bg-white/[0.08] border border-white/[0.14] overflow-x-auto ms-no-scrollbar"
+            class="relative flex gap-1 rounded-[14px] p-1.5 bg-white/[0.08] border border-white/[0.14] overflow-x-auto ms-no-scrollbar"
             :class="showSportsScrollHint ? 'justify-start' : 'justify-center'"
             style="scroll-snap-type: x mandatory"
           >
@@ -242,15 +140,15 @@
         </div>
 
         <!-- Search -->
-        <div class="relative flex items-center gap-2.5 rounded-[14px] px-4 mb-3.5 bg-white/[0.08] border border-white/[0.16]">
-          <span style="color: rgba(244,247,251,.55)">
-            <Icon name="search" class="!w-[17px] !h-[17px]" />
+        <div class="relative flex items-center gap-2 rounded-xl px-3.5 mb-3.5 bg-white/[0.06] border border-white/[0.12]">
+          <span style="color: rgba(244,247,251,.45)">
+            <Icon name="search" class="!w-[15px] !h-[15px]" />
           </span>
           <input
             v-model="search"
             type="text"
-            placeholder="Search team or league…"
-            class="flex-1 bg-transparent border-none outline-none text-[15px] py-3.5"
+            placeholder="Search teams and leagues"
+            class="flex-1 bg-transparent border-none outline-none text-[13.5px] py-2.5"
             style="color: var(--ms-text)"
           />
         </div>
@@ -260,14 +158,14 @@
           <button
             v-for="t in teams"
             :key="`${t.sport}-${t.slug}`"
-            class="team-card rounded-2xl border-2 px-3.5 py-3 text-left transition-all flex items-center gap-3"
+            class="team-card rounded-xl border px-3 py-2.5 text-left transition-all flex items-center gap-2.5"
             :class="{ selected: selectedTeam?.slug === t.slug && selectedTeam?.sport === t.sport }"
             @click="onTeamClick(t)"
           >
-            <TeamBadge :name="t.name" :icon="t.icon" :size="34" />
+            <TeamBadge :name="t.name" :icon="t.icon" :size="30" />
             <div class="min-w-0">
-              <div class="font-bold text-[14.5px] truncate">{{ t.name }}</div>
-              <div class="text-xs font-semibold mt-0.5 truncate" style="color: rgba(244,247,251,.5)">
+              <div class="font-bold text-[13.5px] truncate">{{ t.name }}</div>
+              <div class="text-[11px] font-semibold mt-0.5 truncate" style="color: rgba(244,247,251,.5)">
                 {{ t.leagues.map(l => l.name).join(' · ') }}
               </div>
             </div>
@@ -298,9 +196,10 @@ import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import type { Sport, Team } from '@/types'
 import { fetchSports, fetchTeams } from '@/services/sports'
-import { cachedFeaturedMatch, refreshFeaturedMatch } from '@/services/featuredMatchCache'
+import { cachedFeaturedMatches, refreshFeaturedMatch } from '@/services/featuredMatchCache'
 import Icon from './Icon.vue'
 import TeamBadge from './TeamBadge.vue'
+import FixtureHeroPanel from './FixtureHeroPanel.vue'
 
 const emit = defineEmits<{
   getStarted: []
@@ -320,42 +219,14 @@ const selectedTeam = ref<Team | null>(null)
 // "more matches today" promo card when nothing in the DB scores high enough
 // (e.g. dead period, or the request fails). Cached at module scope so
 // switching tabs and back doesn't flash the fallback while a fresh fetch resolves.
-const hasFeatured = computed(() => !!cachedFeaturedMatch.value)
+const featuredMatches = computed(() => cachedFeaturedMatches.value ?? [])
 
-function dayLabelFor(iso: string): string {
-  const start = new Date(iso)
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const that = new Date(start)
-  that.setHours(0, 0, 0, 0)
-  const diffDays = Math.round((that.getTime() - today.getTime()) / 86_400_000)
-  if (diffDays === 0) return 'today'
-  if (diffDays === 1) return 'tomorrow'
-  if (diffDays === -1) return 'yesterday'
-  return start.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' })
-}
-
-// Only meaningful when hasFeatured is true — templates guard on that first.
-const spotlight = computed(() => {
-  const m = cachedFeaturedMatch.value!
-  return {
-    homeTeam: m.home_team,
-    awayTeam: m.away_team,
-    leagueName: m.league.name,
-    leagueSlug: m.league.slug,
-    timeLabel: new Date(m.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
-    dayLabel: dayLabelFor(m.start_time),
-    homeIcon: m.home_icon ?? null,
-    awayIcon: m.away_icon ?? null,
-    isMotorsport: m.sport === 'motorsport',
-  }
+// "See all matches" should always land on the league the hero leads with —
+// not whatever the user last browsed to on the Matches page.
+const seeAllRoute = computed(() => {
+  const top = featuredMatches.value[0]
+  return top ? { path: '/matches', query: { league: top.league.slug } } : '/matches'
 })
-
-// "See all matches" should always land on the league the hero is currently
-// showing — not whatever the user last browsed to on the Matches page.
-const seeAllRoute = computed(() =>
-  hasFeatured.value ? { path: '/matches', query: { league: spotlight.value.leagueSlug } } : '/matches',
-)
 
 let searchTimer: number | null = null
 
@@ -374,7 +245,9 @@ async function loadTeams() {
 
 const sportTabRefs = ref<HTMLElement[]>([])
 const sportTabsScrollEl = ref<HTMLElement | null>(null)
-const sportSliderStyle = reactive({ width: '0px', transform: 'translateX(0px)', opacity: '0' })
+// top/bottom override the shared .ms-tab-slider's 4px inset (tuned for
+// Navbar.vue's p-1 container) to match this row's larger p-1.5 padding.
+const sportSliderStyle = reactive({ width: '0px', transform: 'translateX(0px)', opacity: '0', top: '6px', bottom: '6px' })
 // Only meaningful (and only shown) once the tabs actually overflow — on a
 // wide screen all of them fit already, so there's nothing to hint at.
 const showSportsScrollHint = ref(false)

@@ -1,14 +1,22 @@
 <template>
   <span
     class="inline-flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
-    :style="{ width: `${size}px`, height: `${size}px`, boxShadow: '0 4px 10px -4px rgba(0,0,0,.5)' }"
+    :style="{
+      width: `${size}px`,
+      height: `${size}px`,
+      // Muted, not pure white — a solid white disc reads harshly against the
+      // dark theme, especially in dense lists (standings, match rows) with
+      // many badges in view at once. Still light enough to keep dark line-art
+      // crests legible.
+      background: icon && !failed ? 'rgba(82, 82, 82, 0.02)' : undefined,
+      boxShadow: '0 4px 10px -4px rgba(0,0,0,.4)',
+    }"
   >
     <img
       v-if="icon && !failed"
       :src="icon"
       :alt="name"
-      class="w-full h-full"
-      :class="fitContain ? 'object-contain p-1' : 'object-cover'"
+      class="w-full h-full object-contain p-1"
       loading="lazy"
       decoding="async"
       @error="failed = true"
@@ -34,13 +42,6 @@ const props = withDefaults(
 const failed = ref(false)
 // Reset the error flag if the icon URL changes (component reused across rows)
 watch(() => props.icon, () => (failed.value = false))
-
-// The F1 series logo is a 4:1 wordmark (120x30) — object-cover in a circular
-// badge crops it down to an unrecognizable sliver, so it needs to be
-// letterboxed (object-contain) instead. Every other crest/flag this app uses
-// is close enough to square that cover still looks right, so this is a
-// narrow, name-based exception rather than a global change.
-const fitContain = computed(() => props.name === 'Formula 1')
 
 const initials = computed(() => {
   const words = props.name.trim().split(/\s+/).filter(Boolean)
