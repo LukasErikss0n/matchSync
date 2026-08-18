@@ -964,7 +964,7 @@ def _send_error_email(error: str) -> None:
         resend.api_key = RESEND_API_KEY
         resend.Emails.send(
             {
-                "from": "onboarding@resend.dev",
+                "from": "alerts@matchcalender.com",
                 "to": ALERT_EMAIL,
                 "subject": "MatchCalender fetcher error",
                 "text": f"MatchCalender fetcher failed at {datetime.now(_LOCAL_TZ).isoformat()}\n\nError:\n{error}",
