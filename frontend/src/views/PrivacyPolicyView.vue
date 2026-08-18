@@ -93,8 +93,8 @@
             <h2>Contact</h2>
             <p>
                 Questions about this policy? Email
-                <a href="mailto:info@matchcalender.io"
-                    >info@matchcalender.io</a
+                <a href="mailto:support@matchcalender.com"
+                    >support@matchcalender.com</a
                 >.
             </p>
         </section>

@@ -112,7 +112,7 @@
       <h2>11. Contact</h2>
       <p>
         Questions about these terms, or want to discuss a use case beyond personal sharing?
-        Email <a href="mailto:info@matchcalender.io">info@matchcalender.io</a>.
+        Email <a href="mailto:support@matchcalender.com">support@matchcalender.com</a>.
       </p>
     </section>
   </LegalLayout>

@@ -57,10 +57,10 @@
             {{ l.label }}
           </RouterLink>
           <a
-            href="mailto:info@matchcalender.io"
+            href="mailto:support@matchcalender.com"
             class="text-[13.5px] font-semibold hover:opacity-80 transition-opacity ms-text-accent"
           >
-            info@matchcalender.io
+              support@matchcalender.com
           </a>
         </div>
       </div>

@@ -66,7 +66,7 @@
           <h2>Questions</h2>
           <p>
             Need something the calendar feed doesn't cover? Email
-            <a href="mailto:info@matchcalender.io">info@matchcalender.io</a>.
+            <a href="mailto:support@matchcalender.com">support@matchcalender.com</a>.
           </p>
         </section>
       </div>
