@@ -312,6 +312,13 @@
             Pick a diffrent team
           </button>
         </div>
+
+        <!-- No step matched: restoring a reload whose data is still loading
+             (e.g. step 3 before fetchTeam resolves). Without this the body
+             is simply empty for the whole round-trip. -->
+        <div v-else key="step-loading" class="py-12 text-center text-sm" style="color: rgba(244,247,251,.5)">
+          Loading…
+        </div>
       </Transition>
       </div>
     </div>
@@ -356,6 +363,20 @@ function syncUrl() {
   router.replace({ query })
 }
 
+// The wizard's URL params, parsed once for every consumer below (the step
+// seed, the ref seeds, and onMounted's restore) so the coercion rules can't
+// drift apart. vue-router yields string[] for a repeated param — treat
+// anything that isn't a plain non-empty string as absent.
+function firstParam(v: unknown): string | null {
+  const raw = Array.isArray(v) ? v[0] : v
+  return typeof raw === 'string' && raw ? raw : null
+}
+const urlParams = {
+  step: Number(firstParam(route.query.wstep) ?? NaN),
+  sport: firstParam(route.query.wsport),
+  team: firstParam(route.query.wteam),
+}
+
 // Which step to open on, decided before the first render. `step` drives the
 // template, so defaulting to 1 and correcting inside onMounted (after an
 // await) paints the Sport step for a frame and then animates away from it —
@@ -363,12 +384,12 @@ function syncUrl() {
 function initialStep(): number {
   if (props.initialTeam) return 3
   if (props.initialSport) return 2
-  // Restoring a reload: only trust the URL's step as far as the params that
-  // step actually needs, so we never open on a step that can't render.
-  const urlStep = Number(route.query.wstep)
-  if (!Number.isFinite(urlStep) || !route.query.wsport) return 1
-  if (route.query.wteam && urlStep >= 3) return 3
-  return 2
+  // Restoring a reload: trust the URL only as far as the params each step
+  // needs, so we never open on a step that can't render. wstep itself is
+  // secondary — a team link with the step missing still belongs on step 3.
+  if (urlParams.sport && urlParams.team) return urlParams.step === 2 ? 2 : 3
+  if (urlParams.sport) return 2
+  return 1
 }
 
 const step = ref(initialStep())
@@ -396,7 +417,7 @@ function handleClose() {
 // carries everything step 3 renders, so waiting for onMounted would leave the
 // step momentarily unrenderable.
 const sportId = ref<string | null>(
-  props.initialTeam?.sport ?? props.initialSport ?? (route.query.wsport as string) ?? null,
+  props.initialTeam?.sport ?? props.initialSport ?? urlParams.sport,
 )
 const teamSlug = ref<string | null>(props.initialTeam?.slug ?? null)
 const selectedTeam = ref<Team | null>(props.initialTeam ?? null)
@@ -428,17 +449,25 @@ function onKey(e: KeyboardEvent) {
   if (e.key === 'Escape') handleClose()
 }
 
+// Monotonic id per loadTeams call: the mount-time unfiltered load can race
+// the search-debounced one (step 2 renders, and is typable, before the mount
+// fetch resolves), and whichever *started* last must win regardless of which
+// response arrives last.
+let teamsRequestSeq = 0
+
 async function loadTeams() {
   if (!sportId.value) return
+  const seq = ++teamsRequestSeq
   teamsLoading.value = true
   try {
-    teamResults.value = await fetchTeams({
+    const results = await fetchTeams({
       sport: sportId.value,
       q: search.value.trim() || undefined,
       limit: 30,
     })
+    if (seq === teamsRequestSeq) teamResults.value = results
   } finally {
-    teamsLoading.value = false
+    if (seq === teamsRequestSeq) teamsLoading.value = false
   }
 }
 
@@ -449,34 +478,38 @@ onMounted(async () => {
   const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
   document.body.style.overflow = 'hidden'
   if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`
-  // Kicked off before the awaits below so the sport list (needed for step 1
-  // and for step 2's "Search <sport> teams…" placeholder) loads in parallel.
-  const sportsPromise = fetchSports()
+  // Sports load independently of everything below — assigned on arrival so
+  // step 1 and step 2's "Search <sport> teams…" placeholder fill in as soon
+  // as possible, and a failure here can't take the rest of the mount down
+  // (nor surface as an unhandled rejection).
+  fetchSports()
+    .then((s) => { sports.value = s })
+    .catch(() => { /* step 1 renders without cards; recovers on next open */ })
 
-  if (!props.initialTeam && !props.initialSport) {
-    // No props → restoring a reload. `step`/`sportId` are already seeded from
-    // the URL; this fills in the team the seeded step needs.
-    const urlSport = (route.query.wsport as string) || null
-    const urlTeam = (route.query.wteam as string) || null
-
-    if (urlTeam && urlSport) {
+  try {
+    if (!props.initialTeam && !props.initialSport && urlParams.sport && urlParams.team) {
+      // Restoring a reload: `step`/`sportId` are already seeded from the
+      // URL; this fills in the team object the seeded step renders.
       try {
-        const team = await fetchTeam(urlTeam, urlSport)
+        const team = await fetchTeam(urlParams.team, urlParams.sport)
         selectedTeam.value = team
-        teamSlug.value = urlTeam
+        teamSlug.value = urlParams.team
         chosenLeagues.value = team.leagues.map((l) => l.slug)
       } catch {
         // Team no longer resolvable — drop back to picking one.
         step.value = 2
       }
     }
+
+    if (sportId.value && !props.initialTeam) await loadTeams()
+  } catch {
+    // Teams fetch failed — step 2 shows its empty state; the wizard stays usable.
+  } finally {
+    // URL sync must come alive even when a fetch above failed, or the wizard
+    // params in the URL go stale for the rest of the session.
+    urlSyncReady.value = true
+    syncUrl()
   }
-
-  if (sportId.value && !props.initialTeam) await loadTeams()
-
-  sports.value = await sportsPromise
-  urlSyncReady.value = true
-  syncUrl()
 })
 
 watch([step, sportId, teamSlug], syncUrl)

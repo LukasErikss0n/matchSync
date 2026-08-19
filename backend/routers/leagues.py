@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 from database import get_session
 from models.models import League, Sport, Team
 from schemas.schemas import LeagueOut, SeasonStatsOut, SportOut, StandingEntryOut, TeamOut
@@ -73,9 +73,9 @@ def list_teams(
     """
     stmt = (
         select(Team, League, Sport)
-        .join(League, Team.league_id == League.id)
-        .join(Sport, League.sport_id == Sport.id)
-        .where(League.slug.not_in(TEAM_SEARCH_EXCLUDED_LEAGUE_SLUGS))
+        .join(League, col(Team.league_id) == col(League.id))
+        .join(Sport, col(League.sport_id) == col(Sport.id))
+        .where(col(League.slug).not_in(TEAM_SEARCH_EXCLUDED_LEAGUE_SLUGS))
     )
     if sport:
         stmt = stmt.where(Sport.slug == sport)
@@ -104,8 +104,8 @@ def get_team(
     """Fetch a single team (by slug) and its leagues. Sport disambiguates name collisions."""
     stmt = (
         select(Team, League, Sport)
-        .join(League, Team.league_id == League.id)
-        .join(Sport, League.sport_id == Sport.id)
+        .join(League, col(Team.league_id) == col(League.id))
+        .join(Sport, col(League.sport_id) == col(Sport.id))
         .where(Team.slug == team_slug)
     )
     if sport:
@@ -115,7 +115,7 @@ def get_team(
     if not rows:
         raise HTTPException(status_code=404, detail="Team not found")
 
-    teams = _collect_teams(rows)
+    teams = _collect_teams(list(rows))
     teams.sort(key=lambda t: -len(t.leagues))
     return teams[0]
 

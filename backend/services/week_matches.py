@@ -27,7 +27,7 @@ from services.featured_match import (
     REGION_BOOST,
     REGION_LEAGUES,
 )
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 # A rolling seven days rather than "until Sunday" — a calendar week checked on
 # a Friday would show two near-empty days and hide the weekend's fixtures.
@@ -93,9 +93,9 @@ def get_week_matches(
     now = datetime.now(timezone.utc)
     stmt = (
         select(Match, Team, League, Sport)
-        .join(Team, Match.team_id == Team.id)
-        .join(League, Team.league_id == League.id)
-        .join(Sport, League.sport_id == Sport.id)
+        .join(Team, col(Match.team_id) == col(Team.id))
+        .join(League, col(Team.league_id) == col(League.id))
+        .join(Sport, col(League.sport_id) == col(Sport.id))
         .where(
             Match.external_id.endswith("_home"),
             Match.start_time >= now - WEEK_LOOKBACK,
@@ -110,7 +110,7 @@ def get_week_matches(
     away_lookup: dict[tuple[int, str], Team] = {}
     if league_ids:
         for team in session.exec(
-            select(Team).where(Team.league_id.in_(league_ids))
+            select(Team).where(col(Team.league_id).in_(league_ids))
         ).all():
             away_lookup[(team.league_id, team.name)] = team
 
@@ -140,6 +140,7 @@ def get_week_matches(
 
     results: list[MatchOut] = []
     for _, match, home_team, lg, sp, start in ranked[:MAX_WEEK_MATCHES]:
+        assert match.id is not None and lg.id is not None  # persisted rows
         away_team = away_lookup.get((lg.id, match.away_team))
         results.append(
             MatchOut(

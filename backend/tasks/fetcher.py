@@ -1,19 +1,20 @@
 import re
 import time as time_module
 from datetime import datetime, timedelta, timezone
+from typing import Any
 from urllib.parse import parse_qs, urlparse
 from zoneinfo import ZoneInfo
 
 import requests
 import resend
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from config import ALERT_EMAIL, RESEND_API_KEY
 from database import engine
 from dateutil.parser import parse
 from models.models import League, Match, Sport, Team
 from requests.adapters import HTTPAdapter
 from services.crest_color import analyze_crest
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 from urllib3.util.retry import Retry
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -40,7 +41,7 @@ _PLACEHOLDER_FRAGMENTS = {
 }
 
 
-def _to_int(val: object) -> int | None:
+def _to_int(val: Any) -> int | None:
     try:
         return int(val)
     except (TypeError, ValueError):
@@ -50,6 +51,24 @@ def _to_int(val: object) -> int | None:
 def _is_placeholder(name: str) -> bool:
     lower = name.lower()
     return any(frag in lower for frag in _PLACEHOLDER_FRAGMENTS)
+
+
+def _pk(row: Sport | League | Team) -> int:
+    """Primary key of a persisted row. Every row DBStore handles comes from a
+    query or has been flush()ed, so id is always set — this just states that
+    where the type checker can see it."""
+    assert row.id is not None
+    return row.id
+
+
+def _attr_str(tag: Tag | None, name: str) -> str | None:
+    """A tag attribute as a plain string. BeautifulSoup's .get() can also
+    return a list (multi-valued attributes) or None (missing tag/attribute) —
+    both mean "no usable value" for our purposes."""
+    if tag is None:
+        return None
+    val = tag.get(name)
+    return val if isinstance(val, str) else None
 
 
 # Shared with services/season_stats.py (regular-season match counting) and
@@ -254,7 +273,7 @@ class DBStore:
     ) -> None:
         """Update team icons from ALL API games regardless of match date."""
         sport = self._get_or_create_sport(sport_key)
-        league = self._get_or_create_league(league_key, sport.id)
+        league = self._get_or_create_league(league_key, _pk(sport))
         for name, icon in icons.items():
             team = self.session.exec(
                 select(Team).where(Team.name == name, Team.league_id == league.id)
@@ -279,7 +298,7 @@ class DBStore:
         if not league_ids:
             return
         teams = self.session.exec(
-            select(Team).where(Team.league_id.in_(league_ids))
+            select(Team).where(col(Team.league_id).in_(league_ids))
         ).all()
         for team in teams:
             icon = icons.get(team.name)
@@ -298,12 +317,14 @@ class DBStore:
         since the last run), so a steady-state run downloads nothing.
         """
         teams = self.session.exec(
-            select(Team).where(Team.icon.is_not(None), Team.color.is_(None))
+            select(Team).where(col(Team.icon).is_not(None), col(Team.color).is_(None))
         ).all()
         if not teams:
             return
         filled = 0
         for team in teams:
+            if not team.icon:  # excluded by the query; restated for the type checker
+                continue
             color, cropped = analyze_crest(team.icon)
             if color:
                 team.color = color
@@ -315,7 +336,7 @@ class DBStore:
 
     def save(self, sport_key: str, league_key: str, events: dict) -> None:
         sport = self._get_or_create_sport(sport_key)
-        league = self._get_or_create_league(league_key, sport.id)
+        league = self._get_or_create_league(league_key, _pk(sport))
 
         expected_external_ids: set[str] = set()
 
@@ -329,10 +350,10 @@ class DBStore:
             except ValueError:
                 continue
             home_team = self._get_or_create_team(
-                event["homeTeam"], league.id, event.get("homeIcon")
+                event["homeTeam"], _pk(league), event.get("homeIcon")
             )
             away_team = self._get_or_create_team(
-                event["awayTeam"], league.id, event.get("awayIcon")
+                event["awayTeam"], _pk(league), event.get("awayIcon")
             )
 
             home_score = _to_int(event.get("homeScore"))
@@ -348,7 +369,7 @@ class DBStore:
             perspectives = [(home_team, "home"), (away_team, "away")]
             extra_name = event.get("extraTeam")
             if extra_name:
-                extra_team = self._get_or_create_team(extra_name, league.id, event.get("extraIcon"))
+                extra_team = self._get_or_create_team(extra_name, _pk(league), event.get("extraIcon"))
                 perspectives.append((extra_team, "extra"))
 
             for team, ext_suffix in perspectives:
@@ -358,7 +379,7 @@ class DBStore:
                     select(Match).where(Match.external_id == external_id)
                 ).first()
                 if existing:
-                    existing.team_id = team.id
+                    existing.team_id = _pk(team)
                     existing.home_team = event["homeTeam"]
                     existing.away_team = event["awayTeam"]
                     existing.start_time = start_time
@@ -372,7 +393,7 @@ class DBStore:
                     self.session.add(
                         Match(
                             external_id=external_id,
-                            team_id=team.id,
+                            team_id=_pk(team),
                             home_team=event["homeTeam"],
                             away_team=event["awayTeam"],
                             start_time=start_time,
@@ -385,7 +406,7 @@ class DBStore:
                     )
 
         team_ids = [
-            t.id
+            _pk(t)
             for t in self.session.exec(
                 select(Team).where(Team.league_id == league.id)
             ).all()
@@ -395,7 +416,7 @@ class DBStore:
             now = datetime.now(timezone.utc)
             future_matches = self.session.exec(
                 select(Match).where(
-                    Match.team_id.in_(team_ids),
+                    col(Match.team_id).in_(team_ids),
                     Match.start_time > now,
                 )
             ).all()
@@ -636,20 +657,23 @@ class SwedishFootballFilter:
             soup = BeautifulSoup(page["data"], "html.parser")
             hit_old = False
             for match in soup.select(".match-list__match"):
-                home = match.select_one(
-                    ".match-list__home .match-list__team-name"
-                ).text.strip()
-                away = match.select_one(
-                    ".match-list__away .match-list__team-name"
-                ).text.strip()
-                home_img = match.select_one(".match-list__home .team-logo__img")
-                away_img = match.select_one(".match-list__away .team-logo__img")
-                home_icon = home_img.get("src") if home_img else None
-                away_icon = away_img.get("src") if away_img else None
-                start = self.time.convert_to_utc(
-                    match.select_one("time").get("datetime")
+                home_el = match.select_one(".match-list__home .match-list__team-name")
+                away_el = match.select_one(".match-list__away .match-list__team-name")
+                start_attr = _attr_str(match.select_one("time"), "datetime")
+                href = _attr_str(match.select_one(".match-list__link"), "href")
+                if home_el is None or away_el is None or not start_attr or not href:
+                    # Row without the expected markup (site tweak, ad slot…) —
+                    # skip it rather than crash the whole fetch run.
+                    continue
+                home = home_el.text.strip()
+                away = away_el.text.strip()
+                home_icon = _attr_str(
+                    match.select_one(".match-list__home .team-logo__img"), "src"
                 )
-                href = match.select_one(".match-list__link").get("href")
+                away_icon = _attr_str(
+                    match.select_one(".match-list__away .team-logo__img"), "src"
+                )
+                start = self.time.convert_to_utc(start_attr)
                 event_id = parse_qs(urlparse(href).query).get("fmid", [None])[0]
                 if not event_id:
                     continue
@@ -936,8 +960,8 @@ class FootballIconsFetcher:
         icons: dict[str, str] = {}
         for team in data.get("teams", []):
             code = team.get("code")
-            fpl_name = team.get("name", "")
-            if not code or not fpl_name:
+            fpl_name = team.get("name")
+            if not isinstance(code, int) or not isinstance(fpl_name, str) or not fpl_name:
                 continue
             db_name = self.NAME_MAP.get(fpl_name, fpl_name)
             icons[db_name] = self._badge_url(code)

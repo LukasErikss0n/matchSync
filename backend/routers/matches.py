@@ -1,7 +1,7 @@
 from datetime import timezone
 
 from fastapi import APIRouter, Depends, Query
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from database import get_session
 from models.models import League, Match, Sport, Team
@@ -65,9 +65,9 @@ def list_matches(
     # Read only the home-perspective row so each fixture appears once.
     stmt = (
         select(Match, Team, League, Sport)
-        .join(Team, Match.team_id == Team.id)
-        .join(League, Team.league_id == League.id)
-        .join(Sport, League.sport_id == Sport.id)
+        .join(Team, col(Match.team_id) == col(Team.id))
+        .join(League, col(Team.league_id) == col(League.id))
+        .join(Sport, col(League.sport_id) == col(Sport.id))
         .where(Match.external_id.endswith("_home"))
     )
     if sport:
@@ -75,14 +75,14 @@ def list_matches(
     if league:
         stmt = stmt.where(League.slug == league)
 
-    rows = session.exec(stmt.order_by(Match.start_time)).all()
+    rows = session.exec(stmt.order_by(col(Match.start_time))).all()
     if not rows:
         return []
 
     # Away crest/slug live on a different Team row — build a per-league lookup.
     league_ids = {lg.id for _, _, lg, _ in rows}
     team_rows = session.exec(
-        select(Team).where(Team.league_id.in_(league_ids))
+        select(Team).where(col(Team.league_id).in_(league_ids))
     ).all()
     teams_by_league: dict[tuple[int, str], Team] = {
         (t.league_id, t.name): t for t in team_rows
@@ -97,13 +97,14 @@ def list_matches(
     if team:
         extra_rows = session.exec(
             select(Match.external_id)
-            .join(Team, Match.team_id == Team.id)
+            .join(Team, col(Match.team_id) == col(Team.id))
             .where(Team.slug == team, Match.external_id.endswith("_extra"))
         ).all()
         extra_event_ids = {eid.rsplit("_", 1)[0] for eid in extra_rows}
 
     result: list[MatchOut] = []
     for match, home_team, lg, sp in rows:
+        assert match.id is not None and lg.id is not None  # persisted rows
         away_team = teams_by_league.get((lg.id, match.away_team))
 
         if team:

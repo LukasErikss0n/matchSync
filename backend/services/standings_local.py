@@ -10,7 +10,7 @@ that one-time backfill this would compute a table missing most of the season.
 
 from datetime import datetime, timezone
 
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 from database import engine
 from models.models import League, Match, Team
@@ -63,6 +63,8 @@ def _compute_table(matches: list[Match], teams: list[Team]) -> list[dict]:
         if home not in stats or away not in stats:
             continue  # team since renamed/removed upstream — skip rather than guess
         hs, as_ = m.home_score, m.away_score
+        if hs is None or as_ is None:
+            continue  # not played — callers pass _played() but don't have to
 
         stats[home]["played"] += 1
         stats[away]["played"] += 1
@@ -138,10 +140,10 @@ def get_local_standings(league_slug: str) -> list[dict] | None:
         if league is None:
             return []
 
-        teams = session.exec(select(Team).where(Team.league_id == league.id)).all()
+        teams = list(session.exec(select(Team).where(Team.league_id == league.id)).all())
         if not teams:
             return []
-        team_ids = {t.id for t in teams}
+        team_ids = {t.id for t in teams if t.id is not None}
 
         # Every fixture for this league, played or not (home-perspective row
         # only — each fixture is stored twice, once per team, see DBStore.save).
@@ -149,7 +151,7 @@ def get_local_standings(league_slug: str) -> list[dict] | None:
         # that next season's schedule has been published.
         all_matches = session.exec(
             select(Match).where(
-                Match.team_id.in_(team_ids),
+                col(Match.team_id).in_(team_ids),
                 Match.external_id.endswith("_home"),
             )
         ).all()

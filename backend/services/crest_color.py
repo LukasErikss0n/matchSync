@@ -135,7 +135,7 @@ def _trim_to_png(img) -> bytes | None:
         scale = _CROP_MIN_SIZE / max(cropped.size)
         cropped = cropped.resize(
             (round(cropped.width * scale), round(cropped.height * scale)),
-            Image.LANCZOS,
+            Image.Resampling.LANCZOS,
         )
         # LANCZOS already resamples more crisply than a browser's own
         # img-tag upscaling would, but it still softens edges a little.

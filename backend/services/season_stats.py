@@ -145,9 +145,11 @@ def _svenskfotboll_paginate(
         soup = BeautifulSoup(page["data"], "html.parser")
         for match in soup.select(".match-list__match"):
             time_el = match.select_one("time")
-            if not time_el or not time_el.get("datetime"):
+            dt_attr = time_el.get("datetime") if time_el else None
+            # BeautifulSoup attributes can also be lists — only a str is usable.
+            if not isinstance(dt_attr, str) or not dt_attr:
                 continue
-            dt = _parse_iso(time.convert_to_utc(time_el.get("datetime")))
+            dt = _parse_iso(time.convert_to_utc(dt_attr))
             if dt:
                 starts.append(dt)
         next_url = page.get("nextUrl")

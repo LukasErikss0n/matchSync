@@ -18,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 from models.models import League, Match, Sport, Team
 from schemas.schemas import LeagueOut, MatchOut
 from services.crest_url import crest_url
-from sqlmodel import Session, select
+from sqlmodel import Session, col, select
 
 # Candidate pre-filter — cheap enough to avoid scoring the whole table.
 LOOKBACK = timedelta(hours=3)
@@ -148,9 +148,9 @@ def get_featured_matches(
     now = datetime.now(timezone.utc)
     stmt = (
         select(Match, Team, League, Sport)
-        .join(Team, Match.team_id == Team.id)
-        .join(League, Team.league_id == League.id)
-        .join(Sport, League.sport_id == Sport.id)
+        .join(Team, col(Match.team_id) == col(Team.id))
+        .join(League, col(Team.league_id) == col(League.id))
+        .join(Sport, col(League.sport_id) == col(Sport.id))
         .where(
             Match.external_id.endswith("_home"),
             Match.start_time >= now - LOOKBACK,
@@ -176,6 +176,7 @@ def get_featured_matches(
         if lg.slug in seen_leagues:
             continue
         seen_leagues.add(lg.slug)
+        assert match.id is not None and lg.id is not None  # persisted rows
 
         away_team = session.exec(
             select(Team).where(Team.league_id == lg.id, Team.name == match.away_team)

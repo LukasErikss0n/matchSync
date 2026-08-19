@@ -13,7 +13,7 @@
          160-180px it occupies on desktop. -->
     <div
       class="w-[52px] h-[52px] rounded-xl flex items-center justify-center mb-1"
-      :style="{ background: iconBgTint, border: `1px solid ${iconColor}4d`, width: `9vw`, height:`9vw` }"
+      :style="{ background: iconBgTint, border: `1px solid ${iconColor}4d` }"
     >
       <Icon :name="sport.icon" class="!w-6 !h-6" :style="{ color: iconColor }" />
     </div>
