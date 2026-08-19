@@ -59,19 +59,24 @@
       <div class="relative px-7 pb-7 step-viewport">
       <Transition :name="stepTransitionName" mode="out-in">
         <!-- Step 1: Sport -->
-        <!-- Two columns at every width: at three, the four sports leave a
-             lone card orphaned on a second row. -->
-        <div v-if="step === 1" key="step1" class="grid grid-cols-2 gap-3">
-          <SportCard
-            v-for="s in sports"
-            :key="s.id"
-            :sport="s"
-            :selected="sportId === s.id"
-            @click="selectSport(s.id)"
-          />
+        <div v-if="step === 1" key="step1">
+          <!-- Two columns at every width: at three, the four sports leave a
+               lone card orphaned on a second row. Cards get a fixed width and
+               the grid shrink-wraps around them, so they stay compact instead
+               of stretching to fill the modal. -->
+          <div class="grid grid-cols-2 gap-3 w-fit mx-auto mb-5">
+            <div v-for="s in sports" :key="s.id" class="w-26">
+              <SportCard
+                :sport="s"
+                :selected="sportId === s.id"
+                @click="selectSport(s.id)"
+              />
+            </div>
+          </div>
+          <!-- Outside the grid: the button spans the modal, not the cards. -->
           <button
             :disabled="!sportId"
-            class="col-span-2 ms-btn-primary rounded-2xl mt-2 py-3.5 font-bold text-[15px] disabled:opacity-40"
+            class="ms-btn-primary rounded-2xl w-full py-3.5 font-bold text-[15px] disabled:opacity-40"
             @click="goToTeams"
           >
             Continue

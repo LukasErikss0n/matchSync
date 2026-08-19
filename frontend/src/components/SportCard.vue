@@ -1,18 +1,24 @@
 <template>
   <button
     type="button"
-    class="sport-card w-full aspect-square rounded-2xl sm:rounded-[22px] px-2.5 sm:px-6 flex flex-col items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-all"
+    class="sport-card w-full max-w-[180px] mx-auto aspect-square rounded-2xl sm:rounded-[22px] px-2 flex flex-col items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-all"
     :class="{ selected }"
     @click="emit('click')"
   >
+    <!-- Icon and label are a fixed size at every breakpoint. They used to be
+         smaller below `sm`, but the card is square and sized off its column,
+         so on a phone it grows while the icon shrinks — the content ended up
+         filling ~17% of the card against ~33% on a laptop, which read as
+         large and empty. max-w keeps the card from ballooning past the
+         160-180px it occupies on desktop. -->
     <div
-      class="w-[38px] h-[38px] sm:w-[52px] sm:h-[52px] rounded-xl flex items-center justify-center mb-1"
-      :style="{ background: iconBgTint, border: `1px solid ${iconColor}4d` }"
+      class="w-[52px] h-[52px] rounded-xl flex items-center justify-center mb-1"
+      :style="{ background: iconBgTint, border: `1px solid ${iconColor}4d`, width: `9vw`, height:`9vw` }"
     >
-      <Icon :name="sport.icon" class="!w-5 !h-5 sm:!w-6 sm:!h-6" :style="{ color: iconColor }" />
+      <Icon :name="sport.icon" class="!w-6 !h-6" :style="{ color: iconColor }" />
     </div>
-    <span class="text-sm sm:text-[15px] font-extrabold">{{ sport.label }}</span>
-    <span v-if="showLeagues" class="text-[11px] sm:text-xs font-semibold" style="color: rgba(244,247,251,.5)">
+    <span class="text-[15px] font-extrabold">{{ sport.label }}</span>
+    <span v-if="showLeagues" class="text-xs font-semibold" style="color: rgba(244,247,251,.5)">
       {{ sport.leagues.length }} leagues
     </span>
   </button>

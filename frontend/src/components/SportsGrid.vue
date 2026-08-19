@@ -7,8 +7,12 @@
           Your sport? We've got it.
         </h2>
       </div>
-      <div class="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-3 sm:gap-4 max-w-md sm:max-w-none mx-auto">
-        <div v-for="s in sports" :key="s.id" class="sm:w-40">
+      <!-- Cards are sized off the viewport on phones (33vw) rather than off
+           the column, so they don't balloon as the screen widens. The grid
+           shrink-wraps to that width so the two columns stay snug instead of
+           leaving wide gutters. -->
+      <div class="grid grid-cols-2 sm:flex sm:flex-wrap sm:justify-center gap-3 sm:gap-4 w-fit sm:w-auto mx-auto">
+        <div v-for="s in sports" :key="s.id" class="w-[33vw] sm:w-40">
           <SportCard :sport="s" show-leagues @click="emit('pickSport', s.id)" />
         </div>
       </div>

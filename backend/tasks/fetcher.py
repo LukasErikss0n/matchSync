@@ -962,7 +962,7 @@ def _send_error_email(error: str) -> None:
         return
     try:
         resend.api_key = RESEND_API_KEY
-        resend.Emails.send(
+        resp = resend.Emails.send(
             {
                 "from": "alerts@matchcalender.com",
                 "to": ALERT_EMAIL,
@@ -970,7 +970,12 @@ def _send_error_email(error: str) -> None:
                 "text": f"MatchCalender fetcher failed at {datetime.now(_LOCAL_TZ).isoformat()}\n\nError:\n{error}",
             }
         )
-        print("[fetcher] error alert email sent")
+        # Log the id Resend hands back rather than just "sent": accepting the
+        # request only means it's queued, so a message can still bounce or be
+        # junked afterwards. The id is what makes it findable in the Resend
+        # dashboard when an alert doesn't turn up.
+        email_id = resp.get("id") if isinstance(resp, dict) else None
+        print(f"[fetcher] error alert queued with Resend (id={email_id or 'unknown'})")
     except Exception as e:
         print(f"[fetcher] failed to send alert email: {e}")
 
