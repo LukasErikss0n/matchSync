@@ -356,7 +356,22 @@ function syncUrl() {
   router.replace({ query })
 }
 
-const step = ref(1)
+// Which step to open on, decided before the first render. `step` drives the
+// template, so defaulting to 1 and correcting inside onMounted (after an
+// await) paints the Sport step for a frame and then animates away from it —
+// the flash you get on every deep link from a sport card or a team.
+function initialStep(): number {
+  if (props.initialTeam) return 3
+  if (props.initialSport) return 2
+  // Restoring a reload: only trust the URL's step as far as the params that
+  // step actually needs, so we never open on a step that can't render.
+  const urlStep = Number(route.query.wstep)
+  if (!Number.isFinite(urlStep) || !route.query.wsport) return 1
+  if (route.query.wteam && urlStep >= 3) return 3
+  return 2
+}
+
+const step = ref(initialStep())
 // Direction the wizard is currently moving, so the step-swap transition
 // slides the right way (forward → new content enters from the right;
 // back → from the left) instead of always sliding one direction.
@@ -377,16 +392,23 @@ function handleClose() {
   setTimeout(() => emit('close'), CLOSE_ANIMATION_MS)
 }
 
-const sportId = ref<string | null>(null)
-const teamSlug = ref<string | null>(null)
-const selectedTeam = ref<Team | null>(null)
-const chosenLeagues = ref<string[]>([])
+// Seeded from props for the same reason as `step`: a team deep-link already
+// carries everything step 3 renders, so waiting for onMounted would leave the
+// step momentarily unrenderable.
+const sportId = ref<string | null>(
+  props.initialTeam?.sport ?? props.initialSport ?? (route.query.wsport as string) ?? null,
+)
+const teamSlug = ref<string | null>(props.initialTeam?.slug ?? null)
+const selectedTeam = ref<Team | null>(props.initialTeam ?? null)
+const chosenLeagues = ref<string[]>(props.initialTeam?.leagues.map((l) => l.slug) ?? [])
 const search = ref('')
 const copied = ref(false)
 
 const sports = ref<Sport[]>([])
 const teamResults = ref<Team[]>([])
-const teamsLoading = ref(false)
+// Starts true whenever mount will immediately fetch teams, so step 2 shows the
+// loading state instead of flashing "No teams available yet" at an empty list.
+const teamsLoading = ref(!props.initialTeam && !!sportId.value)
 const calLink = ref<CalendarLink | null>(null)
 
 const showPreview = ref(false)
@@ -427,46 +449,32 @@ onMounted(async () => {
   const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
   document.body.style.overflow = 'hidden'
   if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`
-  sports.value = await fetchSports()
+  // Kicked off before the awaits below so the sport list (needed for step 1
+  // and for step 2's "Search <sport> teams…" placeholder) loads in parallel.
+  const sportsPromise = fetchSports()
 
-  if (props.initialTeam) {
-    // Deep-link from the hero (full Team object already in hand)
-    selectedTeam.value = props.initialTeam
-    teamSlug.value = props.initialTeam.slug
-    sportId.value = props.initialTeam.sport
-    chosenLeagues.value = props.initialTeam.leagues.map(l => l.slug)
-    step.value = 3
-  } else if (props.initialSport) {
-    // Deep-link from a sport card
-    sportId.value = props.initialSport
-    await loadTeams()
-    step.value = 2
-  } else {
-    // No props → restore from the URL (page reload with the modal open)
+  if (!props.initialTeam && !props.initialSport) {
+    // No props → restoring a reload. `step`/`sportId` are already seeded from
+    // the URL; this fills in the team the seeded step needs.
     const urlSport = (route.query.wsport as string) || null
     const urlTeam = (route.query.wteam as string) || null
-    const urlStep = route.query.wstep ? Number(route.query.wstep) : null
 
     if (urlTeam && urlSport) {
-      sportId.value = urlSport
       try {
         const team = await fetchTeam(urlTeam, urlSport)
         selectedTeam.value = team
         teamSlug.value = urlTeam
-        chosenLeagues.value = team.leagues.map(l => l.slug)
+        chosenLeagues.value = team.leagues.map((l) => l.slug)
       } catch {
-        /* team no longer resolvable, fall back to sport step */
+        // Team no longer resolvable — drop back to picking one.
+        step.value = 2
       }
-      await loadTeams()
-      // Step 4 needs a freshly generated link, so cap the restore at step 3.
-      step.value = urlStep && urlStep >= 2 ? Math.min(urlStep, 3) : (teamSlug.value ? 3 : 2)
-    } else if (urlSport) {
-      sportId.value = urlSport
-      await loadTeams()
-      step.value = 2
     }
   }
 
+  if (sportId.value && !props.initialTeam) await loadTeams()
+
+  sports.value = await sportsPromise
   urlSyncReady.value = true
   syncUrl()
 })
@@ -616,16 +624,25 @@ function reset() {
 .step-viewport {
   overflow: hidden;
 }
-.step-forward-enter-active,
+/* Asymmetric on purpose. Enter and leave used to share one 0.2s ease, which
+   read as a flash: the outgoing step and the incoming one moved at the same
+   speed, so neither registered. The old step now clears quickly (accelerating
+   away), and the new one takes noticeably longer on a decelerating curve —
+   that's the half the eye actually tracks. */
 .step-forward-leave-active,
-.step-back-enter-active,
 .step-back-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition: opacity 0.16s ease-in, transform 0.16s ease-in;
 }
-.step-forward-enter-from { opacity: 0; transform: translateX(28px); }
-.step-forward-leave-to { opacity: 0; transform: translateX(-28px); }
-.step-back-enter-from { opacity: 0; transform: translateX(-28px); }
-.step-back-leave-to { opacity: 0; transform: translateX(28px); }
+.step-forward-enter-active,
+.step-back-enter-active {
+  transition:
+    opacity 0.38s ease-out,
+    transform 0.38s cubic-bezier(0.16, 0.84, 0.32, 1);
+}
+.step-forward-enter-from { opacity: 0; transform: translateX(36px); }
+.step-forward-leave-to { opacity: 0; transform: translateX(-24px); }
+.step-back-enter-from { opacity: 0; transform: translateX(-36px); }
+.step-back-leave-to { opacity: 0; transform: translateX(24px); }
 
 @media (prefers-reduced-motion: reduce) {
   .modal-backdrop,
