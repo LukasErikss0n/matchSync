@@ -91,7 +91,7 @@ SPORT_META: dict[str, tuple[str, str, str]] = {
     "football": ("Football", "football", "football"),
     "hockey": ("Hockey", "hockey", "hockey"),
     "basketball": ("Basketball", "basketball", "basketball"),
-    "motorsport": ("Motorsport", "motorsport", "car"),
+    "motorsport": ("Motorsport", "motorsport", "flag"),
 }
 
 # Maps raw league key → display name
@@ -236,6 +236,12 @@ class DBStore:
             sport = Sport(name=name, slug=slug, icon=icon)
             self.session.add(sport)
             self.session.flush()
+        elif sport.icon != icon:
+            # Keeps an existing row's icon in sync with SPORT_META — without
+            # this, changing an icon here would never reach prod's already-
+            # created row (motorsport's car→flag fix needed exactly this).
+            sport.icon = icon
+            self.session.add(sport)
         return sport
 
     def _get_or_create_league(self, league_key: str, sport_id: int) -> League:
