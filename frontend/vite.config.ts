@@ -47,7 +47,10 @@ export default defineConfig({
     },
     allowedHosts: ["matchcalender.com"],
     proxy: {
-      "/api": {
+      // Regex (any key starting with ^), not a plain prefix: "/api" would also
+      // capture sibling routes like /api-docs and hand them to the backend,
+      // which 404s them. Mirrors isApiRequest() in scripts/prod-server.mjs.
+      "^/api/": {
         // In Docker: backend service name. Locally: localhost.
         target: process.env.API_TARGET ?? "http://localhost:8000",
         changeOrigin: true,

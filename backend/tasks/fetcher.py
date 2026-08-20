@@ -364,6 +364,7 @@ class DBStore:
 
             home_score = _to_int(event.get("homeScore"))
             away_score = _to_int(event.get("awayScore"))
+            venue = event.get("venue") or None
             is_playoff = bool(event.get("isPlayoff", False))
             overtime = bool(event.get("overtime", False))
             shootout = bool(event.get("shootout", False))
@@ -391,6 +392,10 @@ class DBStore:
                     existing.start_time = start_time
                     existing.home_score = home_score
                     existing.away_score = away_score
+                    # Only overwrite with a real value — a source that stops
+                    # sending the ground shouldn't blank a venue we already have.
+                    if venue:
+                        existing.venue = venue
                     existing.is_playoff = is_playoff
                     existing.overtime = overtime
                     existing.shootout = shootout
@@ -405,6 +410,7 @@ class DBStore:
                             start_time=start_time,
                             home_score=home_score,
                             away_score=away_score,
+                            venue=venue,
                             is_playoff=is_playoff,
                             overtime=overtime,
                             shootout=shootout,
@@ -494,6 +500,8 @@ class FootballFilter:
                     "homeTeam":         match["homeTeam"]["name"],
                     "awayTeam":         match["awayTeam"]["name"],
                     "startDateAndTime": start,
+                    # Already "<Ground>, <City>" (e.g. "Anfield, Liverpool").
+                    "venue":            match.get("ground"),
                     "homeIcon":         self._badge_url(match["homeTeam"]),
                     "awayIcon":         self._badge_url(match["awayTeam"]),
                     "homeScore":        match["homeTeam"].get("score"),
@@ -602,6 +610,7 @@ class HockeyBasketballFilter:
                             "homeTeam": match["homeTeamInfo"]["names"]["full"],
                             "awayTeam": match["awayTeamInfo"]["names"]["full"],
                             "startDateAndTime": match["rawStartDateTime"],
+                            "venue": (match.get("venueInfo") or {}).get("name"),
                             "homeIcon": match["homeTeamInfo"].get("icon"),
                             "awayIcon": match["awayTeamInfo"].get("icon"),
                             "homeScore": match["homeTeamInfo"].get("score"),
@@ -808,6 +817,17 @@ class FifaFilter:
             return None
         return url.replace("{format}", "sq").replace("{size}", "4")
 
+    def _venue(self, match: dict) -> str | None:
+        """"<Stadium>, <City>" — both are localized lists, same shape as TeamName."""
+        stadium = match.get("Stadium") or {}
+        names = stadium.get("Name") or []
+        name = names[0]["Description"] if names else None
+        if not name:
+            return None
+        cities = stadium.get("CityName") or []
+        city = cities[0]["Description"] if cities else None
+        return f"{name}, {city}" if city else name
+
     def filter(self):
         for tournament_key, season_id in self.TOURNAMENTS.items():
             events: dict = {}
@@ -831,6 +851,7 @@ class FifaFilter:
                     "homeTeam": home_name,
                     "awayTeam": away_name,
                     "startDateAndTime": match["Date"],
+                    "venue": self._venue(match),
                     "homeIcon": self._picture_url(home),
                     "awayIcon": self._picture_url(away),
                     "homeScore": home.get("Score"),
@@ -903,6 +924,11 @@ class F1Filter:
                 or meeting.get("is_cancelled")
             ):
                 continue
+            # Circuit lives on the meeting, so every session under it shares
+            # the same venue ("Sakhir, Bahrain").
+            circuit = meeting.get("circuit_short_name") or meeting.get("location")
+            country = meeting.get("country_name")
+            venue = f"{circuit}, {country}" if circuit and country else circuit
             sessions = self._get_list(f"{self.BASE_URL}/sessions?meeting_key={meeting_key}")
             for session in sessions:
                 start = session.get("date_start")
@@ -917,6 +943,7 @@ class F1Filter:
                     "homeTeam": name,
                     "awayTeam": session.get("session_name") or session.get("session_type") or "Session",
                     "startDateAndTime": start,
+                    "venue": venue,
                     "homeIcon": meeting.get("country_flag"),
                     # Third pseudo-team every session also belongs to, so
                     # subscribing to it gives the whole season at once

@@ -5,6 +5,7 @@ import ApiDocsView from '@/views/ApiDocsView.vue'
 import PrivacyPolicyView from '@/views/PrivacyPolicyView.vue'
 import TermsOfServiceView from '@/views/TermsOfServiceView.vue'
 import SupportView from '@/views/SupportView.vue'
+import NotFoundView from '@/views/NotFoundView.vue'
 import leaguePages from '@/data/leaguePages.json'
 import { applyPageMeta } from '@/utils/seo'
 
@@ -103,6 +104,18 @@ const router = createRouter({
         isLeaguePage: true,
       },
     })),
+    // Catch-all. prod-server.mjs already answers 404 for anything not
+    // prerendered; this renders something useful inside that response instead
+    // of the blank shell an unmatched route would leave behind.
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: NotFoundView,
+      meta: {
+        title: 'Page not found | MatchCalender',
+        description: HOME_DESCRIPTION,
+      },
+    },
   ]
 })
 
@@ -111,6 +124,7 @@ router.afterEach((to) => {
     title: (to.meta.title as string) ?? 'MatchCalender',
     description: (to.meta.description as string) ?? HOME_DESCRIPTION,
     path: to.path,
+    noindex: to.name === 'not-found',
   })
 })
 

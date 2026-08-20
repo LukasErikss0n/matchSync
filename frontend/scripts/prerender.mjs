@@ -49,6 +49,12 @@ const routes = [
     description:
       'Read the terms covering personal use of MatchCalender, including sharing calendar links with friends and the restriction on commercial redistribution.',
   },
+  {
+    path: '/support',
+    title: 'Report a problem | MatchCalender',
+    description:
+      'Report a bug, suggest an improvement, or ask a question about MatchCalender.',
+  },
   ...leaguePages.map((p) => ({
     path: p.path,
     title: p.title,

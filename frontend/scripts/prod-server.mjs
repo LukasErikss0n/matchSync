@@ -46,22 +46,27 @@ function resolveStaticFile(urlPath) {
         ]
   for (const candidate of candidates) {
     if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
-      return candidate
+      return { filePath: candidate, status: 200 }
     }
   }
-  const hasExtension = path.extname(clean) !== ''
-  return hasExtension ? null : path.join(distDir, 'index.html')
+  if (path.extname(clean) !== '') return null
+  // Every real route is prerendered, so an unmatched extensionless path is a
+  // genuine miss. It still gets the SPA shell (the router's catch-all renders
+  // the not-found view, and a route that outgrew prerender.mjs keeps working),
+  // but under a 404 so crawlers drop it instead of filing it as a duplicate
+  // of the homepage under the shell's canonical tag.
+  return { filePath: path.join(distDir, 'index.html'), status: 404 }
 }
 
 function serveStatic(req, res) {
-  const filePath = resolveStaticFile(req.url ?? '/')
-  if (!filePath) {
+  const resolved = resolveStaticFile(req.url ?? '/')
+  if (!resolved) {
     res.writeHead(404)
     res.end('Not found')
     return
   }
-  res.writeHead(200, { 'Content-Type': contentType(filePath) })
-  fs.createReadStream(filePath).pipe(res)
+  res.writeHead(resolved.status, { 'Content-Type': contentType(resolved.filePath) })
+  fs.createReadStream(resolved.filePath).pipe(res)
 }
 
 function proxyApi(req, res) {
@@ -81,8 +86,17 @@ function proxyApi(req, res) {
   req.pipe(proxyReq)
 }
 
+// Match the /api namespace exactly — a bare `startsWith('/api')` also swallows
+// sibling routes that merely share the prefix, which sent the /api-docs page to
+// the backend and had it answer FastAPI's 404 (Search Console flagged the URL
+// as Not found, since it's in the sitemap).
+function isApiRequest(url) {
+  const clean = (url ?? '/').split('?')[0]
+  return clean === '/api' || clean.startsWith('/api/')
+}
+
 const server = http.createServer((req, res) => {
-  if (req.url?.startsWith('/api')) {
+  if (isApiRequest(req.url)) {
     proxyApi(req, res)
   } else {
     serveStatic(req, res)

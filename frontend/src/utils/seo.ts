@@ -37,7 +37,16 @@ export function removeJsonLd(id: string) {
   document.getElementById(id)?.remove()
 }
 
-export function applyPageMeta(opts: { title: string; description: string; path: string }) {
+export function applyPageMeta(opts: {
+  title: string
+  description: string
+  path: string
+  // Unknown URLs are served the SPA shell under a 404 (see
+  // scripts/prod-server.mjs). The shell carries the prerendered homepage
+  // canonical, so it has to be dropped here — pointing a 404 at "/" is what
+  // gets it filed as a duplicate of the homepage rather than ignored.
+  noindex?: boolean
+}) {
   const fullTitle = opts.title
   document.title = fullTitle
 
@@ -52,5 +61,12 @@ export function applyPageMeta(opts: { title: string; description: string; path: 
   setMetaTag('name', 'twitter:title', fullTitle)
   setMetaTag('name', 'twitter:description', opts.description)
   setMetaTag('name', 'twitter:image', DEFAULT_IMAGE)
+
+  if (opts.noindex) {
+    setMetaTag('name', 'robots', 'noindex')
+    document.head.querySelector('link[rel="canonical"]')?.remove()
+    return
+  }
+  document.head.querySelector('meta[name="robots"]')?.remove()
   setCanonical(opts.path)
 }

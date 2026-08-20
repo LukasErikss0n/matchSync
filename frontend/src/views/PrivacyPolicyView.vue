@@ -102,6 +102,5 @@
 </template>
 
 <script setup lang="ts">
-import { RouterLink } from "vue-router";
 import LegalLayout from "@/components/LegalLayout.vue";
 </script>

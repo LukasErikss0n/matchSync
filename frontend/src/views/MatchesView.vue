@@ -848,6 +848,31 @@ watch(
 // An ItemList of upcoming fixtures as schema.org SportsEvent — drives event
 // rich results and, unlike the FAQ schema, isn't the kind of single-answer
 // query an AI Overview swallows.
+
+const SITE_URL = "https://matchcalender.com";
+
+// Nominal broadcast-to-broadcast length per sport, used only for `endDate`.
+// Google requires an end time for event rich results, but no upstream feed we
+// use publishes one, so this is the scheduled slot rather than the final
+// whistle — an over-run or a delayed start won't move it.
+const EVENT_DURATION_MS: Record<string, number> = {
+    football: 2 * 60 * 60 * 1000, // 90' + half-time + stoppage
+    hockey: 2.5 * 60 * 60 * 1000, // 3 × 20' + two intermissions
+    basketball: 2 * 60 * 60 * 1000,
+    motorsport: 2 * 60 * 60 * 1000, // a session, not the whole race weekend
+};
+const DEFAULT_DURATION_MS = 2 * 60 * 60 * 1000;
+
+function eventImage(m: Match): string {
+    // Crest URLs are absolute and served by the league/provider CDNs; the
+    // cropped variants point at our own API and some sources give us nothing,
+    // so fall back to the social card rather than emit a relative URL.
+    const crest = m.home_icon ?? m.away_icon;
+    return crest && /^https?:\/\//.test(crest)
+        ? crest
+        : `${SITE_URL}/logo-social.png`;
+}
+
 watch(
     [matches, leagueLock],
     () => {
@@ -859,6 +884,11 @@ watch(
         const now = Date.now();
         const upcoming = [...matches.value]
             .filter((m) => new Date(m.start_time).getTime() >= now - 3 * DAY_MS)
+            // Google treats an Event with no `location` as invalid, so it earns
+            // no rich result either way — emitting it would only add a Search
+            // Console error. Two feeds (IIHF, Allsvenskan) carry no venue at
+            // all, so their fixtures are held back rather than published broken.
+            .filter((m) => !!m.venue)
             .sort(
                 (a, b) =>
                     new Date(a.start_time).getTime() - new Date(b.start_time).getTime(),
@@ -868,23 +898,47 @@ watch(
             removeJsonLd("league-events-jsonld");
             return;
         }
+        const leagueName = selectedLeague.value?.name ?? pageH1.value;
         setJsonLd("league-events-jsonld", {
             "@context": "https://schema.org",
             "@type": "ItemList",
-            itemListElement: upcoming.map((m, i) => ({
-                "@type": "ListItem",
-                position: i + 1,
-                item: {
-                    "@type": "SportsEvent",
-                    name: `${m.home_team} vs ${m.away_team}`,
-                    startDate: m.start_time,
-                    eventStatus: "https://schema.org/EventScheduled",
-                    competitor: [
-                        { "@type": "SportsTeam", name: m.home_team },
-                        { "@type": "SportsTeam", name: m.away_team },
-                    ],
-                },
-            })),
+            itemListElement: upcoming.map((m, i) => {
+                const teams = [
+                    { "@type": "SportsTeam", name: m.home_team },
+                    { "@type": "SportsTeam", name: m.away_team },
+                ];
+                const start = new Date(m.start_time);
+                const end = new Date(
+                    start.getTime() +
+                        (EVENT_DURATION_MS[m.sport] ?? DEFAULT_DURATION_MS),
+                );
+                return {
+                    "@type": "ListItem",
+                    position: i + 1,
+                    item: {
+                        "@type": "SportsEvent",
+                        name: `${m.home_team} vs ${m.away_team}`,
+                        description: `${leagueName}: ${m.home_team} vs ${m.away_team} at ${m.venue} on ${start.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}. Sync the fixture to your calendar with MatchCalender.`,
+                        startDate: m.start_time,
+                        endDate: end.toISOString(),
+                        eventStatus: "https://schema.org/EventScheduled",
+                        eventAttendanceMode:
+                            "https://schema.org/OfflineEventAttendanceMode",
+                        image: eventImage(m),
+                        location: { "@type": "Place", name: m.venue },
+                        // `competitor` is the sport-specific property; Google's
+                        // Event rich-result docs look for `performer`, so both
+                        // carry the same two teams.
+                        competitor: teams,
+                        performer: teams,
+                        organizer: {
+                            "@type": "Organization",
+                            name: leagueName,
+                            url: `${SITE_URL}${route.path}`,
+                        },
+                    },
+                };
+            }),
         });
     },
     { immediate: true },
