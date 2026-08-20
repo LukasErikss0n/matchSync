@@ -6,7 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from sqlmodel import Session, select
 
 from database import create_db_and_tables, engine
-from routers import calendar, leagues, matches
+from routers import calendar, leagues, matches, support
 from scripts.backfill_full_history import main as backfill_full_history
 from security import require_api_key
 from tasks.fetcher import run_fetch, fetcher_state
@@ -64,6 +64,9 @@ app.include_router(
 app.include_router(calendar.router, prefix="/api")
 app.include_router(
     matches.router, prefix="/api", dependencies=[Depends(require_api_key)]
+)
+app.include_router(
+    support.router, prefix="/api", dependencies=[Depends(require_api_key)]
 )
 
 

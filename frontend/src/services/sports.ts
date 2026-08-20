@@ -1,4 +1,4 @@
-import type { CalendarLink, Match, SeasonStats, StandingEntry, Sport, Team } from '@/types'
+import type { CalendarLink, Match, SeasonStats, StandingEntry, Sport, SupportPayload, Team } from '@/types'
 
 const API_BASE = '/api'
 
@@ -89,6 +89,15 @@ export async function fetchLastUpdated(): Promise<string | null> {
   if (!res.ok) throw new Error(`Failed to fetch last-updated: ${res.status}`)
   const data = await res.json()
   return data.last_run
+}
+
+export async function sendSupportRequest(payload: SupportPayload): Promise<void> {
+  const res = await fetch(`${API_BASE}/support`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) throw new Error(`Failed to send support request: ${res.status}`)
 }
 
 export async function fetchCalendarLink(

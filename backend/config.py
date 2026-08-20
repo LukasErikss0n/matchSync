@@ -12,3 +12,4 @@ BASE_WEBCAL_URL: str = os.getenv(
 
 RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
 ALERT_EMAIL: str = os.getenv("ALERT_EMAIL", "")
+SUPPORT_EMAIL: str = os.getenv("SUPPORT_EMAIL", "support@matchcalender.com")

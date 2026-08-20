@@ -4,6 +4,7 @@ import MatchesView from '@/views/MatchesView.vue'
 import ApiDocsView from '@/views/ApiDocsView.vue'
 import PrivacyPolicyView from '@/views/PrivacyPolicyView.vue'
 import TermsOfServiceView from '@/views/TermsOfServiceView.vue'
+import SupportView from '@/views/SupportView.vue'
 import leaguePages from '@/data/leaguePages.json'
 import { applyPageMeta } from '@/utils/seo'
 
@@ -17,6 +18,8 @@ const PRIVACY_DESCRIPTION =
   'MatchCalender only stores the sport, team and league selections needed to generate your calendar link — no accounts, no tracking, no ads.'
 const TERMS_DESCRIPTION =
   'Read the terms covering personal use of MatchCalender, including sharing calendar links with friends and the restriction on commercial redistribution.'
+const SUPPORT_DESCRIPTION =
+  'Report a bug, suggest an improvement, or ask a question about MatchCalender.'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -74,6 +77,15 @@ const router = createRouter({
       meta: {
         title: 'Terms of service | MatchCalender',
         description: TERMS_DESCRIPTION,
+      },
+    },
+    {
+      path: '/support',
+      name: 'support',
+      component: SupportView,
+      meta: {
+        title: 'Report a problem | MatchCalender',
+        description: SUPPORT_DESCRIPTION,
       },
     },
     // Per-league landing pages — each reuses MatchesView, locked to one league

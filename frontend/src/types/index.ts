@@ -86,3 +86,13 @@ export interface CalendarLink {
   leagues: League[]
   url: string
 }
+
+export type SupportType = 'bug' | 'improvement' | 'other'
+
+export interface SupportPayload {
+  type: SupportType
+  text: string
+  page?: string | null
+  device: string
+  email?: string | null
+}

@@ -61,8 +61,8 @@ body::before {
 
 /* ── Brand utilities ───────────────────────────────────────────────────────── */
 .ms-btn-primary {
-    background: linear-gradient(160deg, var(--ms-blue) 0%, var(--ms-blue-dark) 100%);
     color: var(--ms-ink);
+    background-color: var(--ms-blue-dark);
     border: none;
     box-shadow: 0 16px 32px -12px rgba(94, 178, 230, 0.55);
     transition: filter 0.15s ease;

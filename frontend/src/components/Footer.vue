@@ -56,12 +56,12 @@
           >
             {{ l.label }}
           </RouterLink>
-          <a
-            href="mailto:support@matchcalender.com"
-            class="text-[13.5px] font-semibold hover:opacity-80 transition-opacity ms-text-accent"
+          <RouterLink
+            to="/support"
+            class="text-[13.5px] font-semibold hover:opacity-80 transition-opacity"
           >
-              support@matchcalender.com
-          </a>
+            <span class="ms-text-accent">Report a problem</span>
+          </RouterLink>
         </div>
       </div>
       <div class="flex flex-col sm:flex-row items-center justify-between gap-2 pt-5">
