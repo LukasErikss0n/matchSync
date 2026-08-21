@@ -113,6 +113,16 @@ LEAGUE_DISPLAY: dict[str, str] = {
 }
 
 
+class ExpectedUpstreamGap(Exception):
+    """A source is unavailable for a known, routine, self-resolving reason —
+    e.g. OpenF1 gating unauthenticated requests while an F1 session is live.
+    Raised (rather than swallowed into an empty result) so the run still
+    aborts before save() can misread "nothing fetched" as "nothing scheduled"
+    and delete real data — but caught separately in run_fetch so it's logged
+    quietly instead of flipping fetcher_state to "error" and sending an alert
+    email for something that isn't actually a problem."""
+
+
 # ── HTTP client ───────────────────────────────────────────────────────────────
 
 
@@ -898,8 +908,18 @@ class F1Filter:
         try:
             data = self.api.get(url)
         except requests.HTTPError as e:
-            if e.response is not None and e.response.status_code == 404:
+            status = e.response.status_code if e.response is not None else None
+            if status == 404:
                 return []
+            if status == 401:
+                # OpenF1's own documented behaviour, not a credentials problem
+                # on our end — it blocks *all* unauthenticated requests
+                # (including historical data) for the duration of any live
+                # session, then reopens on its own. Happens routinely, several
+                # times per race weekend.
+                raise ExpectedUpstreamGap(
+                    f"OpenF1 gated (401, live session in progress): {url}"
+                ) from e
             raise
         return data if isinstance(data, list) else []
 
@@ -1070,6 +1090,10 @@ def run_fetch() -> None:
     def run_one(label: str, fn) -> None:
         try:
             fn()
+        except ExpectedUpstreamGap as e:
+            # Routine, self-resolving, not worth an "error" status or an
+            # alert email — just skip this source for this cycle.
+            print(f"[fetcher] {label} skipped: {e}")
         except Exception as e:
             print(f"[fetcher] {label} failed: {e}")
             errors.append(f"{label}: {e}")
