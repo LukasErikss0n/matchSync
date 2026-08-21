@@ -31,13 +31,14 @@
                 </span>
                 <div v-else class="relative">
                     <button
+                        ref="leagueBtn"
                         class="filter-pill active"
                         @click="toggle('league')"
                     >
                         {{ selectedLeague?.name ?? "League" }}
                         <ChevronDown />
                     </button>
-                    <div v-if="open === 'league'" class="filter-menu">
+                    <div v-if="open === 'league'" class="filter-menu max-h-72 overflow-y-auto" :style="menuPositionStyle">
                         <button
                             v-for="opt in leagueOptions"
                             :key="`${opt.sport}:${opt.slug}`"
@@ -65,6 +66,7 @@
                 <!-- Team -->
                 <div class="relative">
                     <button
+                        ref="teamBtn"
                         class="filter-pill"
                         :class="{ active: !!selectedTeamSlug }"
                         @click="toggle('team')"
@@ -75,6 +77,7 @@
                     <div
                         v-if="open === 'team'"
                         class="filter-menu right-align max-h-72 overflow-y-auto"
+                        :style="menuPositionStyle"
                     >
                         <button
                             class="filter-item"
@@ -260,7 +263,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, h } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, h } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { League, Match, SeasonStats, Sport, Team } from "@/types";
 import {
@@ -344,6 +347,56 @@ const selectedTeamSlug = ref<string | null>(null);
 const matches = ref<Match[]>([]);
 const loading = ref(false);
 const open = ref<"league" | "team" | null>(null);
+// Each filter-menu is `position: absolute` inside its own button's tiny
+// wrapper, so its default left/right anchor is wherever that specific pill
+// landed in the flex-wrap row — fine near the left margin, but on a phone
+// "All teams" sometimes fits on the same line as League/Season (no wrap),
+// landing near the *right* edge, and the dropdown then opens off-screen with
+// only the crest column visible and the team names cut off. Below the mobile
+// breakpoint we switch the open menu to `position: fixed`, spanning the
+// viewport with a fixed margin, and set its top from the trigger button's
+// real position — independent of which pill happened to be nearest the edge.
+const leagueBtn = ref<HTMLButtonElement | null>(null);
+const teamBtn = ref<HTMLButtonElement | null>(null);
+const isNarrowScreen = ref(false);
+const menuTop = ref(0);
+function updateIsNarrowScreen() {
+    isNarrowScreen.value = window.innerWidth <= 639;
+}
+const menuPositionStyle = computed(() =>
+    isNarrowScreen.value
+        ? {
+              position: "fixed" as const,
+              top: `${menuTop.value}px`,
+              left: "0.75rem",
+              right: "0.75rem",
+              maxWidth: "none",
+              minWidth: "0",
+              // `fixed` pulls the menu out of document flow, so it can no
+              // longer grow the page's own scroll the way the old `absolute`
+              // positioning did — cap it to whatever viewport space is left
+              // below the button (with a floor so it isn't squashed to
+              // nothing near the bottom of the screen) and let it scroll
+              // internally instead.
+              maxHeight: `${Math.max(160, window.innerHeight - menuTop.value - 12)}px`,
+          }
+        : {},
+);
+// Being `fixed` also decouples the menu from page scroll — without this, the
+// content behind it keeps scrolling under a menu that stays visually pinned
+// in place. Only needed in the mobile/fixed mode; on desktop the menu is
+// still `absolute` inside the page flow and scrolls along with it normally.
+watch(open, (which) => {
+    if (!isNarrowScreen.value) return;
+    if (which) {
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+        document.body.style.overflow = "hidden";
+        if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`;
+    } else {
+        document.body.style.overflow = "";
+        document.body.style.paddingRight = "";
+    }
+});
 const weekOffset = ref(0);
 // The week jumpToRelevantWeek() picked on its own for the current league.
 // Reset compares against this rather than 0: a league whose next fixture is
@@ -449,7 +502,13 @@ const season = computed(() => {
 });
 
 function toggle(which: "league" | "team") {
-    open.value = open.value === which ? null : which;
+    const wasOpen = open.value === which;
+    open.value = wasOpen ? null : which;
+    if (wasOpen) return;
+    nextTick(() => {
+        const btn = which === "league" ? leagueBtn.value : teamBtn.value;
+        if (btn) menuTop.value = btn.getBoundingClientRect().bottom + 8;
+    });
 }
 
 function pushQuery(league: LeagueOption | null, team: string | null) {
@@ -980,6 +1039,9 @@ function onViewStandings(m: Match) {
 }
 
 onMounted(async () => {
+    updateIsNarrowScreen();
+    window.addEventListener("resize", updateIsNarrowScreen);
+
     // Reopen the subscribe wizard if the URL still carries its state (reload while open).
     if (route.query.wstep || route.query.wsport || route.query.wteam) {
         showModal.value = true;
@@ -1049,6 +1111,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
     if (clockTimer !== null) window.clearInterval(clockTimer);
+    window.removeEventListener("resize", updateIsNarrowScreen);
+    document.body.style.overflow = "";
+    document.body.style.paddingRight = "";
     removeJsonLd("faq-jsonld");
     removeJsonLd("league-events-jsonld");
 });

@@ -261,14 +261,11 @@ body::before {
     right: 0;
 }
 
-/* On narrow screens filters wrap onto their own row near the left edge —
-   right-aligning there pushes the menu off-screen, so force left-align. */
-@media (max-width: 639px) {
-    .filter-menu.right-align {
-        left: 0;
-        right: auto;
-    }
-}
+/* Below 639px, MatchesView.vue switches the open menu to an inline
+   `position: fixed` anchored off the trigger button's real position (see
+   menuPositionStyle) instead of this class's button-relative left/right —
+   the button can land anywhere in the wrapped filter row, so a fixed
+   left-vs-right CSS rule can't keep the menu on-screen in every case. */
 
 .filter-item {
     display: flex;
