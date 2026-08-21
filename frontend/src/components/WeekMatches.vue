@@ -110,9 +110,10 @@ const rows = computed(() =>
         m.sport === 'motorsport'
           ? `${m.home_team} · ${m.away_team}`
           : `${m.home_team} – ${m.away_team}`,
-      // Venue isn't populated by any fetcher yet, so this is usually just the
-      // league — it fills in on its own once venues start arriving.
-      subtitle: m.venue ? `${m.league.name} · ${m.venue}` : m.league.name,
+      // Venue is "<Stadium>, <City>" — city is dropped here since this row is
+      // a single truncating line and the stadium name is the part worth the
+      // space (the full string is still used for the calendar feed/JSON-LD).
+      subtitle: m.venue ? `${m.league.name} · ${m.venue.split(',')[0].trim()}` : m.league.name,
       dayLabel: start.toLocaleDateString([], { weekday: 'short' }),
       timeLabel: start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
       isToday: start.toDateString() === new Date().toDateString(),

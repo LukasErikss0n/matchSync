@@ -142,9 +142,14 @@ const current = computed<Fixture | undefined>(() => fixtures.value[index.value])
 const eyebrow = computed(() => {
   const f = current.value
   if (!f) return ''
-  // Venue isn't populated by any fetcher yet, so this usually renders as just
-  // the league — it lights up on its own once venues start arriving.
-  return f.venue ? `${f.league} · ${f.venue}` : f.league
+  if (!f.venue) return f.league
+  // Venue is "<Stadium>, <City>" — the city is the part this single-line,
+  // fixed-width label can least afford, so it's dropped here (the full
+  // string is still what's used everywhere else, e.g. the calendar feed and
+  // structured data). "League · Stadium" still overflows for a handful of
+  // long combinations, which the ellipsis below handles.
+  const stadium = f.venue.split(',')[0].trim()
+  return `${f.league} · ${stadium}`
 })
 
 const washGradient = computed(() => {
