@@ -1,16 +1,12 @@
-"""Ranked list of the coming week's matches for the home page's "This week".
+"""Chronological list of the coming week's matches for the home page's "This
+week" panel.
 
-Reuses featured_match's league weights and region boost so one editorial
-opinion about league importance lives in a single place. What differs is the
-emphasis: featured_match picks a single hero fixture, so kickoff proximity
-dominates its score. This list is browsed as a week at a glance, so league
-prestige leads and kickoff time only orders matches *within* the same tier —
-a Premier League game on Saturday still outranks an Allsvenskan one tonight,
-unless the visitor is Swedish and the region boost flips that round.
-
-Rather than fold both into one number (which needs the time term kept small
-enough never to jump a league tier — fragile as weights change), ordering is
-an explicit sort key: live first, then league score, then kickoff.
+Ordering used to lead with league prestige (and a region boost for the
+visitor's home leagues), with kickoff time only breaking ties within the same
+tier — league blocks were each internally in order, but concatenated back to
+back the whole list read as scrambled (a Monday fixture from one block
+sitting right before a Friday fixture from the next). Straight chronological
+order is what "this week" actually promises, so that's the only sort key now.
 """
 
 import time
@@ -19,14 +15,6 @@ from datetime import datetime, timedelta, timezone
 from models.models import League, Match, Sport, Team
 from schemas.schemas import LeagueOut, MatchOut
 from services.crest_url import crest_url
-from services.featured_match import (
-    DEFAULT_LEAGUE_WEIGHT,
-    F1_LOW_PRIORITY_SESSIONS,
-    LEAGUE_WEIGHTS,
-    LIVE_WINDOW,
-    REGION_BOOST,
-    REGION_LEAGUES,
-)
 from sqlmodel import Session, col, select
 
 # A rolling seven days rather than "until Sunday" — a calendar week checked on
@@ -65,24 +53,10 @@ _cache: dict[str, tuple[float, list[MatchOut]]] = {}
 _CACHE_TTL_SECONDS = 300
 
 
-def _league_score(league_slug: str, away_team: str, region: str | None) -> float:
-    score = LEAGUE_WEIGHTS.get(league_slug, DEFAULT_LEAGUE_WEIGHT)
-    # Same rule featured_match applies: an F1 weekend contributes one row per
-    # session, and nobody browses the week for Practice 2 — without this the
-    # top of the list is a single Grand Prix repeated five times.
-    if league_slug == "formula-1" and any(
-        p in away_team for p in F1_LOW_PRIORITY_SESSIONS
-    ):
-        score = DEFAULT_LEAGUE_WEIGHT
-    if region and league_slug in REGION_LEAGUES.get(region, ()):
-        score += REGION_BOOST
-    return score
-
-
 def get_week_matches(
     session: Session, region: str | None = None, limit: int = MAX_WEEK_MATCHES
 ) -> list[MatchOut]:
-    """The coming week's matches, best leagues first, then by kickoff."""
+    """The coming week's matches, earliest kickoff first."""
     region = region.upper() if region else None
     cache_key = region or "global"
     now_ts = time.monotonic()
@@ -114,7 +88,7 @@ def get_week_matches(
         ).all():
             away_lookup[(team.league_id, team.name)] = team
 
-    ranked: list[tuple[tuple, Match, Team, League, Sport, datetime]] = []
+    ranked: list[tuple[datetime, int, Match, Team, League, Sport]] = []
     for index, (match, home_team, lg, sp) in enumerate(rows):
         if _hidden_for_region(lg.slug, region):
             continue
@@ -123,23 +97,14 @@ def get_week_matches(
         if start.tzinfo is None:
             start = start.replace(tzinfo=timezone.utc)
 
-        has_score = match.home_score is not None and match.away_score is not None
-        is_live = start <= now <= start + LIVE_WINDOW and not has_score
+        # `index` only breaks exact kickoff ties, so the sort never has to
+        # compare Match objects (which aren't orderable).
+        ranked.append((start, index, match, home_team, lg, sp))
 
-        # `index` only breaks exact ties, so the sort never has to compare
-        # Match objects (which aren't orderable).
-        key = (
-            0 if is_live else 1,
-            -_league_score(lg.slug, match.away_team, region),
-            start,
-            index,
-        )
-        ranked.append((key, match, home_team, lg, sp, start))
-
-    ranked.sort(key=lambda r: r[0])
+    ranked.sort(key=lambda r: (r[0], r[1]))
 
     results: list[MatchOut] = []
-    for _, match, home_team, lg, sp, start in ranked[:MAX_WEEK_MATCHES]:
+    for start, _, match, home_team, lg, sp in ranked[:MAX_WEEK_MATCHES]:
         assert match.id is not None and lg.id is not None  # persisted rows
         away_team = away_lookup.get((lg.id, match.away_team))
         results.append(

@@ -47,8 +47,12 @@
             <div class="font-bold text-[14px] sm:text-[15px] leading-snug break-words">
               {{ m.title }}
             </div>
+            <!-- Wraps rather than truncates, same reasoning as the title
+                 above: "League · Stadium" routinely doesn't fit one line next
+                 to the day badge and time on a phone, and the venue is the
+                 whole point of showing it — cutting it off defeats the row. -->
             <div
-              class="text-[12px] sm:text-[13px] font-semibold truncate mt-0.5"
+              class="text-[12px] sm:text-[13px] font-semibold break-words mt-0.5"
               style="color: rgba(244,247,251,.5)"
             >
               {{ m.subtitle }}

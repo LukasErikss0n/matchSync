@@ -886,11 +886,21 @@ class F1Filter:
 
     def _get_list(self, url: str) -> list:
         # OpenF1 404s (rather than returning []) for a year/meeting it has no
-        # data for yet (e.g. next season, before the calendar's published).
+        # data for yet (e.g. next season, before the calendar's published) —
+        # that's a legitimate empty result. Anything else (401 — OpenF1 now
+        # gates unauthenticated requests while a session is live — 429, 5xx,
+        # ...) must NOT be swallowed the same way: filter() hands whatever it
+        # collects to store.save(), which deletes every future match not in
+        # that set. Treating a real outage as "zero events" reads as the
+        # whole season having been cancelled and wipes every upcoming Grand
+        # Prix from the database — so anything but a 404 has to raise and
+        # abort the run before save() is ever called.
         try:
             data = self.api.get(url)
-        except requests.HTTPError:
-            return []
+        except requests.HTTPError as e:
+            if e.response is not None and e.response.status_code == 404:
+                return []
+            raise
         return data if isinstance(data, list) else []
 
     def filter(self, full_history: bool = False):
@@ -1048,24 +1058,51 @@ def run_fetch() -> None:
     time = TimeManagement()
     helpers = HelpFunctions()
 
+    # Each entry hits a different upstream, any of which can be down/rate-
+    # limited/auth-gated independently. Previously they all shared one
+    # try/except, so one failure (e.g. OpenF1's 401 during a live F1 session)
+    # aborted every filter after it in the list, including the icon/colour
+    # backfill that has nothing to do with F1 — silently skipping updates for
+    # every other sport too. Isolating each call means one source's outage
+    # only costs that source's update.
+    errors: list[str] = []
+
+    def run_one(label: str, fn) -> None:
+        try:
+            fn()
+        except Exception as e:
+            print(f"[fetcher] {label} failed: {e}")
+            errors.append(f"{label}: {e}")
+
     try:
         with Session(engine) as session:
             store = DBStore(session)
-            FootballFilter(api, time, store).filter()
-            HockeyBasketballFilter(api, time, store, helpers).filter()
-            SwedishFootballFilter(api, time, store).filter()
-            IIHFFilter(api, time, store).filter()
-            FifaFilter(api, time, store).filter()
-            F1Filter(api, time, store).filter()
-            FootballIconsFetcher(api, store).filter()
+            run_one("football", lambda: FootballFilter(api, time, store).filter())
+            run_one("hockey/basketball", lambda: HockeyBasketballFilter(api, time, store, helpers).filter())
+            run_one("swedish football", lambda: SwedishFootballFilter(api, time, store).filter())
+            run_one("iihf", lambda: IIHFFilter(api, time, store).filter())
+            run_one("fifa", lambda: FifaFilter(api, time, store).filter())
+            run_one("f1", lambda: F1Filter(api, time, store).filter())
+            run_one("football icons", lambda: FootballIconsFetcher(api, store).filter())
             # Last, so every icon written above gets a colour in the same run.
-            store.backfill_team_colors()
+            run_one("team colours", lambda: store.backfill_team_colors())
 
-        fetcher_state["status"] = "ok"
         fetcher_state["last_run"] = datetime.now(_LOCAL_TZ).isoformat()
-        fetcher_state["last_error"] = None
-        print("[fetcher] done")
+        if errors:
+            combined = "; ".join(errors)
+            was_ok = fetcher_state["status"] != "error"
+            fetcher_state["status"] = "error"
+            fetcher_state["last_error"] = combined
+            print(f"[fetcher] completed with errors: {combined}")
+            if was_ok:
+                _send_error_email(combined)
+        else:
+            fetcher_state["status"] = "ok"
+            fetcher_state["last_error"] = None
+            print("[fetcher] done")
     except Exception as e:
+        # Something outside any single filter (e.g. the DB itself) — the
+        # whole run is genuinely unusable here, unlike a per-filter failure.
         was_ok = fetcher_state["status"] != "error"
         fetcher_state["status"] = "error"
         fetcher_state["last_error"] = str(e)
