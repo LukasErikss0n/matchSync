@@ -1,101 +1,11 @@
 <template>
   <section class="relative px-4 sm:px-6 pt-8 sm:pt-14 pb-6">
-    <!-- MOBILE: headline, then the same duotone panel scaled down -->
-    <div class="lg:hidden max-w-5xl mx-auto">
-      <p class="text-[11px] font-bold uppercase mb-2.5 ms-text-accent" style="letter-spacing: 0.15em">
-        Auto-sync
-      </p>
-      <h1 class="text-[29px] font-extrabold leading-[1.08]" style="letter-spacing: -0.02em">
-        The whole season.<br />One subscription.
-      </h1>
-
-      <FixtureHeroPanel :matches="featuredMatches" class="mt-4" />
-
-      <p class="text-[15px] font-medium mt-3.5 leading-relaxed" style="color: var(--ms-muted); text-align: center;">
-        Pick your team and get a live calendar link. Rescheduled matches, playoffs and cups, everything updates itself for free.
-      </p>
-
-      <div class="flex flex-col gap-3 mt-5.5">
-        <button
-          class="ms-btn-primary rounded-2xl py-3.5 font-bold text-[16px] flex items-center justify-center gap-2"
-          @click="emit('getStarted')"
-        >
-          <Icon name="calendar" class="!w-[18px] !h-[18px]" />
-          Choose your team
-        </button>
-        <RouterLink
-          :to="seeAllRoute"
-          class="ms-btn-secondary rounded-2xl py-3.5 font-bold text-[16px] text-center"
-        >
-          See all matches
-        </RouterLink>
-      </div>
-
-      <div class="flex justify-center gap-2 mt-5.5 flex-wrap">
-        <div class="glass-panel rounded-[14px] px-3.5 py-2.5 text-center">
-          <div class="text-[15px] font-extrabold">14+</div>
-          <div class="text-[10.5px] font-semibold uppercase tracking-wide mt-0.5" style="color: var(--ms-muted-dim)">Leagues</div>
-        </div>
-        <div class="glass-panel rounded-[14px] px-3.5 py-2.5 text-center">
-          <div class="text-[15px] font-extrabold">4</div>
-          <div class="text-[10.5px] font-semibold uppercase tracking-wide mt-0.5" style="color: var(--ms-muted-dim)">Sports</div>
-        </div>
-        <div class="glass-panel rounded-[14px] px-3.5 py-2.5 text-center">
-          <div class="text-[15px] font-extrabold">1 min</div>
-          <div class="text-[10.5px] font-semibold uppercase tracking-wide mt-0.5" style="color: var(--ms-muted-dim)">To get started</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- DESKTOP: side-by-side split hero -->
-    <div class="hidden lg:grid lg:grid-cols-2 gap-14 items-center max-w-5xl mx-auto">
-      <div>
-        <p class="text-[13px] font-bold uppercase mb-3.5 ms-text-accent" style="letter-spacing: 0.18em">
-          Always up to date &nbsp;·&nbsp; Auto-sync
-        </p>
-        <h1
-          class="text-5xl font-extrabold leading-[1.05] mb-4"
-          style="letter-spacing: -0.02em"
-        >
-          The whole season.<br />One subscription.
-        </h1>
-        <p class="text-base font-medium mb-7 max-w-md leading-relaxed" style="color: var(--ms-muted)">
-          Pick your team and get a live calendar link. Rescheduled matches and playoffs, everything updates itself.
-        </p>
-        <div class="flex flex-row gap-3">
-          <button
-            class="ms-btn-primary rounded-2xl px-6 py-3.5 font-bold text-[15px] flex items-center justify-center gap-2"
-            @click="emit('getStarted')"
-          >
-            <Icon name="calendar" class="!w-[18px] !h-[18px]" />
-            Choose your team
-          </button>
-          <RouterLink
-            :to="seeAllRoute"
-            class="ms-btn-secondary rounded-2xl px-6 py-3.5 font-bold text-[15px] text-center"
-          >
-            See all matches
-          </RouterLink>
-        </div>
-        <div class="flex gap-2 mt-8 flex-wrap">
-          <div class="glass-panel rounded-2xl px-4 py-3 text-center">
-            <div class="text-[15px] font-extrabold">13+</div>
-            <div class="text-[10.5px] font-semibold uppercase tracking-wide mt-0.5" style="color: var(--ms-muted-dim)">Leagues</div>
-          </div>
-          <div class="glass-panel rounded-2xl px-4 py-3 text-center">
-            <div class="text-[15px] font-extrabold">3</div>
-            <div class="text-[10.5px] font-semibold uppercase tracking-wide mt-0.5" style="color: var(--ms-muted-dim)">Sports</div>
-          </div>
-          <div class="glass-panel rounded-2xl px-4 py-3 text-center">
-            <div class="text-[15px] font-extrabold">1 min</div>
-            <div class="text-[10.5px] font-semibold uppercase tracking-wide mt-0.5" style="color: var(--ms-muted-dim)">To get started</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Duotone stage: rotates through the top featured fixtures, or a
-           generic promo card when nothing scores high enough. -->
-      <FixtureHeroPanel :matches="featuredMatches" />
+    <!-- Featured fixture: rotates through the top featured fixtures, or a
+         generic promo card when nothing scores high enough. One card at every
+         width — it's responsive internally rather than swapped for a
+         separate headline+preview split. -->
+    <div class="max-w-5xl mx-auto">
+      <FixtureHeroPanel :matches="featuredMatches" @get-started="emit('getStarted')" />
     </div>
 
     <!-- TEAM PICKER PANEL -->
@@ -193,7 +103,6 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted, nextTick } from 'vue'
-import { RouterLink } from 'vue-router'
 import type { Sport, Team } from '@/types'
 import { fetchSports, fetchTeams } from '@/services/sports'
 import { cachedFeaturedMatches, refreshFeaturedMatch } from '@/services/featuredMatchCache'
@@ -220,13 +129,6 @@ const selectedTeam = ref<Team | null>(null)
 // (e.g. dead period, or the request fails). Cached at module scope so
 // switching tabs and back doesn't flash the fallback while a fresh fetch resolves.
 const featuredMatches = computed(() => cachedFeaturedMatches.value ?? [])
-
-// "See all matches" should always land on the league the hero leads with —
-// not whatever the user last browsed to on the Matches page.
-const seeAllRoute = computed(() => {
-  const top = featuredMatches.value[0]
-  return top ? { path: '/matches', query: { league: top.league.slug } } : '/matches'
-})
 
 let searchTimer: number | null = null
 

@@ -39,6 +39,8 @@ const emit = defineEmits<{ click: [] }>()
 // Deterministic pastel pick, matching the design's 3-color rotation
 const PALETTE = ['#8ecdf2', '#f2b8c6', '#c9e8d2']
 const iconColor = computed(() => {
+  // Hockey lands on the pink slot by hash coincidence — pinned to blue instead.
+  if (props.sport.id === 'hockey') return '#8ecdf2'
   let hash = 0
   for (let i = 0; i < props.sport.id.length; i++) hash = (hash * 31 + props.sport.id.charCodeAt(i)) >>> 0
   return PALETTE[hash % PALETTE.length]
