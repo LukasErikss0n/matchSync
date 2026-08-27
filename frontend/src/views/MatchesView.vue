@@ -222,26 +222,6 @@
                     Get link
                 </button>
             </div>
-
-            <!-- Season FAQ (built from the live fixture list — helps long-tail search) -->
-            <div v-if="seasonFaq" class="mt-6 glass-card rounded-2xl px-5 py-5">
-                <p class="section-label mb-3">FAQ</p>
-                <div v-for="item in seasonFaq.items" :key="item.question" class="mb-4 last:mb-0">
-                    <p class="font-bold text-sm mb-3">{{ item.question }}</p>
-                    <div v-if="item.rows" class="rounded-2xl border border-white/[0.08] overflow-hidden">
-                        <div
-                            v-for="(row, index) in item.rows"
-                            :key="row.label"
-                            class="flex items-center justify-between px-4 py-3 border-b border-white/[0.06] last:border-b-0"
-                            :class="index % 2 === 0 ? 'bg-white/[0.03]' : 'bg-white/[0.06]'"
-                        >
-                            <span class="font-bold text-sm">{{ row.label }}</span>
-                            <span class="font-bold text-sm ms-text-accent">{{ row.value }}</span>
-                        </div>
-                    </div>
-                    <p v-else class="text-sm" style="color: var(--ms-muted)">{{ item.answer }}</p>
-                </div>
-            </div>
         </div>
     </main>
 
@@ -265,14 +245,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, h } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import type { League, Match, SeasonStats, Sport, Team } from "@/types";
+import type { League, Match, Sport, Team } from "@/types";
 import {
     fetchSports,
     fetchTeams,
     fetchTeam,
     fetchMatches,
     fetchLastUpdated,
-    fetchSeasonStats,
 } from "@/services/sports";
 import { cachedFeaturedMatch, refreshFeaturedMatch } from "@/services/featuredMatchCache";
 import { setJsonLd, removeJsonLd } from "@/utils/seo";
@@ -542,7 +521,7 @@ async function selectLeague(opt: LeagueOption) {
     selectedTeamSlug.value = null;
     saveLastLeague(opt);
     pushQuery(opt, null);
-    await Promise.all([loadTeams(), loadMatches(), loadSeasonStats()]);
+    await Promise.all([loadTeams(), loadMatches()]);
 }
 
 function selectTeam(slug: string | null) {
@@ -572,18 +551,6 @@ async function loadTeams() {
             t.leagues.some((l) => l.slug === selectedLeague.value!.slug),
         )
         .sort((a, b) => a.name.localeCompare(b.name));
-}
-
-const seasonStats = ref<SeasonStats | null>(null);
-
-async function loadSeasonStats() {
-    if (!selectedLeague.value) return;
-    seasonStats.value = null;
-    try {
-        seasonStats.value = await fetchSeasonStats(selectedLeague.value.slug);
-    } catch {
-        /* FAQ just won't show for this league */
-    }
 }
 
 async function loadMatches() {
@@ -774,139 +741,9 @@ const windowSubtitle = computed(
     () => `${visibleMatches.value.length} matches this week`,
 );
 
-// World Cup winners are historical fact, not something the fetcher's live
-// season-stats source tracks — hardcoded here rather than derived from the DB,
-// which only ever holds the current tournament's fixtures.
-const WORLD_CUP_WINNERS: { year: number; country: string }[] = [
-    { year: 1930, country: "Uruguay" },
-    { year: 1934, country: "Italy" },
-    { year: 1938, country: "Italy" },
-    { year: 1950, country: "Uruguay" },
-    { year: 1954, country: "West Germany" },
-    { year: 1958, country: "Brazil" },
-    { year: 1962, country: "Brazil" },
-    { year: 1966, country: "England" },
-    { year: 1970, country: "Brazil" },
-    { year: 1974, country: "West Germany" },
-    { year: 1978, country: "Argentina" },
-    { year: 1982, country: "Italy" },
-    { year: 1986, country: "Argentina" },
-    { year: 1990, country: "West Germany" },
-    { year: 1994, country: "Brazil" },
-    { year: 1998, country: "France" },
-    { year: 2002, country: "Brazil" },
-    { year: 2006, country: "Italy" },
-    { year: 2010, country: "Spain" },
-    { year: 2014, country: "Germany" },
-    { year: 2018, country: "France" },
-    { year: 2022, country: "Argentina" },
-    { year: 2026, country: "Spain" },
-];
-
-function worldCupFaqItems() {
-    const winCounts = new Map<string, number>();
-    for (const { country } of WORLD_CUP_WINNERS) {
-        winCounts.set(country, (winCounts.get(country) ?? 0) + 1);
-    }
-    const winnersByCount = [...winCounts.entries()].sort((a, b) => b[1] - a[1]);
-    const winnersRows = winnersByCount.map(([country, count]) => ({
-        label: country,
-        value: String(count),
-    }));
-
-    const last = WORLD_CUP_WINNERS[WORLD_CUP_WINNERS.length - 1];
-
-    return [
-        {
-            question: "Who has won the FIFA World Cup?",
-            answer: winnersByCount.map(([country, count]) => `${country} — ${count}`).join(", "),
-            rows: winnersRows,
-        },
-        {
-            question: "Who won the last FIFA World Cup?",
-            answer: `${last.country} won the ${last.year} FIFA World Cup.`,
-        },
-    ];
-}
-
-// ── Season FAQ ───────────────────────────────────────────────────────────────
-// Backed by GET /api/leagues/{slug}/season-stats, which queries the same
-// external providers the fetcher uses (see backend/services/season_stats.py) —
-// not our own DB, which only ever holds a rolling window and can look empty
-// right after a season ends and before the next one is announced.
-const seasonFaq = computed(() => {
-    if (!selectedLeague.value || !seasonStats.value) return null;
-    const name = selectedLeague.value.name;
-    const stats = seasonStats.value;
-
-    if (selectedLeague.value.slug === "fifa-world-cup-2026" && stats.published) {
-        return { items: worldCupFaqItems() };
-    }
-
-    if (!stats.published) {
-        return {
-            items: [
-                {
-                    question: `When does the ${name} season start?`,
-                    answer: `Fixtures for the next ${name} season haven't been published yet. Check back soon — this updates automatically once they're announced.`,
-                },
-            ],
-        };
-    }
-
-    const fmt = (d: Date) =>
-        d.toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" });
-    const start = stats.season_start ? fmt(new Date(stats.season_start)) : null;
-
-    // Knockout cups (FA Cup, EFL Cup) draw each round only once the previous one
-    // finishes — there's no fixed "games this season" total to report, so the
-    // count means "currently scheduled", phrased to make that explicit.
-    const countAnswer = stats.progressive_knockout
-        ? `${stats.regular_season_count} ${stats.regular_season_count === 1 ? "match is" : "matches are"} currently scheduled for the ${name}. Later rounds are drawn as the competition progresses, so the full total isn't set yet.`
-        : `The season contains ${stats.regular_season_count} matches before playoffs that we track.`;
-
-    return {
-        items: [
-            ...(start
-                ? [
-                      {
-                          question: `When does the ${name} season start?`,
-                          answer: `The ${name} season starts on ${start}.`,
-                      },
-                  ]
-                : []),
-            {
-                question: `How many games are in a ${name} season?`,
-                answer: countAnswer,
-            },
-        ],
-    };
-});
-
-watch(
-    seasonFaq,
-    (faq) => {
-        if (!faq) {
-            removeJsonLd("faq-jsonld");
-            return;
-        }
-        setJsonLd("faq-jsonld", {
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: faq.items.map((item) => ({
-                "@type": "Question",
-                name: item.question,
-                acceptedAnswer: { "@type": "Answer", text: item.answer },
-            })),
-        });
-    },
-    { immediate: true },
-);
-
 // ── SportsEvent structured data (league landing pages only) ──────────────────
 // An ItemList of upcoming fixtures as schema.org SportsEvent — drives event
-// rich results and, unlike the FAQ schema, isn't the kind of single-answer
-// query an AI Overview swallows.
+// rich results.
 
 const SITE_URL = "https://matchcalender.com";
 
@@ -1097,7 +934,7 @@ onMounted(async () => {
         selectedTeamSlug.value = filterParam;
     }
 
-    await Promise.all([loadMatches(), loadSeasonStats()]);
+    await loadMatches();
     pushQuery(selectedLeague.value, selectedTeamSlug.value);
 
     try {
@@ -1114,7 +951,6 @@ onUnmounted(() => {
     window.removeEventListener("resize", updateIsNarrowScreen);
     document.body.style.overflow = "";
     document.body.style.paddingRight = "";
-    removeJsonLd("faq-jsonld");
     removeJsonLd("league-events-jsonld");
 });
 
