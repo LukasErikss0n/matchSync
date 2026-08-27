@@ -85,6 +85,7 @@
 import { computed } from 'vue'
 import type { Match } from '@/types'
 import { nowMs } from '@/utils/clock'
+import { matchState } from '@/utils/matchState'
 import TeamBadge from './TeamBadge.vue'
 import Icon from './Icon.vue'
 
@@ -98,22 +99,14 @@ const hasScore = computed(
   () => props.match.home_score != null && props.match.away_score != null,
 )
 
-// The fetcher only pulls every ~30 minutes, so there's no real per-minute
-// clock to show during a match — instead we treat kickoff..kickoff+LIVE_WINDOW
-// as "live" (mirrors backend/services/featured_match.py's LIVE_WINDOW) and
-// just show a LIVE badge rather than a fake, precisely-ticking minute count.
-const LIVE_WINDOW_MS = (2 * 60 + 30) * 60 * 1000 // 2h30m — approx match + stoppage time
-
 const kickoff = computed(() => new Date(props.match.start_time))
-const isPast = computed(() => kickoff.value.getTime() < nowMs.value)
-const isLive = computed(
-  () => isPast.value && !hasScore.value && nowMs.value <= kickoff.value.getTime() + LIVE_WINDOW_MS,
-)
-// Finished once a score has been recorded, or once we're well past the point
-// the match could plausibly still be live (fetcher just hasn't caught up).
-const finished = computed(
-  () => hasScore.value || (isPast.value && !isLive.value),
-)
+
+// Source status where available, clock-based safety net otherwise — see
+// utils/matchState.ts for why neither the score nor a bare status is
+// trustworthy on its own.
+const state = computed(() => matchState(props.match, nowMs.value))
+const isLive = computed(() => state.value === 'live')
+const finished = computed(() => state.value === 'finished')
 
 const timeLabel = computed(() =>
   kickoff.value.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
@@ -125,7 +118,11 @@ const leftLabel = computed(() => {
 })
 
 const centerText = computed(() => {
+  // A live match has a real running score now that kickoff no longer means
+  // "finished" — show it rather than the old hardcoded 0-0 placeholder.
   if (hasScore.value) return `${props.match.home_score}-${props.match.away_score}`
+  // Live but no score yet: sources that only publish a result once the match
+  // is over (e.g. Allsvenskan) genuinely have nothing to show mid-match.
   if (isLive.value) return '0-0'
   return finished.value ? '–' : timeLabel.value
 })

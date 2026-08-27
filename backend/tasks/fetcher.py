@@ -12,6 +12,7 @@ from config import ALERT_EMAIL, RESEND_API_KEY
 from database import engine
 from dateutil.parser import parse
 from models.models import League, Match, Sport, Team
+from schemas.schemas import STATUS_FINISHED, STATUS_LIVE, STATUS_SCHEDULED
 from requests.adapters import HTTPAdapter
 from services.crest_color import analyze_crest
 from sqlmodel import Session, col, select
@@ -111,6 +112,51 @@ LEAGUE_DISPLAY: dict[str, str] = {
     "fifa_world_cup_2026": "FIFA World Cup 2026",
     "f1": "Formula 1",
 }
+
+
+# Ball-in-play phases from pulselive's `period`. Whitelisted rather than
+# treated as "anything that isn't PreMatch/FullTime": that catch-all also
+# swallowed Abandoned/Postponed/Suspended, storing them as live — and since
+# save() only overwrites status with a truthy value, such a match would keep
+# a LIVE badge indefinitely. Unrecognised values return None instead, so the
+# kickoff-time fallback decides and the match still ages out to finished.
+_PL_LIVE_PERIODS = frozenset({
+    "FirstHalf",
+    "HalfTime",
+    "SecondHalf",
+    "ExtraTimeFirstHalf",
+    "ExtraTimeHalfTime",
+    "ExtraTimeSecondHalf",
+    "ShootOut",
+    "PenaltyShootout",
+})
+
+
+def _pl_status(period: str | None) -> str | None:
+    """Premier League/UEFA (pulselive) `period` → canonical status."""
+    if not period:
+        return None
+    if period == "PreMatch":
+        return STATUS_SCHEDULED
+    if period == "FullTime":
+        return STATUS_FINISHED
+    if period in _PL_LIVE_PERIODS:
+        return STATUS_LIVE
+    return None
+
+
+def _shl_status(state: str | None) -> str | None:
+    """SHL/SDHL/SBL `state` → canonical status. Same whitelist reasoning as
+    _pl_status: only "ongoing" is positively live."""
+    if not state:
+        return None
+    if state == "pre-game":
+        return STATUS_SCHEDULED
+    if state == "post-game":
+        return STATUS_FINISHED
+    if state == "ongoing":
+        return STATUS_LIVE
+    return None
 
 
 class ExpectedUpstreamGap(Exception):
@@ -375,6 +421,7 @@ class DBStore:
             home_score = _to_int(event.get("homeScore"))
             away_score = _to_int(event.get("awayScore"))
             venue = event.get("venue") or None
+            status = event.get("status") or None
             is_playoff = bool(event.get("isPlayoff", False))
             overtime = bool(event.get("overtime", False))
             shootout = bool(event.get("shootout", False))
@@ -406,6 +453,10 @@ class DBStore:
                     # sending the ground shouldn't blank a venue we already have.
                     if venue:
                         existing.venue = venue
+                    # Same rule as venue: a source that goes quiet shouldn't
+                    # downgrade a known status back to unknown.
+                    if status:
+                        existing.status = status
                     existing.is_playoff = is_playoff
                     existing.overtime = overtime
                     existing.shootout = shootout
@@ -421,6 +472,7 @@ class DBStore:
                             home_score=home_score,
                             away_score=away_score,
                             venue=venue,
+                            status=status,
                             is_playoff=is_playoff,
                             overtime=overtime,
                             shootout=shootout,
@@ -512,6 +564,7 @@ class FootballFilter:
                     "startDateAndTime": start,
                     # Already "<Ground>, <City>" (e.g. "Anfield, Liverpool").
                     "venue":            match.get("ground"),
+                    "status":           _pl_status(match.get("period")),
                     "homeIcon":         self._badge_url(match["homeTeam"]),
                     "awayIcon":         self._badge_url(match["awayTeam"]),
                     "homeScore":        match["homeTeam"].get("score"),
@@ -621,6 +674,7 @@ class HockeyBasketballFilter:
                             "awayTeam": match["awayTeamInfo"]["names"]["full"],
                             "startDateAndTime": match["rawStartDateTime"],
                             "venue": (match.get("venueInfo") or {}).get("name"),
+                            "status": _shl_status(match.get("state")),
                             "homeIcon": match["homeTeamInfo"].get("icon"),
                             "awayIcon": match["awayTeamInfo"].get("icon"),
                             "homeScore": match["homeTeamInfo"].get("score"),
@@ -650,6 +704,12 @@ class SwedishFootballFilter:
         season = self.time.get_active_season_year(f"{self.SEASON_START_MONTH:02d}")
         for league_key, competition_id in self.LEAGUES.items():
             events: dict = {}
+            # Deliberately no status for upcoming-games: it carries anything
+            # not yet finished, which includes a match currently being played
+            # (svenskfotboll only moves a match to played-games, and only
+            # publishes its score, once it's over). Claiming "scheduled" here
+            # would actively suppress the LIVE state for a match in progress,
+            # so it's left unset and the kickoff-time fallback decides.
             self._collect(
                 events, f"/api/upcoming-games/?competitionId={competition_id}&from=0"
             )
@@ -658,10 +718,12 @@ class SwedishFootballFilter:
             # since been played. Ordered most-recent-first, so once a match
             # falls outside the results window everything after it is older
             # still — safe to stop paginating instead of walking full history.
+            # Appearing here at all is what makes a match definitively over.
             self._collect(
                 events,
                 f"/api/played-games/?competitionId={competition_id}&from=0",
                 stop_when_old=True,
+                status=STATUS_FINISHED,
             )
             self.store.save("football", league_key, events)
 
@@ -671,6 +733,7 @@ class SwedishFootballFilter:
         start_url: str,
         stop_when_old: bool = False,
         full_history: bool = False,
+        status: str | None = None,
     ) -> None:
         """`full_history=True` ignores the recency filter entirely — used by
         the one-off backfill script (scripts/backfill_full_history.py) to pull
@@ -719,6 +782,13 @@ class SwedishFootballFilter:
                         "awayIcon":         away_icon,
                     },
                 )
+                # Set outside the setdefault so the played-games pass wins for
+                # a match that appeared in both — it's the definitive one.
+                if status:
+                    event["status"] = status
+                venue_el = match.select_one(".match-list__location")
+                if venue_el is not None and venue_el.text.strip():
+                    event["venue"] = venue_el.text.strip()
                 home_score_el = match.select_one(".match-list__home .match-list__score")
                 away_score_el = match.select_one(".match-list__away .match-list__score")
                 if home_score_el is not None:

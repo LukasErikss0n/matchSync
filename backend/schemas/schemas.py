@@ -4,6 +4,14 @@ from sqlalchemy import Column, LargeBinary
 from sqlmodel import Field, SQLModel
 
 
+# Canonical match states (MatchBase.status). Defined here rather than in
+# tasks/fetcher.py so the services/ consumers can share them without importing
+# the fetcher (which imports services itself).
+STATUS_SCHEDULED = "scheduled"
+STATUS_LIVE = "live"
+STATUS_FINISHED = "finished"
+
+
 # ── Sport ─────────────────────────────────────────────────────────────────────
 
 class SportBase(SQLModel):
@@ -74,6 +82,13 @@ class MatchBase(SQLModel):
     venue: Optional[str] = None
     home_score: Optional[int] = None   # nullable — only set once a match is played
     away_score: Optional[int] = None
+    # "scheduled" | "live" | "finished", normalised from whatever each source
+    # calls it (see tasks/fetcher.py's _STATUS_*). None where the source gives
+    # us nothing to go on — consumers fall back to a kickoff-time heuristic.
+    # A score alone can't stand in for this: every provider starts reporting
+    # 0-0 the moment a match kicks off, so "has a score" means "under way or
+    # over", never specifically "over".
+    status: Optional[str] = None
     team_id: int
     # Hockey/basketball only — their game-schedule feed mixes regular-season
     # and playoff games with no other way to tell them apart (see
@@ -142,6 +157,7 @@ class MatchOut(SQLModel):
     away_score: Optional[int] = None
     start_time: datetime
     venue: Optional[str] = None
+    status: Optional[str] = None   # see MatchBase.status
 
 
 class SeasonStatsOut(SQLModel):

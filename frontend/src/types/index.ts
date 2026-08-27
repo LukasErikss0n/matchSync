@@ -57,7 +57,14 @@ export interface Match {
   away_score?: number | null
   start_time: string   // ISO-UTC (with Z) — rendered in the viewer's local time
   venue?: string | null
+  // Normalised upstream state, when the source reports one. Null for sources
+  // that don't, in which case consumers fall back to a kickoff-time window.
+  // Never infer this from the score: providers report 0-0 from kickoff, so a
+  // score means "under way or over", not "over".
+  status?: MatchStatus | null
 }
+
+export type MatchStatus = 'scheduled' | 'live' | 'finished'
 
 export interface SeasonStats {
   published: boolean

@@ -80,11 +80,9 @@ import type { Match } from '@/types'
 import { fetchWeekMatches } from '@/services/sports'
 import { detectRegion } from '@/utils/region'
 import { clubIdentity } from '@/utils/clubIdentity'
+import { matchState } from '@/utils/matchState'
 
 const COLLAPSED_COUNT = 4
-// Matches this far past kickoff still count as in progress — same window the
-// backend uses to decide whether a fixture is live.
-const LIVE_WINDOW_MS = 2.5 * 60 * 60 * 1000
 
 const matches = ref<Match[]>([])
 const expanded = ref(false)
@@ -95,9 +93,7 @@ const rows = computed(() =>
   matches.value.map((m) => {
     const club = clubIdentity(m.home_team, { color: m.home_color })
     const start = new Date(m.start_time)
-    const startMs = start.getTime()
     const now = Date.now()
-    const hasScore = m.home_score != null && m.away_score != null
     const icon = m.home_icon_cropped ?? m.home_icon ?? null
 
     return {
@@ -121,7 +117,7 @@ const rows = computed(() =>
       dayLabel: start.toLocaleDateString([], { weekday: 'short' }),
       timeLabel: start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
       isToday: start.toDateString() === new Date().toDateString(),
-      isLive: !hasScore && startMs <= now && now <= startMs + LIVE_WINDOW_MS,
+      isLive: matchState(m, now) === 'live',
       to: { path: '/matches', query: { league: m.league.slug } },
     }
   }),

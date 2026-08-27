@@ -16,7 +16,13 @@ import time
 from datetime import datetime, timedelta, timezone
 
 from models.models import League, Match, Sport, Team
-from schemas.schemas import LeagueOut, MatchOut
+from schemas.schemas import (
+    STATUS_FINISHED,
+    STATUS_LIVE,
+    STATUS_SCHEDULED,
+    LeagueOut,
+    MatchOut,
+)
 from services.crest_url import crest_url
 from sqlmodel import Session, col, select
 
@@ -109,7 +115,29 @@ def _score_match(match: Match, league_slug: str, now: datetime, region: str | No
     if start.tzinfo is None:
         start = start.replace(tzinfo=timezone.utc)
 
-    if start <= now <= start + LIVE_WINDOW and not has_score:
+    # Mirrors frontend/src/utils/matchState.ts — keep the two in step.
+    #
+    # A status is only trusted as far as the clock allows. "finished" is
+    # terminal so it stands on its own, but "live" has to be bounded (a source
+    # that stops updating mid-match would otherwise pin this at +1000 forever)
+    # and "scheduled" is only meaningful before kickoff — trusting a stale one
+    # past kickoff sent an in-progress match down the `else` branch and
+    # returned -1, dropping it from the hero for the whole match.
+    #
+    # The fallback deliberately doesn't consult `has_score`: every provider
+    # reports 0-0 from kickoff, so a score means "under way or over", never
+    # specifically "over".
+    within_live_window = start <= now <= start + LIVE_WINDOW
+    if match.status == STATUS_FINISHED:
+        is_live = False
+    elif match.status == STATUS_LIVE:
+        is_live = within_live_window
+    elif match.status == STATUS_SCHEDULED and now < start:
+        is_live = False
+    else:
+        is_live = within_live_window
+
+    if is_live:
         score += 1000
     elif start > now:
         hours_until = (start - now).total_seconds() / 3600
@@ -206,6 +234,7 @@ def get_featured_matches(
                 away_score=match.away_score,
                 start_time=start,
                 venue=match.venue,
+                status=match.status,
             )
         )
         if len(results) >= MAX_FEATURED:

@@ -127,6 +127,7 @@ def get_week_matches(
                 away_score=match.away_score,
                 start_time=start,
                 venue=match.venue,
+                status=match.status,
             )
         )
 

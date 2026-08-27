@@ -133,6 +133,7 @@ def list_matches(
             away_score=match.away_score,
             start_time=start,
             venue=match.venue,
+            status=match.status,
         ))
 
     return result[:limit]
