@@ -10,7 +10,13 @@
       <!-- Fixed surface — deliberately NOT derived from either team's colour
            (that used to be a per-fixture wash), so the card looks the same
            fixture to fixture and only the two crest tiles carry club colour. -->
+
+
+
       <div class="absolute inset-0" style="background: rgba(18,26,44,.96)"></div>
+
+
+
       <div
         class="absolute inset-0 pointer-events-none"
         style="background: radial-gradient(120% 90% at 100% 0%, rgba(142,205,242,.06), transparent 60%)"
@@ -534,4 +540,5 @@ watch(
     transition: none;
   }
 }
+
 </style>

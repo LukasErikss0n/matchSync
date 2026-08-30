@@ -22,8 +22,8 @@
           <h2 class="text-2xl font-extrabold" style="letter-spacing: -0.5px">{{ stepLabels[step - 1] }}</h2>
         </div>
         <button
-          class="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
-          style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16)"
+          class="xcl-btn-1 w-8 h-8 rounded-full flex items-center justify-center"
+          :class="{ 'xcl-closing-1': closing }"
           @click="handleClose"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M6 6l12 12M18 6 6 18"/></svg>
@@ -58,8 +58,38 @@
       <!-- Body -->
       <div class="relative px-7 pb-7 step-viewport">
       <Transition :name="stepTransitionName" mode="out-in">
+        <!-- Grabbing your calendar link -->
+        <div v-if="submitting" key="submitting">
+          <div class="py-10 flex flex-col items-center text-center" role="status" aria-live="polite">
+            <div class="icl-badge w-16 h-16 rounded-2xl flex items-center justify-center mb-5" style="background: #131c2e">
+              <div class="icl-spinner" aria-hidden="true">
+                <span class="icl-spinner-bar" style="transform: rotate(0deg); animation-delay: 0s"></span>
+                <span class="icl-spinner-bar" style="transform: rotate(30deg); animation-delay: -1.1s"></span>
+                <span class="icl-spinner-bar" style="transform: rotate(60deg); animation-delay: -1s"></span>
+                <span class="icl-spinner-bar" style="transform: rotate(90deg); animation-delay: -0.9s"></span>
+                <span class="icl-spinner-bar" style="transform: rotate(120deg); animation-delay: -0.8s"></span>
+                <span class="icl-spinner-bar" style="transform: rotate(150deg); animation-delay: -0.7s"></span>
+                <span class="icl-spinner-bar" style="transform: rotate(180deg); animation-delay: -0.6s"></span>
+                <span class="icl-spinner-bar" style="transform: rotate(210deg); animation-delay: -0.5s"></span>
+                <span class="icl-spinner-bar" style="transform: rotate(240deg); animation-delay: -0.4s"></span>
+                <span class="icl-spinner-bar" style="transform: rotate(270deg); animation-delay: -0.3s"></span>
+                <span class="icl-spinner-bar" style="transform: rotate(300deg); animation-delay: -0.2s"></span>
+                <span class="icl-spinner-bar" style="transform: rotate(330deg); animation-delay: -0.1s"></span>
+              </div>
+              <svg class="icl-check icl-check-1" viewBox="0 0 24 24" width="26" height="26" fill="none" aria-hidden="true">
+                <path d="M5 12.5l4.5 4.5L19 7" stroke="#8ecdf2" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="icl-phases relative h-5 text-sm font-semibold" style="color: rgba(244,247,251,.75); min-width: 220px">
+              <span class="icl-phase icl-phase-a">Grabbing fixtures…</span>
+              <span class="icl-phase icl-phase-b">Syncing your calendar…</span>
+              <span class="icl-phase icl-phase-c">All set!</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Step 1: Sport -->
-        <div v-if="step === 1" key="step1">
+        <div v-else-if="step === 1" key="step1">
           <!-- Two columns at every width: at three, the four sports leave a
                lone card orphaned on a second row. Cards get a fixed width and
                the grid shrink-wraps around them, so they stay compact instead
@@ -143,6 +173,7 @@
 
         <!-- Step 3: Leagues -->
         <div v-else-if="step === 3 && selectedTeam" key="step3">
+
           <button
             class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 mb-3 transition-all"
             style="color: rgba(244,247,251,.6); background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16)"
@@ -158,25 +189,17 @@
             <label
               v-for="l in selectedTeam.leagues"
               :key="l.slug"
-              class="rounded-2xl border-2 px-4 py-3 cursor-pointer flex items-center gap-3 transition-all"
-              :class="chosenLeagues.includes(l.slug) ? 'border-[rgba(142,205,242,.5)]' : 'border-white/[0.14]'"
+              class="lgd-card-1 rounded-2xl border-2 px-4 py-3 cursor-pointer flex items-center gap-3"
+              :class="chosenLeagues.includes(l.slug) ? 'lgd-card-1-on border-[rgba(142,205,242,.5)]' : 'border-white/[0.14]'"
               :style="chosenLeagues.includes(l.slug) ? 'background: rgba(142,205,242,.14)' : 'background: rgba(255,255,255,.05)'"
             >
-              <input
-                type="checkbox"
-                :value="l.slug"
-                v-model="chosenLeagues"
-                class="hidden"
-              />
-              <!-- Custom checkbox -->
+              <input type="checkbox" :value="l.slug" v-model="chosenLeagues" class="hidden" />
               <span
-                class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                :class="chosenLeagues.includes(l.slug)
-                  ? 'border-[var(--ms-blue)]'
-                  : 'border-white/25'"
+                class="lgd-check-1 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                :class="chosenLeagues.includes(l.slug) ? 'border-[var(--ms-blue)]' : 'border-white/25'"
                 :style="chosenLeagues.includes(l.slug) ? 'background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark))' : 'background: transparent'"
               >
-                <svg v-if="chosenLeagues.includes(l.slug)" viewBox="0 0 12 12" class="w-3 h-3" fill="none" stroke="#08131f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+                <svg class="lgd-check-mark-1" viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="#08131f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" :style="chosenLeagues.includes(l.slug) ? '' : 'stroke-dashoffset: 10'">
                   <path d="M2 6l3 3 5-5"/>
                 </svg>
               </span>
@@ -190,6 +213,7 @@
           >
             Get my link
           </button>
+
         </div>
 
         <!-- Step 4: Link -->
@@ -431,6 +455,10 @@ const teamResults = ref<Team[]>([])
 // loading state instead of flashing "No teams available yet" at an empty list.
 const teamsLoading = ref(!props.initialTeam && !!sportId.value)
 const calLink = ref<CalendarLink | null>(null)
+// Drives the "grabbing data" loading state while goToLink's fetch is in
+// flight — step stays 3 the whole time, so this is a separate flag rather
+// than an extra numeric step.
+const submitting = ref(false)
 
 const showPreview = ref(false)
 const previewMatches = ref<Match[]>([])
@@ -567,12 +595,24 @@ async function goToLeagues() {
 
 async function goToLink() {
   if (!sportId.value || !teamSlug.value || chosenLeagues.value.length === 0) return
-  calLink.value = await fetchCalendarLink(
-    sportId.value,
-    teamSlug.value,
-    chosenLeagues.value,
-  )
-  step.value = 4
+  submitting.value = true
+  try {
+    // Floors the loading state at the authored animation's length (spin +
+    // phase copy + checkmark settle, see .icl-* in <style>) so a fast local
+    // API can't cut the "grabbing data" moment short via the out-in
+    // Transition — a fetch that resolves before the leave transition even
+    // finishes would otherwise skip the loading branch entirely. Errors
+    // still reject immediately; only the success path waits on this floor.
+    const MIN_VISIBLE_MS = 2200
+    const [link] = await Promise.all([
+      fetchCalendarLink(sportId.value, teamSlug.value, chosenLeagues.value),
+      new Promise((resolve) => setTimeout(resolve, MIN_VISIBLE_MS)),
+    ])
+    calLink.value = link
+    step.value = 4
+  } finally {
+    submitting.value = false
+  }
 }
 
 function formatMatchDate(iso: string): string {
@@ -708,4 +748,202 @@ function reset() {
   opacity: 0;
   transform: translateY(-6px);
 }
+
+/* ── "Grabbing data" loading state (goToLink in flight) ─────────────────── */
+.icl-badge {
+  position: relative;
+}
+
+.icl-phases {
+  position: relative;
+}
+
+.icl-check {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  opacity: 0;
+}
+
+@keyframes icl-check-in {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes icl-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.icl-check-1,
+.icl-check-2,
+.icl-check-3 {
+  transform: scale(0.6);
+  animation: icl-check-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 1.75s forwards;
+}
+
+/* Opacity-based phase stack — variants 1 and 2 */
+.icl-phase {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  animation: icl-phase-window 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.icl-phase-a {
+  animation-delay: 0s;
+}
+.icl-phase-b {
+  animation-delay: 0.85s;
+}
+.icl-phase-c {
+  animation: icl-phase-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 1.7s both;
+}
+@keyframes icl-phase-window {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  15%,
+  80% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@keyframes icl-phase-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Radial spinner that settles into a checkmark once the calendar link is
+   ready — 12 bars around the badge center, brightness sweeping clockwise via
+   staggered negative animation-delays (classic "iOS activity indicator"
+   technique), recolored to Signal Blue instead of grayscale. */
+.icl-spinner {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  animation: icl-fade-out 0.3s ease 1.75s forwards;
+}
+.icl-spinner-bar {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 3px;
+  height: 9px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--ms-blue);
+  transform-origin: 50% 16px;
+  opacity: 0.15;
+  animation: icl-spinner-fade 1.2s linear infinite;
+}
+@keyframes icl-spinner-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icl-spinner {
+    animation: none;
+    opacity: 0.6;
+  }
+  .icl-spinner-bar {
+    animation: none;
+    opacity: 0.5;
+  }
+  .icl-phase-a,
+  .icl-phase-b {
+    display: none;
+  }
+  .icl-phase-c {
+    position: static;
+    animation: icl-phase-in 0.25s ease forwards;
+  }
+  .icl-check-1 {
+    animation: icl-check-in 0.25s ease forwards;
+  }
+}
+
+/* ── Close button: bare icon that lifts on hover and, in sync with the
+   panel's own closing animation (`closing` ref), scales down with a slight
+   rotation instead of just vanishing with the panel. ────────────────────── */
+.xcl-btn-1 {
+  background: transparent;
+  border: none;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+}
+.xcl-btn-1:hover {
+  opacity: 0.7;
+  transform: scale(1.08);
+}
+.xcl-btn-1:active {
+  transform: scale(0.92);
+}
+.xcl-closing-1 {
+  animation: xcl-close-1 0.16s cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+@keyframes xcl-close-1 {
+  to {
+    transform: scale(0.65) rotate(-90deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xcl-btn-1:hover,
+  .xcl-btn-1:active {
+    transform: none;
+  }
+  .xcl-closing-1 {
+    animation: none;
+    opacity: 0.4;
+  }
+}
+
+/* ── League picker delight: picking a league gives the card a satisfying
+   overshoot pop (playful intensity) and the checkmark draws in with a
+   stroke reveal instead of just popping into existence. ──────────────────── */
+.lgd-card-1 {
+  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.15s ease, background-color 0.15s ease;
+}
+.lgd-card-1-on {
+  transform: scale(1.045);
+}
+.lgd-check-mark-1 {
+  stroke-dasharray: 10;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lgd-card-1,
+  .lgd-card-1-on {
+    transform: none !important;
+    transition: opacity 0.15s ease, color 0.15s ease !important;
+  }
+  .lgd-check-mark-1 {
+    transition: none;
+  }
+}
+
 </style>
