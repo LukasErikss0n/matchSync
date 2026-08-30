@@ -1,10 +1,20 @@
 <template>
   <section class="relative px-4 sm:px-6 pt-8 sm:pt-14 pb-6">
-    <!-- Featured fixture: rotates through the top featured fixtures, or a
-         generic promo card when nothing scores high enough. One card at every
-         width — it's responsive internally rather than swapped for a
-         separate headline+preview split. -->
     <div class="max-w-5xl mx-auto">
+      <div class="hero-headline text-center mb-8 sm:mb-10">
+        <h1 class="hero-title">
+          <span class="hero-title-white">Your team's matches,</span>
+          <span class="hero-title-blue">straight into your calendar</span>
+        </h1>
+        <p class="hero-subtitle">
+          Pick your team once. Every kick-off, reschedule and playoff syncs automatically.
+        </p>
+      </div>
+
+      <!-- Featured fixture: rotates through the top featured fixtures, or a
+           generic promo card when nothing scores high enough. One card at
+           every width — it's responsive internally rather than swapped for a
+           separate headline+preview split. -->
       <FixtureHeroPanel :matches="featuredMatches" @get-started="emit('getStarted')" />
     </div>
 
@@ -23,11 +33,11 @@
         <div class="relative mb-3.5">
           <div
             ref="sportTabsScrollEl"
-            class="relative flex gap-1 rounded-[14px] p-1.5 bg-white/[0.08] border border-white/[0.14] overflow-x-auto ms-no-scrollbar"
+            class="relative flex gap-1 rounded-[14px] p-1.5 overflow-x-auto ms-no-scrollbar"
             :class="showSportsScrollHint ? 'justify-start' : 'justify-center'"
             style="scroll-snap-type: x mandatory"
           >
-            <div class="ms-tab-slider" :style="sportSliderStyle"></div>
+            <div class="ms-tab-slider ms-tab-slider--outline" :style="sportSliderStyle"></div>
             <button
               v-for="s in sports"
               :key="s.id"
@@ -50,7 +60,7 @@
         </div>
 
         <!-- Search -->
-        <div class="relative flex items-center gap-2 rounded-xl px-3.5 mb-3.5 bg-white/[0.06] border border-white/[0.12]">
+        <div class="relative flex items-center gap-2 rounded-xl px-3.5 mb-3.5">
           <span style="color: rgba(244,247,251,.45)">
             <Icon name="search" class="!w-[15px] !h-[15px]" />
           </span>
@@ -220,3 +230,59 @@ function onPrimaryClick() {
   }
 }
 </script>
+
+<style scoped>
+/* Dark tile with a blue underline instead of the navbar's filled-pill
+   active state — reads better against this row's already-transparent
+   background (see the "remove the bg" change above). */
+.ms-tab-slider--outline {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* A separate flat-edged bar rather than the tile's own border-bottom — the
+   tile is rounded, so a border there would bow with its corners instead of
+   sitting as a straight line. */
+.ms-tab-slider--outline::after {
+  content: '';
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 0;
+  height: 2px;
+  background: var(--ms-blue);
+}
+
+.hero-title {
+  font-size: clamp(32px, 6vw, 52px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.hero-title-white,
+.hero-title-blue {
+  display: block;
+}
+
+.hero-title-white {
+  color: var(--ms-text);
+}
+
+.hero-title-blue {
+  background: linear-gradient(120deg, var(--ms-blue) 0%, var(--ms-blue-dark) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.hero-subtitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ms-muted);
+  max-width: 30rem;
+  margin: 16px auto 0;
+  line-height: 1.5;
+}
+</style>

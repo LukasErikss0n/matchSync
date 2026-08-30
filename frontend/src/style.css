@@ -57,10 +57,9 @@ body::before {
 
 /* ── Brand utilities ───────────────────────────────────────────────────────── */
 .ms-btn-primary {
-    color: var(--ms-ink);
-    background-color: var(--ms-blue-dark);
+    color: #ffff;
+    background-color: rgb(47, 127, 184);
     border: none;
-    box-shadow: 0 16px 32px -12px rgba(94, 178, 230, 0.55);
     transition: filter 0.15s ease;
 }
 
@@ -95,7 +94,6 @@ body::before {
 }
 
 .glass-panel {
-    background: var(--ms-glass);
     border: 1px solid var(--ms-glass-border);
     backdrop-filter: blur(24px) saturate(140%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 30px 60px -30px rgba(0, 0, 0, 0.6);
@@ -180,7 +178,6 @@ body::before {
 }
 
 .team-card {
-    background: rgba(255, 255, 255, 0.07);
     border-color: rgba(255, 255, 255, 0.14) !important;
     color: var(--ms-text);
 }

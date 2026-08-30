@@ -16,6 +16,7 @@ export type IconName =
   | 'link'
   | 'calendar'
   | 'search'
+  | 'clock'
 
 export interface League {
   name: string

@@ -20,10 +20,10 @@
             </RouterLink>
 
             <nav
-                class="relative flex items-center ml-auto rounded-2xl p-1 bg-white/5 border border-white/10"
+                class="relative flex items-center ml-auto rounded-2xl p-1"
             >
                 <div
-                    class="ms-tab-slider"
+                    class="ms-tab-slider ms-tab-slider--outline"
                     :style="sliderStyle"
                 ></div>
                 <RouterLink
@@ -119,3 +119,23 @@ onMounted(async () => {
     window.addEventListener("resize", () => applyStyle(activeIndex.value, false));
 });
 </script>
+
+<style scoped>
+/* Same treatment as Hero.vue's sport tabs: flat, no filled pill — just a
+   straight-edged underline on the active tab. */
+.ms-tab-slider--outline {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.ms-tab-slider--outline::after {
+    content: "";
+    position: absolute;
+    left: 14%;
+    right: 14%;
+    bottom: 4px;
+    height: 3px;
+    background: var(--ms-blue);
+}
+</style>
