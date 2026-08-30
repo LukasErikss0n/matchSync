@@ -280,10 +280,17 @@ function onAwayIconError() {
   awayLogoSize.value = null
 }
 
+// Sizes the *element* to at most the source's own dimensions, then lets
+// `background-size: contain` (see .fxn-logo) fit the crest inside it. Both
+// axes have to be capped: constraining width alone lets a tall crest (a
+// shield, say) compute a height past the square box, and the background
+// paints clipped to that box — the logo loses its top and bottom.
 function logoStyle(icon: string | null | undefined, size: { w: number; h: number } | null) {
   if (!icon) return {}
-  const backgroundSize = size && size.w > 0 ? `min(${size.w}px, 100%) auto` : 'contain'
-  return { backgroundImage: `url(${icon})`, backgroundSize }
+  const box = size && size.w > 0 && size.h > 0
+    ? { width: `min(${size.w}px, 100%)`, height: `min(${size.h}px, 100%)` }
+    : { width: '100%', height: '100%' }
+  return { backgroundImage: `url(${icon})`, ...box }
 }
 const homeLogoStyle = computed(() => logoStyle(current.value?.homeIcon, homeLogoSize.value))
 const awayLogoStyle = computed(() => logoStyle(current.value?.awayIcon, awayLogoSize.value))
@@ -423,11 +430,14 @@ watch(
 .fxn-logo {
   position: absolute;
   inset: 0;
-  /* background-size is set inline per-icon (see logoStyle in the script) —
+  /* width/height are set inline per-icon (see logoStyle in the script),
      capped at the source's natural resolution so small raster crests aren't
-     upscaled past their real size and don't come out blurry. */
+     upscaled past their real size and don't come out blurry. `margin: auto`
+     against inset:0 centres whatever box that produces. */
+  margin: auto;
   background-position: center;
   background-repeat: no-repeat;
+  background-size: contain;
 }
 
 .fxn-logo-probe {
