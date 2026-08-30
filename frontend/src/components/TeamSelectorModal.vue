@@ -117,13 +117,13 @@
         <div v-else-if="step === 2" key="step2">
           <button
             class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 mb-4 transition-all"
-            style="color: rgba(244,247,251,.6); background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16)"
+            style="color: rgba(244,247,251,.6); border: 1px solid rgba(255,255,255,.16)"
             @click="step = 1"
           >
             <svg viewBox="0 0 16 16" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg>
             Back
           </button>
-          <div class="flex items-center gap-2.5 rounded-2xl px-4 mb-3.5" style="background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16)">
+          <div class="flex items-center gap-2.5 rounded-2xl px-4 mb-3.5" style="border: 1px solid rgba(255,255,255,.16)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color: rgba(244,247,251,.5)"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
             <input
               v-model="search"
@@ -176,7 +176,7 @@
 
           <button
             class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 mb-3 transition-all"
-            style="color: rgba(244,247,251,.6); background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16)"
+            style="color: rgba(244,247,251,.6); border: 1px solid rgba(255,255,255,.16)"
             @click="goBackToTeams"
           >
             <svg viewBox="0 0 16 16" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg>
@@ -185,21 +185,20 @@
           <p class="text-sm font-medium mb-4" style="color: rgba(244,247,251,.65)">
             <strong style="color: var(--ms-text)">{{ selectedTeam.name }}</strong> — select leagues
           </p>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <label
               v-for="l in selectedTeam.leagues"
               :key="l.slug"
               class="lgd-card-1 rounded-2xl border-2 px-4 py-3 cursor-pointer flex items-center gap-3"
               :class="chosenLeagues.includes(l.slug) ? 'lgd-card-1-on border-[rgba(142,205,242,.5)]' : 'border-white/[0.14]'"
-              :style="chosenLeagues.includes(l.slug) ? 'background: rgba(142,205,242,.14)' : 'background: rgba(255,255,255,.05)'"
             >
               <input type="checkbox" :value="l.slug" v-model="chosenLeagues" class="hidden" />
               <span
-                class="lgd-check-1 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                :class="chosenLeagues.includes(l.slug) ? 'border-[var(--ms-blue)]' : 'border-white/25'"
+                class="lgd-check-1 w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0"
+                :class="chosenLeagues.includes(l.slug) ? 'lgd-check-1-on border-[var(--ms-blue)]' : 'border-white/50'"
                 :style="chosenLeagues.includes(l.slug) ? 'background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark))' : 'background: transparent'"
               >
-                <svg class="lgd-check-mark-1" viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="#08131f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" :style="chosenLeagues.includes(l.slug) ? '' : 'stroke-dashoffset: 10'">
+                <svg v-if="chosenLeagues.includes(l.slug)" class="lgd-check-mark-1" viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="#08131f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M2 6l3 3 5-5"/>
                 </svg>
               </span>
@@ -220,7 +219,7 @@
         <div v-else-if="step === 4 && calLink" key="step4">
           <button
             class="inline-flex items-center gap-1.5 text-xs font-bold rounded-full px-3 py-1.5 mb-4 transition-all"
-            style="color: rgba(244,247,251,.6); background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.16)"
+            style="color: rgba(244,247,251,.6);  border: 1px solid rgba(255,255,255,.16)"
             @click="step = 3"
           >
             <svg viewBox="0 0 16 16" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg>
@@ -930,19 +929,33 @@ function reset() {
   transform: scale(1.045);
 }
 .lgd-check-mark-1 {
-  stroke-dasharray: 10;
-  stroke-dashoffset: 0;
-  transition: stroke-dashoffset 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  stroke-dasharray: 12;
+  stroke-dashoffset: 12;
+  animation: lgd-check-draw 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes lgd-check-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.lgd-check-1 {
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.15s ease, background-color 0.15s ease;
+}
+.lgd-check-1-on {
+  transform: scale(1.15);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .lgd-card-1,
-  .lgd-card-1-on {
+  .lgd-card-1-on,
+  .lgd-check-1,
+  .lgd-check-1-on {
     transform: none !important;
     transition: opacity 0.15s ease, color 0.15s ease !important;
   }
   .lgd-check-mark-1 {
-    transition: none;
+    animation: none;
+    stroke-dashoffset: 0;
   }
 }
 
