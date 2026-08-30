@@ -16,7 +16,11 @@
            generic promo card when nothing scores high enough. One card at
            every width — it's responsive internally rather than swapped for a
            separate headline+preview split. -->
-      <FixtureHeroPanel :matches="featuredMatches" @get-started="emit('getStarted')" />
+      <FixtureHeroPanel
+        :matches="featuredMatches"
+        :loading="featuredLoading"
+        @get-started="emit('getStarted')"
+      />
     </div>
 
     <!-- TEAM PICKER PANEL -->
@@ -76,6 +80,22 @@
 
         <!-- Team grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4 max-h-72 overflow-y-auto">
+          <!-- Only on the very first load. Re-filtering by sport or search
+               keeps the current results on screen instead of blanking the
+               grid to skeletons on every keystroke. -->
+          <div
+            v-for="n in 6"
+            v-show="teamsFirstLoad"
+            :key="`team-skeleton-${n}`"
+            class="rounded-xl border border-white/[0.08] px-3 py-2.5 flex items-center gap-2.5"
+            aria-hidden="true"
+          >
+            <span class="ms-skeleton flex-none" style="width: 30px; height: 30px; border-radius: 9px"></span>
+            <div class="min-w-0 flex-1">
+              <span class="ms-skeleton block" style="width: 68%; height: 13px"></span>
+              <span class="ms-skeleton block" style="width: 45%; height: 10px; margin-top: 6px"></span>
+            </div>
+          </div>
           <button
             v-for="t in teams"
             :key="`${t.sport}-${t.slug}`"
@@ -92,7 +112,7 @@
             </div>
           </button>
           <div
-            v-if="!loading && teams.length === 0"
+            v-if="!loading && !teamsFirstLoad && teams.length === 0"
             class="col-span-2 flex items-center justify-center text-sm py-8"
             style="color: var(--ms-muted)"
           >
@@ -140,8 +160,17 @@ const selectedTeam = ref<Team | null>(null)
 // (e.g. dead period, or the request fails). Cached at module scope so
 // switching tabs and back doesn't flash the fallback while a fresh fetch resolves.
 const featuredMatches = computed(() => cachedFeaturedMatches.value ?? [])
+// The cache distinguishes "never fetched" (undefined) from "fetched, nothing
+// scored high enough" ([]) — only the former is a loading state. Without this
+// the panel briefly renders its "More matches today" fallback on first paint,
+// which reads as a real (wrong) answer rather than as pending.
+const featuredLoading = computed(() => cachedFeaturedMatches.value === undefined)
 
 let searchTimer: number | null = null
+
+// True only until the first team fetch resolves — see the skeleton in the
+// grid for why later fetches don't re-enter this state.
+const teamsFirstLoad = ref(true)
 
 async function loadTeams() {
   loading.value = true
@@ -152,6 +181,7 @@ async function loadTeams() {
       limit: 8,
     })
   } finally {
+    teamsFirstLoad.value = false
     loading.value = false
   }
 }

@@ -274,8 +274,20 @@
 
           <Transition name="preview">
             <div v-if="showPreview" class="rounded-2xl overflow-hidden mb-5" style="background: rgba(0,0,0,.2); border: 1px solid rgba(255,255,255,.12)">
-              <div v-if="previewLoading" class="py-6 text-center text-sm" style="color: rgba(244,247,251,.5)">
-                Loading matches…
+              <!-- Mirrors the real preview rows (date column + title/league)
+                   so the panel doesn't resize as the fixtures arrive. -->
+              <div v-if="previewLoading" aria-hidden="true">
+                <div
+                  v-for="n in 4"
+                  :key="`preview-skeleton-${n}`"
+                  class="flex items-start gap-3 px-4 py-3 border-b border-white/[0.06] last:border-b-0"
+                >
+                  <span class="ms-skeleton flex-shrink-0" style="width: 44px; height: 12px; margin-top: 2px"></span>
+                  <div class="flex-1 min-w-0">
+                    <span class="ms-skeleton block" style="width: 66%; height: 13px"></span>
+                    <span class="ms-skeleton block" style="width: 38%; height: 11px; margin-top: 6px"></span>
+                  </div>
+                </div>
               </div>
               <div v-else-if="previewMatches.length === 0" class="py-6 text-center text-sm" style="color: rgba(244,247,251,.5)">
                 No upcoming matches found.

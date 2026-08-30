@@ -22,7 +22,33 @@
         style="background: radial-gradient(120% 90% at 100% 0%, rgba(142,205,242,.06), transparent 60%)"
       ></div>
 
-      <template v-if="current">
+      <!-- Skeleton while the featured fixture is still in flight. Mirrors the
+           real card's shape (pill, two crests, centre time block) so nothing
+           shifts when the data lands. -->
+      <template v-if="loading">
+        <div class="fxn-row-top relative z-[1] flex items-center justify-between gap-2">
+          <span class="ms-skeleton" style="width: 116px; height: 27px; border-radius: 999px"></span>
+          <span class="ms-skeleton" style="width: 62px; height: 14px"></span>
+        </div>
+        <div class="fxn-matchup relative z-[1]" aria-hidden="true">
+          <div class="fxn-team">
+            <span class="ms-skeleton fxn-crest" style="border-radius: 18px"></span>
+            <span class="ms-skeleton" style="width: 76px; height: 15px; margin-top: 10px"></span>
+            <span class="ms-skeleton" style="width: 34px; height: 11px; margin-top: 6px"></span>
+          </div>
+          <div class="fxn-meta">
+            <span class="ms-skeleton" style="width: 84px; height: 30px"></span>
+            <span class="ms-skeleton" style="width: 68px; height: 11px; margin-top: 8px"></span>
+          </div>
+          <div class="fxn-team">
+            <span class="ms-skeleton fxn-crest" style="border-radius: 18px"></span>
+            <span class="ms-skeleton" style="width: 76px; height: 15px; margin-top: 10px"></span>
+            <span class="ms-skeleton" style="width: 34px; height: 11px; margin-top: 6px"></span>
+          </div>
+        </div>
+      </template>
+
+      <template v-else-if="current">
         <div class="fxn-row-top relative z-[1] flex items-center justify-between gap-2">
           <span class="fxn-league-pill truncate">{{ current.league }}</span>
           <span class="fxn-day-label flex-none">{{ dayOnlyLabel }}</span>
@@ -123,7 +149,12 @@
       </RouterLink>
     </div>
 
-    <div v-if="current" class="fxn-actions flex flex-nowrap gap-3">
+    <div v-if="loading" class="fxn-actions flex flex-nowrap gap-3" aria-hidden="true">
+      <span class="ms-skeleton flex-1" style="height: 48px; border-radius: 999px"></span>
+      <span class="ms-skeleton flex-none" style="width: 116px; height: 48px; border-radius: 999px"></span>
+    </div>
+
+    <div v-else-if="current" class="fxn-actions flex flex-nowrap gap-3">
       <button
         class="ms-btn-primary rounded-full px-6 py-3.5 font-bold text-[15px] flex items-center justify-center gap-2"
         @click="emit('getStarted')"
@@ -148,7 +179,7 @@ import type { Match } from '@/types'
 import { clubIdentity, type ClubIdentity } from '@/utils/clubIdentity'
 import Icon from './Icon.vue'
 
-const props = defineProps<{ matches: Match[] }>()
+const props = defineProps<{ matches: Match[]; loading?: boolean }>()
 const emit = defineEmits<{ getStarted: [] }>()
 
 const ROTATE_MS = 10_000

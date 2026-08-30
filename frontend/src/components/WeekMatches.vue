@@ -1,12 +1,15 @@
 <template>
-  <section v-if="matches.length" class="px-4 sm:px-6 py-10 sm:py-14">
+  <!-- Kept mounted while loading so the section doesn't pop into the page
+       once the fetch lands; it collapses to nothing only if the week is
+       genuinely empty. -->
+  <section v-if="loading || matches.length" class="px-4 sm:px-6 py-10 sm:py-14">
     <div class="max-w-3xl mx-auto">
       <div class="flex items-baseline justify-between mb-4">
         <h2 class="text-xl sm:text-2xl font-extrabold" style="letter-spacing: -0.02em">
           This week
         </h2>
         <button
-          v-if="matches.length > COLLAPSED_COUNT"
+          v-if="!loading && matches.length > COLLAPSED_COUNT"
           type="button"
           class="text-sm font-bold ms-text-accent hover:opacity-80 transition-opacity"
           @click="expanded = !expanded"
@@ -16,6 +19,24 @@
       </div>
 
       <div class="glass-card rounded-[20px] overflow-hidden">
+        <div
+          v-for="n in COLLAPSED_COUNT"
+          v-show="loading"
+          :key="`week-skeleton-${n}`"
+          class="flex items-center gap-3 sm:gap-3.5 px-3.5 sm:px-4 py-3 sm:py-3.5 border-b border-white/[0.07] last:border-b-0"
+          aria-hidden="true"
+        >
+          <span class="ms-skeleton week-crest flex-none" style="border-radius: 12px"></span>
+          <div class="min-w-0 flex-1">
+            <span class="ms-skeleton block" style="width: 62%; height: 14px"></span>
+            <span class="ms-skeleton block" style="width: 40%; height: 12px; margin-top: 6px"></span>
+          </div>
+          <div class="flex items-center gap-2 sm:gap-2.5 flex-none">
+            <span class="ms-skeleton" style="width: 30px; height: 13px"></span>
+            <span class="ms-skeleton" style="width: 38px; height: 15px"></span>
+          </div>
+        </div>
+
         <RouterLink
           v-for="m in visible"
           :key="m.id"
@@ -85,6 +106,7 @@ import { matchState } from '@/utils/matchState'
 const COLLAPSED_COUNT = 4
 
 const matches = ref<Match[]>([])
+const loading = ref(true)
 const expanded = ref(false)
 // Reactive so a crest that 404s falls back to the monogram on the spot.
 const failedIcons = reactive(new Set<number>())
@@ -132,6 +154,8 @@ onMounted(async () => {
     matches.value = await fetchWeekMatches(detectRegion())
   } catch {
     matches.value = []
+  } finally {
+    loading.value = false
   }
 })
 </script>

@@ -386,3 +386,40 @@ button.link-box:hover {
     box-shadow: 0 0 0 0 rgba(142, 205, 242, 0.6);
     animation: lgpulse 2s infinite;
 }
+
+/* ── Skeleton loading ──────────────────────────────────────────────────────── */
+/* A single primitive used by every loading placeholder, so home and matches
+   shimmer identically. Sized by the caller (width/height utilities); this
+   only owns the surface and the sweep. */
+.ms-skeleton {
+    position: relative;
+    overflow: hidden;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.ms-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.07),
+        transparent
+    );
+    animation: msSkeletonSweep 1.4s ease-in-out infinite;
+}
+
+@keyframes msSkeletonSweep {
+    to {
+        transform: translateX(100%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ms-skeleton::after {
+        animation: none;
+    }
+}

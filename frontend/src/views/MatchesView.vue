@@ -141,14 +141,35 @@
                 </button>
             </div>
 
-            <!-- Loading -->
-            <div
-                v-if="loading"
-                class="text-center py-16 text-sm"
-                style="color: var(--ms-muted)"
-            >
-                Loading matches…
-            </div>
+            <!-- Loading: mirrors the real group cards below (header strip +
+                 rows) so the page doesn't reflow when matches arrive. -->
+            <template v-if="loading || initialLoad">
+                <div
+                    v-for="g in 2"
+                    :key="`group-skeleton-${g}`"
+                    class="glass-card rounded-[24px] overflow-hidden mb-3.5"
+                    aria-hidden="true"
+                >
+                    <div
+                        class="flex items-center justify-between px-4 sm:px-6 py-3.5 bg-white/[0.05] border-b border-white/[0.08]"
+                    >
+                        <span class="ms-skeleton" style="width: 104px; height: 14px"></span>
+                        <span class="ms-skeleton" style="width: 62px; height: 12px"></span>
+                    </div>
+                    <div
+                        v-for="r in 3"
+                        :key="`row-skeleton-${r}`"
+                        class="flex items-center gap-3 px-4 sm:px-6 py-4 border-b border-white/[0.06] last:border-b-0"
+                    >
+                        <span class="ms-skeleton flex-none" style="width: 38px; height: 38px; border-radius: 11px"></span>
+                        <div class="min-w-0 flex-1">
+                            <span class="ms-skeleton block" style="width: 58%; height: 14px"></span>
+                            <span class="ms-skeleton block" style="width: 36%; height: 11px; margin-top: 7px"></span>
+                        </div>
+                        <span class="ms-skeleton flex-none" style="width: 46px; height: 15px"></span>
+                    </div>
+                </div>
+            </template>
 
             <!-- Match groups -->
             <template v-else-if="visibleGroups.length">
@@ -325,6 +346,11 @@ const teamOptions = ref<Team[]>([]);
 const selectedTeamSlug = ref<string | null>(null);
 const matches = ref<Match[]>([]);
 const loading = ref(false);
+// Separate from `loading` because the first paint happens before onMounted
+// has resolved a league at all — and loadMatches() early-returns without
+// touching `loading` when there's no league yet. Without this the page shows
+// "No matches this week" for a beat before the real fetch even starts.
+const initialLoad = ref(true);
 const open = ref<"league" | "team" | null>(null);
 // Each filter-menu is `position: absolute` inside its own button's tiny
 // wrapper, so its default left/right anchor is wherever that specific pill
@@ -884,58 +910,66 @@ onMounted(async () => {
         showModal.value = true;
     }
 
-    sports.value = await fetchSports();
-    if (!leagueOptions.value.length) return;
+    // finally, not a trailing assignment: loadTeams() and fetchSports()
+    // can both reject, and an aborted onMounted would otherwise leave the
+    // skeleton on screen forever instead of falling through to the empty
+    // state.
+    try {
+        sports.value = await fetchSports();
+        if (!leagueOptions.value.length) return;
 
-    // Locked league pages take the league from route meta; everywhere else it
-    // comes from ?league= (falling back to last-picked / featured below).
-    const leagueParam = leagueLock.value ?? (route.query.league as string | undefined);
-    const filterParam = route.query.filter as string | undefined;
+        // Locked league pages take the league from route meta; everywhere else it
+        // comes from ?league= (falling back to last-picked / featured below).
+        const leagueParam = leagueLock.value ?? (route.query.league as string | undefined);
+        const filterParam = route.query.filter as string | undefined;
 
-    // No explicit ?league= given (e.g. the Navbar's plain "Matches" tab) —
-    // resume whatever league was last actually shown here; only fall back to
-    // the hero's featured league if nothing's ever been shown yet.
-    let defaultLeague = leagueOptions.value[0];
-    if (!leagueParam) {
-        const last = readLastLeague();
-        const lastMatch = last
-            ? leagueOptions.value.find((l) => l.sport === last.sport && l.slug === last.slug)
-            : undefined;
-        if (lastMatch) {
-            defaultLeague = lastMatch;
-        } else {
-            if (cachedFeaturedMatch.value === undefined) {
-                await refreshFeaturedMatch();
-            }
-            const fm = cachedFeaturedMatch.value;
-            if (fm) {
-                const match = leagueOptions.value.find(
-                    (l) => l.sport === fm.sport && l.slug === fm.league.slug,
-                );
-                if (match) defaultLeague = match;
+        // No explicit ?league= given (e.g. the Navbar's plain "Matches" tab) —
+        // resume whatever league was last actually shown here; only fall back to
+        // the hero's featured league if nothing's ever been shown yet.
+        let defaultLeague = leagueOptions.value[0];
+        if (!leagueParam) {
+            const last = readLastLeague();
+            const lastMatch = last
+                ? leagueOptions.value.find((l) => l.sport === last.sport && l.slug === last.slug)
+                : undefined;
+            if (lastMatch) {
+                defaultLeague = lastMatch;
+            } else {
+                if (cachedFeaturedMatch.value === undefined) {
+                    await refreshFeaturedMatch();
+                }
+                const fm = cachedFeaturedMatch.value;
+                if (fm) {
+                    const match = leagueOptions.value.find(
+                        (l) => l.sport === fm.sport && l.slug === fm.league.slug,
+                    );
+                    if (match) defaultLeague = match;
+                }
             }
         }
+
+        // On a locked league page, never silently fall back to another league — if
+        // its fixtures aren't loaded yet, show an empty state under the right title.
+        const matchedLeague = leagueOptions.value.find((l) => l.slug === leagueParam);
+        selectedLeague.value = matchedLeague ?? (leagueLock.value ? null : defaultLeague);
+
+        // An explicit ?league= (e.g. the hero's "See all matches" link) is a real
+        // "show me this league" action too — remember it the same as a manual
+        // pick, so the next plain "Matches" visit resumes here rather than
+        // reverting to whatever was picked before this visit.
+        if (matchedLeague && !leagueLock.value) saveLastLeague(matchedLeague);
+
+        await loadTeams();
+
+        if (filterParam && teamOptions.value.some((t) => t.slug === filterParam)) {
+            selectedTeamSlug.value = filterParam;
+        }
+
+        await loadMatches();
+        pushQuery(selectedLeague.value, selectedTeamSlug.value);
+    } finally {
+        initialLoad.value = false;
     }
-
-    // On a locked league page, never silently fall back to another league — if
-    // its fixtures aren't loaded yet, show an empty state under the right title.
-    const matchedLeague = leagueOptions.value.find((l) => l.slug === leagueParam);
-    selectedLeague.value = matchedLeague ?? (leagueLock.value ? null : defaultLeague);
-
-    // An explicit ?league= (e.g. the hero's "See all matches" link) is a real
-    // "show me this league" action too — remember it the same as a manual
-    // pick, so the next plain "Matches" visit resumes here rather than
-    // reverting to whatever was picked before this visit.
-    if (matchedLeague && !leagueLock.value) saveLastLeague(matchedLeague);
-
-    await loadTeams();
-
-    if (filterParam && teamOptions.value.some((t) => t.slug === filterParam)) {
-        selectedTeamSlug.value = filterParam;
-    }
-
-    await loadMatches();
-    pushQuery(selectedLeague.value, selectedTeamSlug.value);
 
     try {
         const iso = await fetchLastUpdated();
