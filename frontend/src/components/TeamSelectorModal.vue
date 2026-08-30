@@ -421,9 +421,17 @@ const step = ref(initialStep())
 // back → from the left) instead of always sliding one direction.
 const stepDirection = ref<'forward' | 'back'>('forward')
 const stepTransitionName = computed(() => `step-${stepDirection.value}`)
+// flush: 'sync' matters. A default (post) watcher updates the direction only
+// *after* the re-render that swaps the step, so the Transition starts with
+// the previous step's name and then has it changed mid-flight — Vue strips
+// the old enter classes and applies the new ones, leaving the element with
+// no transition class for a frame, painted at its final position and full
+// opacity. That one-frame flash showed on 3 → 4 whenever the direction was
+// still 'back' from a previous Back click. Resolving it synchronously means
+// the swap renders with the correct name the first time.
 watch(step, (next, prev) => {
   stepDirection.value = next >= prev ? 'forward' : 'back'
-})
+}, { flush: 'sync' })
 
 // Closing plays a short reverse animation before the parent actually
 // unmounts the modal — closing the panel by simply vanishing looked abrupt
