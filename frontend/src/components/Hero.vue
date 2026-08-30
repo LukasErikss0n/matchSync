@@ -1,13 +1,14 @@
 <template>
   <section class="relative px-4 sm:px-6 pt-8 sm:pt-14 pb-6">
     <div class="max-w-5xl mx-auto">
-      <div class="hero-headline text-center mb-8 sm:mb-10">
+      <div class="hero-headline mb-8 sm:mb-10">
+        <div class="hero-eyebrow">Next kickoff</div>
         <h1 class="hero-title">
-          <span class="hero-title-white">Your team's matches,</span>
-          <span class="hero-title-blue">straight into your calendar</span>
+          <span>Every match.</span>
+          <span>One calendar.</span>
         </h1>
         <p class="hero-subtitle">
-          Pick your team once. Every kick-off, reschedule and playoff syncs automatically.
+          Follow your clubs across every competition, get reminders before kickoff and sync fixtures straight to your calendar for free.
         </p>
       </div>
 
@@ -254,27 +255,25 @@ function onPrimaryClick() {
   background: var(--ms-blue);
 }
 
+.hero-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ms-blue);
+  margin-bottom: 10px;
+}
+
 .hero-title {
   font-size: clamp(32px, 6vw, 52px);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.1;
-}
-
-.hero-title-white,
-.hero-title-blue {
-  display: block;
-}
-
-.hero-title-white {
   color: var(--ms-text);
 }
 
-.hero-title-blue {
-  background: linear-gradient(120deg, var(--ms-blue) 0%, var(--ms-blue-dark) 100%);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
+.hero-title span {
+  display: block;
 }
 
 .hero-subtitle {
@@ -282,7 +281,7 @@ function onPrimaryClick() {
   font-weight: 500;
   color: var(--ms-muted);
   max-width: 30rem;
-  margin: 16px auto 0;
+  margin: 16px 0 0;
   line-height: 1.5;
 }
 </style>

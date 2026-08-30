@@ -23,69 +23,78 @@
       ></div>
 
       <template v-if="current">
-        <div class="fxn-header relative z-[1] flex items-center justify-between gap-2">
-          <span class="fxn-league truncate">{{ current.league }}</span>
-          <span class="fxn-when-pill flex items-center gap-1.5 flex-none">
-            <Icon name="clock" class="!w-3.5 !h-3.5" />
-            {{ whenLabel }}
-          </span>
+        <div class="fxn-row-top relative z-[1] flex items-center justify-between gap-2">
+          <span class="fxn-league-pill truncate">{{ current.league }}</span>
+          <span class="fxn-day-label flex-none">{{ dayOnlyLabel }}</span>
         </div>
 
-        <div class="fxn-crests relative z-[1]" :class="{ 'fxn-crests-solo': current.isMotorsport }">
-          <div class="fxn-crest fxn-crest-home">
-            <!-- background-image, not <img>: several crests (e.g. Premier
-                 League's) are SVGs with no width/height on the root element,
-                 only a viewBox — Chromium rasterises a plain <img> of one of
-                 those at a small default box and stretches that bitmap up,
-                 visibly blurry at this tile's size. background-size:contain
-                 rasterises at the real display size instead. -->
-            <div
-              v-if="current.homeIcon && !homeIconFailed"
-              class="fxn-logo"
-              :style="homeLogoStyle"
-              role="img"
-              :aria-label="current.home.monogram"
-            ></div>
-            <span v-else class="fxn-mono">{{ current.home.monogram }}</span>
-            <!-- Invisible — exists purely to get a real load/error event (and
-                 the source's natural size), since a CSS background-image has
-                 no equivalent of <img>'s @error. -->
-            <img
-              v-if="current.homeIcon"
-              :src="current.homeIcon"
-              alt=""
-              aria-hidden="true"
-              class="fxn-logo-probe"
-              decoding="async"
-              @error="onHomeIconError"
-              @load="onHomeIconLoad"
-            />
-          </div>
-          <div
-            v-if="!current.isMotorsport"
-            class="fxn-crest fxn-crest-away"
-          >
-            <div
-              v-if="current.awayIcon && !awayIconFailed"
-              class="fxn-logo"
-              :style="awayLogoStyle"
-              role="img"
-              :aria-label="current.away.monogram"
-            ></div>
-            <span v-else class="fxn-mono">{{ current.away.monogram }}</span>
-            <img
-              v-if="current.awayIcon"
-              :src="current.awayIcon"
-              alt=""
-              aria-hidden="true"
-              class="fxn-logo-probe"
-              decoding="async"
-              @error="onAwayIconError"
-              @load="onAwayIconLoad"
-            />
+        <div class="fxn-matchup relative z-[1]" :class="{ 'fxn-matchup-solo': current.isMotorsport }">
+          <div class="fxn-team">
+            <div class="fxn-crest">
+              <!-- background-image, not <img>: several crests (e.g. Premier
+                   League's) are SVGs with no width/height on the root element,
+                   only a viewBox — Chromium rasterises a plain <img> of one of
+                   those at a small default box and stretches that bitmap up,
+                   visibly blurry at this tile's size. background-size:contain
+                   rasterises at the real display size instead. -->
+              <div
+                v-if="current.homeIcon && !homeIconFailed"
+                class="fxn-logo"
+                :style="homeLogoStyle"
+                role="img"
+                :aria-label="current.home.monogram"
+              ></div>
+              <span v-else class="fxn-mono">{{ current.home.monogram }}</span>
+              <!-- Invisible — exists purely to get a real load/error event (and
+                   the source's natural size), since a CSS background-image has
+                   no equivalent of <img>'s @error. -->
+              <img
+                v-if="current.homeIcon"
+                :src="current.homeIcon"
+                alt=""
+                aria-hidden="true"
+                class="fxn-logo-probe"
+                decoding="async"
+                @error="onHomeIconError"
+                @load="onHomeIconLoad"
+              />
+            </div>
+            <div class="fxn-team-name">{{ current.homeTeam }}</div>
+            <div class="fxn-team-abbr">{{ current.home.monogram }}</div>
           </div>
 
-          <!-- Rotation indicator, anchored to the crest row so it doesn't
+          <div class="fxn-meta">
+            <div class="fxn-time tabular-nums">{{ timeOnlyLabel }}</div>
+            <div v-if="venueName" class="fxn-venue truncate">{{ venueName }}</div>
+            <div v-if="countdown" class="fxn-count tabular-nums">{{ countdown }} to kickoff</div>
+          </div>
+
+          <div v-if="!current.isMotorsport" class="fxn-team">
+            <div class="fxn-crest">
+              <div
+                v-if="current.awayIcon && !awayIconFailed"
+                class="fxn-logo"
+                :style="awayLogoStyle"
+                role="img"
+                :aria-label="current.away.monogram"
+              ></div>
+              <span v-else class="fxn-mono">{{ current.away.monogram }}</span>
+              <img
+                v-if="current.awayIcon"
+                :src="current.awayIcon"
+                alt=""
+                aria-hidden="true"
+                class="fxn-logo-probe"
+                decoding="async"
+                @error="onAwayIconError"
+                @load="onAwayIconLoad"
+              />
+            </div>
+            <div class="fxn-team-name">{{ current.awayTeam }}</div>
+            <div class="fxn-team-abbr">{{ current.away.monogram }}</div>
+          </div>
+
+          <!-- Rotation indicator, anchored to the matchup row so it doesn't
                drift when the copy below grows/shrinks between fixtures. -->
           <div v-if="fixtures.length > 1" class="fxn-dots flex flex-col items-center">
             <button
@@ -100,19 +109,6 @@
             ></button>
           </div>
         </div>
-
-        <p v-if="!current.isMotorsport" class="fxn-vs relative z-[1] text-center">vs</p>
-
-        <h2 class="fxn-title relative z-[1] text-center">
-          <template v-if="current.isMotorsport">{{ current.homeTeam }}</template>
-          <template v-else>{{ current.homeTeam }} vs {{ current.awayTeam }}</template>
-        </h2>
-
-        <p v-if="venueName" class="fxn-venue relative z-[1] text-center truncate">{{ venueName }}</p>
-
-        <p v-if="countdown" class="fxn-count-line relative z-[1] text-center tabular-nums">
-          {{ countdown }} to kickoff
-        </p>
       </template>
 
       <!-- Nothing scored high enough to feature -->
@@ -129,7 +125,7 @@
 
     <div v-if="current" class="fxn-actions flex flex-nowrap gap-3">
       <button
-        class="ms-btn-primary rounded-2xl px-6 py-3.5 font-bold text-[15px] flex items-center justify-center gap-2"
+        class="ms-btn-primary rounded-full px-6 py-3.5 font-bold text-[15px] flex items-center justify-center gap-2"
         @click="emit('getStarted')"
       >
         <Icon name="calendar" class="!w-[18px] !h-[18px]" />
@@ -137,7 +133,7 @@
       </button>
       <RouterLink
         :to="seeAllRoute"
-        class="ms-btn-secondary rounded-2xl px-6 py-3.5 font-bold text-[15px] text-center"
+        class="ms-btn-secondary rounded-full px-6 py-3.5 font-bold text-[15px] text-center"
       >
         Matches
       </RouterLink>
@@ -221,12 +217,15 @@ const countdown = computed(() => {
   return `${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`
 })
 
-const whenLabel = computed(() => {
+const timeOnlyLabel = computed(() => {
   const f = current.value
   if (!f) return ''
-  const start = new Date(f.startMs)
-  const time = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
-  return `${dayLabel(start)} · ${time}`
+  return new Date(f.startMs).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+})
+
+const dayOnlyLabel = computed(() => {
+  const f = current.value
+  return f ? dayLabel(new Date(f.startMs)) : ''
 })
 
 function dayLabel(start: Date): string {
@@ -288,12 +287,6 @@ function logoStyle(icon: string | null | undefined, size: { w: number; h: number
 }
 const homeLogoStyle = computed(() => logoStyle(current.value?.homeIcon, homeLogoSize.value))
 const awayLogoStyle = computed(() => logoStyle(current.value?.awayIcon, awayLogoSize.value))
-
-// Fixed rather than derived from the club's synthesised colour (clubIdentity
-// has no real per-team colour data — it's a hash-based guess) — a crest sits
-// on the same flat navy regardless of which two clubs are shown, instead of
-// the disc's colour swinging with whatever the hash happened to pick.
-const CIRCLE_BG = '#151f31'
 
 // While hovered/focused the panel freezes completely — fixture, crests and
 // countdown all hold still, so it can be inspected (or screenshotted)
@@ -363,76 +356,73 @@ watch(
 }
 
 .fxn-panel {
-  min-height: 340px;
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 22px 24px 26px;
+  padding: 18px 20px 22px;
 }
 
-.fxn-header {
-  margin-bottom: 8px;
+.fxn-row-top {
+  margin-bottom: 20px;
 }
 
-.fxn-league {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ms-text);
-  min-width: 0;
-}
-
-.fxn-when-pill {
-  padding: 6px 12px;
+.fxn-league-pill {
+  padding: 6px 14px;
   border-radius: 999px;
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--ms-blue);
   background: rgba(142, 205, 242, 0.12);
-  border: 1px solid rgba(142, 205, 242, 0.35);
+  border: 1px solid rgba(142, 205, 242, 0.3);
+  min-width: 0;
 }
 
-.fxn-crests {
+.fxn-day-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(244, 247, 251, 0.5);
+}
+
+.fxn-matchup {
   position: relative;
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  gap: 8px;
+  /* Scales with the card so the crests can't outgrow a narrow phone. */
+  --fxn-crest: clamp(80px, 20vw, 108px);
+}
+
+/* Motorsport has no away side. Kept side-by-side (crest, then time) rather
+   than stacked, so a solo event card is exactly as tall as a two-club one
+   instead of growing by a whole row. */
+.fxn-matchup-solo {
+  grid-template-columns: minmax(0, auto) auto;
   justify-content: center;
-  /* Scales with the card so the two tiles can't outgrow a narrow phone. */
-  --fxn-crest: clamp(96px, 26vw, 132px);
-  --fxn-overlap: calc(var(--fxn-crest) * -0.26);
-  margin: 22px 0 8px;
 }
 
-.fxn-crests-solo {
-  --fxn-overlap: 0px;
+.fxn-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  text-align: center;
 }
 
+/* No tile behind the crest — the club badge is its own shape and reads
+   stronger sitting directly on the card surface. */
 .fxn-crest {
   position: relative;
   width: var(--fxn-crest);
   height: var(--fxn-crest);
-  border-radius: 26px;
   flex: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Fixed rather than derived from either club's colour — see CIRCLE_BG in
-     the script for why. */
-  background: v-bind(CIRCLE_BG);
-  box-shadow: 0 20px 40px -18px rgba(0, 0, 0, 0.55);
-}
-
-/* Away sits in front of home where they overlap. */
-.fxn-crest-home {
-  z-index: 1;
-}
-
-.fxn-crest-away {
-  margin-left: var(--fxn-overlap);
-  z-index: 2;
 }
 
 .fxn-logo {
   position: absolute;
-  inset: 18%;
+  inset: 0;
   /* background-size is set inline per-icon (see logoStyle in the script) —
      capped at the source's natural resolution so small raster crests aren't
      upscaled past their real size and don't come out blurry. */
@@ -448,23 +438,81 @@ watch(
   pointer-events: none;
 }
 
+/* Monogram fallback, shown when a club has no crest image. */
 .fxn-mono {
-  /* Tracks the tile rather than a fixed size, so it stays proportionate at
-     every breakpoint now that --fxn-crest is fluid. */
-  font-size: calc(var(--fxn-crest) * 0.2);
+  /* Tracks the crest box rather than a fixed size, so it stays proportionate
+     at every breakpoint now that --fxn-crest is fluid. */
+  font-size: calc(var(--fxn-crest) * 0.24);
   font-weight: 900;
   letter-spacing: 0.5px;
-  /* Fixed light colour rather than clubIdentity's "ink" — ink is tuned for
-     legibility against that club's own bright synthesised colour, which the
-     tile no longer uses as its background. */
   color: var(--ms-text);
+}
+
+/* Wraps rather than truncates — a long club name ("IF Brommapojkarna")
+   must stay readable in full, and both columns are the same width so the
+   two names stay balanced when one of them runs to a second line.
+   Two lines are always reserved (min-height) so a one-line name and a
+   two-line one produce the same card height — otherwise the panel visibly
+   resizes as the rotation moves between fixtures. */
+.fxn-team-name {
+  max-width: 100%;
+  margin-top: 10px;
+  font-size: 14.5px;
+  font-weight: 800;
+  line-height: 1.25;
+  min-height: 2.5em;
+  overflow-wrap: anywhere;
+}
+
+.fxn-team-abbr {
+  max-width: 100%;
+  margin-top: 2px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(244, 247, 251, 0.5);
+}
+
+.fxn-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  padding: 0 4px;
+  /* Aligns the time with the crest tiles rather than the shorter name/abbr
+     text sitting below them. */
+  padding-top: calc(var(--fxn-crest) * 0.32);
+}
+
+.fxn-time {
+  font-size: clamp(24px, 7vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.fxn-venue {
+  margin-top: 4px;
+  max-width: 100%;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(244, 247, 251, 0.5);
+}
+
+.fxn-count {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ms-blue);
 }
 
 .fxn-dots {
   position: absolute;
-  top: 50%;
+  top: 0;
   right: -2px;
-  transform: translateY(-50%);
   gap: 6px;
   z-index: 3;
 }
@@ -483,37 +531,8 @@ watch(
   background: #8ecdf2;
 }
 
-.fxn-vs {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: rgba(244, 247, 251, 0.4);
-  margin-bottom: 10px;
-}
-
-.fxn-title {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-  margin-bottom: 8px;
-}
-
-.fxn-venue {
-  font-size: 14px;
-  font-weight: 600;
-  color: rgba(244, 247, 251, 0.7);
-  margin-bottom: 4px;
-}
-
-.fxn-count-line {
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(244, 247, 251, 0.5);
-}
-
 .fxn-empty {
-  min-height: 340px;
+  min-height: 200px;
 }
 
 .fx-crest {
