@@ -316,10 +316,28 @@ function onAwayIconError() {
 // axes have to be capped: constraining width alone lets a tall crest (a
 // shield, say) compute a height past the square box, and the background
 // paints clipped to that box — the logo loses its top and bottom.
+// Smallest natural size we'll believe. Below this the browser is reporting
+// nonsense rather than a genuinely tiny crest, and capping the tile to it
+// would shrink the badge to a speck.
+const MIN_CREDIBLE_CREST_PX = 24
+
 function logoStyle(icon: string | null | undefined, size: { w: number; h: number } | null) {
   if (!icon) return {}
-  const box = size && size.w > 0 && size.h > 0
-    ? { width: `min(${size.w}px, 100%)`, height: `min(${size.h}px, 100%)` }
+
+  // Never cap an SVG. They scale losslessly, so there's nothing to protect
+  // against, and many crests (the Premier League set among them) declare only
+  // a viewBox with no width/height — browsers then disagree completely about
+  // their "natural" size, Safari reporting none at all. Trusting that number
+  // collapsed those badges to a dot on iOS.
+  const isSvg = /\.svg(\?|#|$)/i.test(icon)
+  const credible =
+    !isSvg &&
+    size !== null &&
+    size.w >= MIN_CREDIBLE_CREST_PX &&
+    size.h >= MIN_CREDIBLE_CREST_PX
+
+  const box = credible
+    ? { width: `min(${size!.w}px, 100%)`, height: `min(${size!.h}px, 100%)` }
     : { width: '100%', height: '100%' }
   return { backgroundImage: `url(${icon})`, ...box }
 }
