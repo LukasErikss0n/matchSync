@@ -213,3 +213,13 @@ ClaudeContext.txt
 
 # Local dev overrides
 docker-compose.override.yml
+
+# Claude Code skills (installed via `npx skills add`, local-only)
+.claude/skills/
+
+# Impeccable skill tooling state (local config/cache, not app code)
+.impeccable/
+frontend/.impeccable/
+PRODUCT.md
+DESIGN.md
+skills-lock.json

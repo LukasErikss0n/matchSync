@@ -24,15 +24,15 @@
           <pre><code>GET /api/calendar/{sport}/{team_slug}.ics?leagues={league_slug,...}&amp;id={token}</code></pre>
           <p>No API key required. Responds with <code>Content-Type: text/calendar</code>.</p>
           <ul>
-            <li><strong>sport</strong> — sport slug, e.g. <code>football</code>.</li>
-            <li><strong>team_slug</strong> — team slug, e.g. <code>arsenal</code>.</li>
+            <li><strong>sport</strong>: sport slug, e.g. <code>football</code>.</li>
+            <li><strong>team_slug</strong>: team slug, e.g. <code>arsenal</code>.</li>
             <li>
-              <strong>leagues</strong> — optional, comma-separated league slugs to restrict the feed
+              <strong>leagues</strong>: optional, comma-separated league slugs to restrict the feed
               to (e.g. only Champions League, not domestic league). Omit it to include every league
               the team competes in.
             </li>
             <li>
-              <strong>id</strong> — optional subscription token, added automatically to links
+              <strong>id</strong>: optional subscription token, added automatically to links
               generated on this site. It exists only so we can count how many subscriptions are
               still active. Omit it (or delete it from a generated link) and the feed behaves
               identically, just uncounted. An unrecognised value is ignored rather than rejected,
@@ -84,7 +84,7 @@
           <p>
             Team and league slugs aren't published as a static list, so the easiest way to get a
             correct feed URL is to pick your team on the
-            <RouterLink to="/">home page</RouterLink> — it builds the exact URL above for you.
+            <RouterLink to="/">home page</RouterLink>. It builds the exact URL above for you.
           </p>
         </section>
 
@@ -94,7 +94,7 @@
             The REST endpoints behind the site (<code>/api/sports</code>, <code>/api/teams</code>,
             <code>/api/matches</code>, <code>/api/matches/featured</code>,
             <code>/api/leagues/{'{'}slug{'}'}/season-stats</code>) require an
-            <code>X-API-Key</code> header and are reserved for the frontend itself — there's no
+            <code>X-API-Key</code> header and are reserved for the frontend itself. There's no
             public developer key issuance at this time.
           </p>
         </section>

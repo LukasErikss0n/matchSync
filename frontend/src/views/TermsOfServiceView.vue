@@ -34,7 +34,7 @@
       <p>
         The restriction we care about most: <strong>you may not redistribute, republish, mirror,
         resell, or otherwise make our calendar feeds or underlying match data available through
-        another product, service, app, or company</strong> — whether for free or for payment. In
+        another product, service, app, or company</strong>, whether for free or for payment. In
         plain terms: sharing a link with a friend is fine; another company (or your own separate
         product) plugging our feed into their platform and presenting it as their own data source
         is not. Specifically, you may not:
@@ -48,7 +48,7 @@
       </ul>
       <p>
         If you'd like to use our data for something beyond personal sharing (e.g. integrating it
-        into another product), contact us — we're open to discussing it, we just don't allow it
+        into another product), contact us. We're open to discussing it, we just don't allow it
         by default.
       </p>
     </section>
@@ -60,7 +60,7 @@
         and league websites. We do our best to keep this data accurate and up to date, but
         fixtures get rescheduled, postponed, or corrected by leagues at short notice, and we
         can't guarantee the data is always current or error-free. Don't rely on MatchCalender as
-        the sole source of truth for time-sensitive plans (e.g. travel bookings) — always confirm
+        the sole source of truth for time-sensitive plans (e.g. travel bookings). Always confirm
         important match details with the official league or broadcaster.
       </p>
     </section>
@@ -79,7 +79,7 @@
       <p>
         To the fullest extent permitted by law, MatchCalender is not liable for any indirect,
         incidental, or consequential damages arising from your use of, or inability to use, the
-        service — including missed matches, incorrect schedule information, or service downtime.
+        service, including missed matches, incorrect schedule information, or service downtime.
       </p>
     </section>
 

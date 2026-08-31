@@ -183,7 +183,7 @@
             Back
           </button>
           <p class="text-sm font-medium mb-4" style="color: rgba(244,247,251,.65)">
-            <strong style="color: var(--ms-text)">{{ selectedTeam.name }}</strong> — select leagues
+            Select leagues for <strong style="color: var(--ms-text)">{{ selectedTeam.name }}</strong>
           </p>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <label

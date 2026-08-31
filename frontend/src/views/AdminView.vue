@@ -69,7 +69,7 @@
           <div class="glass-card rounded-2xl p-5">
             <div class="text-3xl font-extrabold tabular-nums">{{ data.active_count }}</div>
             <div class="text-xs font-semibold mt-1" style="color: rgba(244,247,251,.5)">
-              Active — fetched in {{ data.active_window_days }}d
+              Active in last {{ data.active_window_days }}d
             </div>
           </div>
           <div class="glass-card rounded-2xl p-5">

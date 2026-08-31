@@ -14,9 +14,9 @@ const HOME_DESCRIPTION =
 const MATCHES_DESCRIPTION =
   'Browse every fixture and result by league or team, updated live and ready to sync to your calendar.'
 const API_DOCS_DESCRIPTION =
-  'Every calendar link generated on MatchCalender is a standard iCal feed you can subscribe to from any calendar app — see the feed URL format and parameters.'
+  'Every calendar link generated on MatchCalender is a standard iCal feed you can subscribe to from any calendar app. See the feed URL format and parameters.'
 const PRIVACY_DESCRIPTION =
-  'MatchCalender only stores the sport, team and league selections needed to generate your calendar link — no accounts, no tracking, no ads.'
+  'MatchCalender only stores the sport, team and league selections needed to generate your calendar link. No accounts, no tracking, no ads.'
 const TERMS_DESCRIPTION =
   'Read the terms covering personal use of MatchCalender, including sharing calendar links with friends and the restriction on commercial redistribution.'
 const SUPPORT_DESCRIPTION =
