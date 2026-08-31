@@ -1,7 +1,16 @@
 <template>
   <section class="relative px-4 sm:px-6 pt-8 sm:pt-14 pb-6">
-    <div class="max-w-5xl mx-auto">
-      <div class="hero-headline mb-8 sm:mb-10">
+    <!-- Stacked below lg, side by side above it. The split only turns on at
+         lg because the fixture card has a 26rem floor: at md there isn't
+         enough left over for the headline to sit beside it without the
+         measure collapsing to a few words a line. -->
+    <div class="max-w-5xl mx-auto lg:grid lg:grid-cols-2 lg:gap-12 lg:items-center">
+      <!-- While stacked, the headline is capped to the fixture card's own
+           26rem and centred, so the two read as one column instead of
+           full-width text sitting above a narrow centred card. Phones are
+           already narrower than the cap, so it only bites on tablets. The
+           cap is dropped at lg, where the headline owns half the grid. -->
+      <div class="hero-headline max-w-[26rem] mx-auto lg:max-w-none lg:mx-0 mb-8 sm:mb-10 lg:mb-0">
         <div class="hero-eyebrow">Next kickoff</div>
         <h1 class="hero-title">
           <span>Every match.</span>
@@ -24,7 +33,10 @@
     </div>
 
     <!-- TEAM PICKER PANEL -->
-    <div class="relative flex justify-center mt-10 sm:mt-14">
+    <!-- Extra top margin once the hero splits into two columns: the picker
+         sits under a wider, shorter block there, so the gap that reads as
+         "next section" on a phone reads as cramped on a desktop. -->
+    <div class="relative flex justify-center mt-10 sm:mt-14 lg:mt-20">
       <div class="glass-panel relative w-full max-w-xl rounded-[28px] p-5 sm:p-6 overflow-hidden">
         <div
           class="absolute inset-0 pointer-events-none"
