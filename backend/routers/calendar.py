@@ -1,9 +1,10 @@
+import secrets
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response
 from sqlmodel import Session, col, select
 from database import get_session
-from models.models import League, Match, Sport, Team
+from models.models import CalendarSubscription, League, Match, Sport, Team
 from schemas.schemas import CalendarLink, LeagueOut
 from services.ics_builder import build_ics
 from config import BASE_WEBCAL_URL
@@ -61,16 +62,64 @@ def get_calendar_link(
     rows = _resolve_team_rows(session, sport, team, league_slugs)
     team_name = rows[0][0].name
     league_outs = [LeagueOut(name=l.name, slug=l.slug) for _, l in rows]
-    url = f"{BASE_WEBCAL_URL}/{sport}/{team}.ics?leagues={','.join(league_slugs)}"
 
+    # Every issued link gets its own token, which is the only thing that
+    # distinguishes two people subscribing to the same team and leagues —
+    # without it their feed requests are identical and count as one.
+    # Sorted so the stored form doesn't depend on the order the user happened
+    # to tick the league checkboxes.
+    token = secrets.token_urlsafe(9)
+    session.add(
+        CalendarSubscription(
+            token=token,
+            sport_slug=sport,
+            team_slug=team,
+            team_name=team_name,
+            leagues=",".join(sorted(league_slugs)),
+            created_at=datetime.now(timezone.utc),
+        )
+    )
+    session.commit()
+
+    url = (
+        f"{BASE_WEBCAL_URL}/{sport}/{team}.ics"
+        f"?leagues={','.join(league_slugs)}&id={token}"
+    )
     return CalendarLink(team=team_name, sport=sport, leagues=league_outs, url=url)
+
+
+def _record_fetch(session: Session, token: str | None, user_agent: str | None) -> None:
+    """Stamp a subscription as alive.
+
+    Deliberately never raises and never 404s on an unknown token: this runs on
+    the path a subscriber's calendar app polls, and breaking someone's feed to
+    protect a metric would be the wrong trade. Links issued before tokens
+    existed simply carry no id and go unrecorded.
+    """
+    if not token:
+        return
+    try:
+        row = session.exec(
+            select(CalendarSubscription).where(CalendarSubscription.token == token)
+        ).first()
+        if row is None:
+            return
+        row.last_seen = datetime.now(timezone.utc)
+        row.fetch_count += 1
+        row.last_user_agent = (user_agent or None) and user_agent[:200]
+        session.add(row)
+        session.commit()
+    except Exception:
+        session.rollback()
 
 
 @router.get("/calendar/{sport_slug}/{team_slug}.ics")
 def get_ics(
+    request: Request,
     sport_slug: str,
     team_slug: str,
     leagues: str | None = None,
+    id: str | None = None,
     session: Session = Depends(get_session),
 ):
     league_slugs = _parse_league_slugs(leagues)
@@ -86,4 +135,11 @@ def get_ics(
     # league name per team row, so each event title can say which competition it is
     league_by_team = {t.id: l.name for t, l in rows if t.id is not None}
     ics_bytes = build_ics(team_name, list(matches), league_by_team)
-    return Response(content=ics_bytes, media_type="text/calendar")
+    _record_fetch(session, id, request.headers.get("user-agent"))
+    return Response(
+        content=ics_bytes,
+        media_type="text/calendar",
+        # A cached feed is a poll that never reaches us — it would both serve
+        # stale fixtures and make an active subscriber look dormant.
+        headers={"Cache-Control": "no-store"},
+    )

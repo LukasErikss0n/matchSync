@@ -1,4 +1,4 @@
-import type { CalendarLink, Match, SeasonStats, StandingEntry, Sport, SupportPayload, Team } from '@/types'
+import type { CalendarLink, Match, SeasonStats, StandingEntry, Sport, SubscriptionDashboard, SupportPayload, Team } from '@/types'
 
 const API_BASE = '/api'
 
@@ -100,11 +100,34 @@ export async function sendSupportRequest(payload: SupportPayload): Promise<void>
   if (!res.ok) throw new Error(`Failed to send support request: ${res.status}`)
 }
 
+// Each call to /calendar mints a fresh subscriber token server-side, so going
+// Back and regenerating the same selection would otherwise leave a trail of
+// abandoned links on the admin dashboard. Reuse what this browser already
+// got for an identical selection.
+//
+// sessionStorage, not localStorage, and deliberately never shared: two
+// different people picking the same team and leagues must keep separate
+// tokens, or they collapse into a single counted subscriber.
+const CAL_LINK_CACHE_PREFIX = 'ms-cal-link:'
+
+function calLinkCacheKey(sport: string, teamSlug: string, leagueSlugs: string[]): string {
+  // Sorted so ticking the same leagues in a different order still hits.
+  return `${CAL_LINK_CACHE_PREFIX}${sport}|${teamSlug}|${[...leagueSlugs].sort().join(',')}`
+}
+
 export async function fetchCalendarLink(
   sport: string,
   teamSlug: string,
   leagueSlugs: string[],
 ): Promise<CalendarLink> {
+  const cacheKey = calLinkCacheKey(sport, teamSlug, leagueSlugs)
+  try {
+    const cached = sessionStorage.getItem(cacheKey)
+    if (cached) return JSON.parse(cached) as CalendarLink
+  } catch {
+    // Private mode, disabled storage, or a corrupt entry — just re-fetch.
+  }
+
   const params = new URLSearchParams({
     sport,
     team: teamSlug,
@@ -112,5 +135,29 @@ export async function fetchCalendarLink(
   })
   const res = await fetch(`${API_BASE}/calendar?${params}`)
   if (!res.ok) throw new Error(`Failed to fetch calendar link: ${res.status}`)
+  const link: CalendarLink = await res.json()
+
+  try {
+    sessionStorage.setItem(cacheKey, JSON.stringify(link))
+  } catch {
+    // Caching is an optimisation; a failure here must not break the flow.
+  }
+  return link
+}
+
+// Admin dashboard. Sends X-Admin-Token, which — unlike X-API-Key — the
+// dev/prod proxy does not inject, so the operator has to supply it by hand.
+export async function fetchSubscriptionDashboard(
+  adminToken: string,
+  windowDays?: number,
+): Promise<SubscriptionDashboard> {
+  const qs = windowDays ? `?window_days=${windowDays}` : ''
+  const res = await fetch(`${API_BASE}/admin/subscriptions${qs}`, {
+    headers: { 'X-Admin-Token': adminToken },
+  })
+  if (!res.ok) {
+    const detail = await res.json().catch(() => null)
+    throw new Error(detail?.detail ?? `Failed to load dashboard: ${res.status}`)
+  }
   return res.json()
 }

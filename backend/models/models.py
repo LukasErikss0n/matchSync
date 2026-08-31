@@ -1,6 +1,12 @@
 from typing import Optional
 from sqlmodel import Field, Relationship
-from schemas.schemas import SportBase, LeagueBase, TeamBase, MatchBase
+from schemas.schemas import (
+    CalendarSubscriptionBase,
+    SportBase,
+    LeagueBase,
+    TeamBase,
+    MatchBase,
+)
 
 
 class Sport(SportBase, table=True):
@@ -28,3 +34,10 @@ class Match(MatchBase, table=True):
     external_id: str = Field(unique=True)
     team_id: int = Field(foreign_key="team.id")
     team: Optional[Team] = Relationship(back_populates="matches")
+
+
+class CalendarSubscription(CalendarSubscriptionBase, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    # Looked up on every feed fetch, so it carries an index, and uniqueness
+    # is what makes "one row per issued link" hold.
+    token: str = Field(unique=True, index=True)

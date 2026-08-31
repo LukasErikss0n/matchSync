@@ -82,10 +82,12 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4 max-h-72 overflow-y-auto">
           <!-- Only on the very first load. Re-filtering by sport or search
                keeps the current results on screen instead of blanking the
-               grid to skeletons on every keystroke. -->
+               grid to skeletons on every keystroke.
+               The `!teams.length` half is belt-and-braces: whatever the flag
+               says, a placeholder must never sit next to a real result. -->
           <div
             v-for="n in 6"
-            v-show="teamsFirstLoad"
+            v-show="teamsFirstLoad && !teams.length"
             :key="`team-skeleton-${n}`"
             class="rounded-xl border border-white/[0.08] px-3 py-2.5 flex items-center gap-2.5"
             aria-hidden="true"

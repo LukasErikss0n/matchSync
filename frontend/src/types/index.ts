@@ -104,3 +104,23 @@ export interface SupportPayload {
   device: string
   email?: string | null
 }
+
+export interface CalendarSubscription {
+  token: string
+  sport: string
+  team: string
+  leagues: string[]
+  created_at: string
+  last_seen: string | null
+  fetch_count: number
+  last_user_agent: string | null
+  active: boolean
+}
+
+export interface SubscriptionDashboard {
+  active_count: number
+  pending_count: number
+  dormant_count: number
+  active_window_days: number
+  subscriptions: CalendarSubscription[]
+}

@@ -21,7 +21,7 @@
             supports iCal/webcal URLs, and it stays in sync on its own, no polling logic or auth
             needed on your end.
           </p>
-          <pre><code>GET /api/calendar/{sport}/{team_slug}.ics?leagues={league_slug,...}</code></pre>
+          <pre><code>GET /api/calendar/{sport}/{team_slug}.ics?leagues={league_slug,...}&amp;id={token}</code></pre>
           <p>No API key required. Responds with <code>Content-Type: text/calendar</code>.</p>
           <ul>
             <li><strong>sport</strong> — sport slug, e.g. <code>football</code>.</li>
@@ -31,6 +31,13 @@
               to (e.g. only Champions League, not domestic league). Omit it to include every league
               the team competes in.
             </li>
+            <li>
+              <strong>id</strong> — optional subscription token, added automatically to links
+              generated on this site. It exists only so we can count how many subscriptions are
+              still active. Omit it (or delete it from a generated link) and the feed behaves
+              identically, just uncounted. An unrecognised value is ignored rather than rejected,
+              so a stale link never breaks.
+            </li>
           </ul>
           <p>Example:</p>
           <pre><code>GET /api/calendar/football/arsenal.ics?leagues=premier-league,uefa-champions-league</code></pre>
@@ -39,6 +46,36 @@
             (<code>REFRESH-INTERVAL</code> / <code>X-PUBLISHED-TTL</code> of 1 hour), and each event
             carries a stable UID so reschedules update the existing entry in your calendar instead
             of duplicating it.
+          </p>
+        </section>
+
+        <section>
+          <h2>The <code>id</code> parameter</h2>
+          <p>
+            Links generated on this site end with a token, for example
+            <code>&amp;id=36wPQZ47d0pA</code>. It answers one question we otherwise can't:
+            how many calendar subscriptions are actually live. Two people subscribing to the
+            same team and leagues send byte-identical requests, so without a token they are
+            indistinguishable from one person refreshing twice.
+          </p>
+          <p>
+            It is 12 characters drawn from 9 bytes of cryptographically secure randomness
+            (Python's <code>secrets.token_urlsafe(9)</code>, i.e. 72 bits), base64url-encoded so
+            it is safe to drop straight into a query string. Nothing about you is fed into it:
+            it is not derived from your name, IP address, device, browser or selections, and it
+            is not a hash of anything. A fresh one is minted each time a link is generated.
+          </p>
+          <p>
+            Against that token we record the team and leagues it was created for, when it was
+            created, when your calendar app last fetched it, how many times, and the kind of
+            client that asked (e.g. <code>Google Calendar</code>). We deliberately do not store
+            an IP address alongside it. See the
+            <RouterLink to="/privacy">privacy policy</RouterLink> for the full picture.
+          </p>
+          <p>
+            Because a calendar app re-fetches the feed on its own schedule, each request acts as
+            a heartbeat: a subscription counts as active while it is still being fetched, and
+            quietly falls out of the count once it stops.
           </p>
         </section>
 

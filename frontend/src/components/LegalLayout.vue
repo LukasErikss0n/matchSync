@@ -76,4 +76,17 @@ const showModal = ref(false)
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* Inline URL fragments (e.g. the &id= parameter in the privacy policy).
+   Wraps rather than overflows — these appear mid-sentence on a phone. */
+.legal-content :deep(code) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  color: var(--ms-blue);
+  background: rgba(142, 205, 242, 0.1);
+  border: 1px solid rgba(142, 205, 242, 0.22);
+  border-radius: 6px;
+  padding: 1px 6px;
+  overflow-wrap: anywhere;
+}
 </style>

@@ -21,7 +21,7 @@
       <div class="glass-card rounded-[20px] overflow-hidden">
         <div
           v-for="n in COLLAPSED_COUNT"
-          v-show="loading"
+          v-show="loading && !matches.length"
           :key="`week-skeleton-${n}`"
           class="flex items-center gap-3 sm:gap-3.5 px-3.5 sm:px-4 py-3 sm:py-3.5 border-b border-white/[0.07] last:border-b-0"
           aria-hidden="true"

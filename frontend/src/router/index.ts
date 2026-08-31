@@ -104,6 +104,20 @@ const router = createRouter({
         isLeaguePage: true,
       },
     })),
+    // Operator-only. noindex because this must never reach a search result,
+    // and lazily imported so the dashboard isn't part of the bundle every
+    // visitor downloads. The real gate is the backend's ADMIN_TOKEN — this
+    // route renders a token prompt, not data.
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('@/views/AdminView.vue'),
+      meta: {
+        title: 'Subscriptions | MatchCalender',
+        description: 'Operator dashboard.',
+        noindex: true,
+      },
+    },
     // Catch-all. prod-server.mjs already answers 404 for anything not
     // prerendered; this renders something useful inside that response instead
     // of the blank shell an unmatched route would leave behind.
@@ -124,7 +138,7 @@ router.afterEach((to) => {
     title: (to.meta.title as string) ?? 'MatchCalender',
     description: (to.meta.description as string) ?? HOME_DESCRIPTION,
     path: to.path,
-    noindex: to.name === 'not-found',
+    noindex: to.name === 'not-found' || to.meta.noindex === true,
   })
 })
 

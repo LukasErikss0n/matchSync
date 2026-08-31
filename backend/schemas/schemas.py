@@ -197,3 +197,61 @@ class CalendarLink(SQLModel):
     sport: str
     leagues: list[LeagueOut]
     url: str
+
+
+# ── Calendar subscriptions ────────────────────────────────────────────────────
+
+class CalendarSubscriptionBase(SQLModel):
+    """One issued calendar link.
+
+    A row is created when the wizard generates a link, and only becomes an
+    *active subscription* once a calendar client actually fetches the feed
+    (`last_seen` set). That split matters: the wizard re-issues a link every
+    time someone reaches the final step, so tokens that were generated and
+    never subscribed to must not be counted as subscribers.
+    """
+    # Opaque per-link identifier carried in the .ics URL as ?id=. This is what
+    # separates two people subscribing to the same team+leagues — without it
+    # their requests are byte-identical and collapse into one.
+    token: str
+    sport_slug: str
+    team_slug: str
+    team_name: str
+    # Comma-joined, sorted — so ?leagues=shl,cl and ?leagues=cl,shl describe
+    # the same subscription rather than looking like two different ones.
+    leagues: str
+    created_at: datetime
+    # None until the first fetch. Every subsequent poll (calendar clients
+    # refresh on their own schedule, often several times a day) just moves
+    # this forward — it's a heartbeat, not a counter.
+    last_seen: Optional[datetime] = None
+    fetch_count: int = 0
+    # Last client to fetch the feed, e.g. Google Calendar vs Apple. Useful for
+    # reading the dashboard; deliberately no IP address is stored.
+    last_user_agent: Optional[str] = None
+
+
+class CalendarSubscriptionOut(SQLModel):
+    """One subscription row as shown on the admin dashboard."""
+    token: str
+    sport: str
+    team: str
+    leagues: list[str]
+    created_at: datetime
+    last_seen: Optional[datetime] = None
+    fetch_count: int
+    last_user_agent: Optional[str] = None
+    active: bool
+
+
+class SubscriptionDashboardOut(SQLModel):
+    """GET /admin/subscriptions — totals plus the rows behind them."""
+    active_count: int
+    # Issued but never fetched: someone reached the last wizard step and
+    # didn't subscribe (or hasn't yet).
+    pending_count: int
+    # Previously fetched, but nothing for longer than the active window —
+    # most likely unsubscribed.
+    dormant_count: int
+    active_window_days: int
+    subscriptions: list[CalendarSubscriptionOut]
