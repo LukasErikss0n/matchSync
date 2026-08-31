@@ -58,6 +58,28 @@ function resolveStaticFile(urlPath) {
   return { filePath: path.join(distDir, 'index.html'), status: 404 }
 }
 
+// Without an explicit Cache-Control, Cloudflare applies its own default (4h)
+// to anything that looks like a static asset — including sw.js. A cached
+// service worker keeps serving its own precached copy of the previous build's
+// bundle, which overrides whatever index.html asks for and survives a hard
+// refresh, because the worker answers before the network does. That made
+// deploys look like they hadn't landed for hours.
+//
+// So: never cache the entries that point at a build (the worker and the HTML
+// that names the bundle), and cache the build's own output forever, since
+// Vite fingerprints those filenames by content.
+function cacheControlFor(filePath) {
+  const base = path.basename(filePath)
+  if (base === 'sw.js' || base === 'registerSW.js' || base === 'workbox-window.prod.es5.js') {
+    return 'no-cache'
+  }
+  if (path.extname(filePath) === '.html') return 'no-cache'
+  if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+    return 'public, max-age=31536000, immutable'
+  }
+  return 'public, max-age=3600'
+}
+
 function serveStatic(req, res) {
   const resolved = resolveStaticFile(req.url ?? '/')
   if (!resolved) {
@@ -65,7 +87,10 @@ function serveStatic(req, res) {
     res.end('Not found')
     return
   }
-  res.writeHead(resolved.status, { 'Content-Type': contentType(resolved.filePath) })
+  res.writeHead(resolved.status, {
+    'Content-Type': contentType(resolved.filePath),
+    'Cache-Control': cacheControlFor(resolved.filePath),
+  })
   fs.createReadStream(resolved.filePath).pipe(res)
 }
 
