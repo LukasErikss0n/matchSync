@@ -10,7 +10,7 @@ from routers import admin, calendar, leagues, matches, support
 from scripts.backfill_full_history import main as backfill_full_history
 from security import require_api_key
 from tasks.fetcher import run_fetch, fetcher_state
-from tasks.prune_subscriptions import prune_pending_subscriptions
+from tasks.prune_subscriptions import prune_subscriptions
 
 
 def _startup_fetch() -> None:
@@ -40,10 +40,10 @@ async def lifespan(app: FastAPI):
     scheduler.add_job(run_fetch, "cron", hour="17-23", minute="0,30")
     # Rest of day: run every 4 hours (0, 4, 8, 12, 16)
     scheduler.add_job(run_fetch, "cron", hour="0,4,8,12,16", minute=0)
-    # Clears out calendar links that were generated and never subscribed to.
-    # Daily is plenty — they only accumulate as fast as people click through
-    # the wizard's last step.
-    scheduler.add_job(prune_pending_subscriptions, "cron", hour=4, minute=15)
+    # Clears out calendar links that were generated and never subscribed to,
+    # plus subscriptions that have gone a year without a fetch. Daily is
+    # plenty — neither accumulates quickly.
+    scheduler.add_job(prune_subscriptions, "cron", hour=4, minute=15)
     scheduler.start()
     threading.Thread(target=_startup_fetch, daemon=True).start()
 

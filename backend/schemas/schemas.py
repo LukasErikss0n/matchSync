@@ -226,8 +226,10 @@ class CalendarSubscriptionBase(SQLModel):
     # this forward — it's a heartbeat, not a counter.
     last_seen: Optional[datetime] = None
     fetch_count: int = 0
-    # Last client to fetch the feed, e.g. Google Calendar vs Apple. Useful for
-    # reading the dashboard; deliberately no IP address is stored.
+    # Coarse client family only ("Google Calendar", "Apple Calendar", …), never
+    # the raw User-Agent: see _client_label in routers/calendar.py. The full
+    # string carries OS and version detail the dashboard has no use for.
+    # Deliberately no IP address is stored either.
     last_user_agent: Optional[str] = None
 
 

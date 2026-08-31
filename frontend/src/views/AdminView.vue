@@ -111,7 +111,7 @@
               <div class="text-xs font-semibold mt-1" style="color: rgba(244,247,251,.35)">
                 {{ s.fetch_count }} {{ s.fetch_count === 1 ? 'fetch' : 'fetches' }}
                 · {{ lastSeenLabel(s) }}
-                <template v-if="s.last_user_agent"> · {{ clientLabel(s.last_user_agent) }}</template>
+                <template v-if="s.last_user_agent"> · {{ s.last_user_agent }}</template>
               </div>
             </div>
             <span class="sub-pill flex-none" :class="statusOf(s)">{{ statusOf(s) }}</span>
@@ -187,17 +187,6 @@ function lastSeenLabel(s: CalendarSubscription): string {
   const hours = Math.round(mins / 60)
   if (hours < 48) return `last fetch ${hours}h ago`
   return `last fetch ${Math.round(hours / 24)}d ago`
-}
-
-// Calendar clients identify themselves loosely and inconsistently; this only
-// needs to be good enough to tell the big ones apart at a glance.
-function clientLabel(ua: string): string {
-  const s = ua.toLowerCase()
-  if (s.includes('google')) return 'Google Calendar'
-  if (s.includes('ical') || s.includes('macos') || s.includes('ios')) return 'Apple Calendar'
-  if (s.includes('outlook') || s.includes('microsoft')) return 'Outlook'
-  if (s.includes('thunderbird')) return 'Thunderbird'
-  return ua.split('/')[0].slice(0, 24)
 }
 
 onMounted(() => {

@@ -57,9 +57,19 @@
                     app (Google Calendar, Apple Calendar, Outlook, etc.)
                     refreshes your subscribed feed, it makes a request to our
                     server the same way your browser does. We use this only to
-                    count active subscriptions as described above. We don't
-                    build a profile of you, and we don't store the IP address
-                    alongside your calendar link.
+                    count active subscriptions as described above, and we don't
+                    build a profile of you. The subscription record itself holds
+                    no IP address; the separate server logs described above do
+                    record one, as they do for every request to any website.
+                </li>
+                <li>
+                    <strong>How long we keep it.</strong> A link that is
+                    generated but never subscribed to is deleted automatically
+                    after 7 days. Once subscribed, the record is deleted
+                    automatically after 12 months with no fetch from your
+                    calendar app — so unsubscribing erases it within a year
+                    without you doing anything. Both run daily. You can also
+                    ask us to remove it sooner — see "Your rights" below.
                 </li>
                 <li>
                     <strong>If you'd rather not be counted.</strong> The ID is
@@ -86,7 +96,9 @@
                 <li>
                     No name, email address, IP address, device fingerprint or
                     location stored against your calendar link — the random ID
-                    is not derived from any of them.
+                    is not derived from any of them. We record only the family
+                    of calendar app that fetched it, never the full browser or
+                    device string it sends.
                 </li>
             </ul>
         </section>

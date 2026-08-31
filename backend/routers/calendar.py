@@ -88,6 +88,33 @@ def get_calendar_link(
     return CalendarLink(team=team_name, sport=sport, leagues=league_outs, url=url)
 
 
+def _client_label(user_agent: str | None) -> str | None:
+    """Reduce a User-Agent to a coarse client family before it is stored.
+
+    A raw UA carries OS and version detail we have no use for, and which the
+    privacy policy promises not to keep — the dashboard only ever needs to
+    know whether it was Google, Apple, and so on. Classifying here rather
+    than at render time means the detail is never written down in the first
+    place.
+    """
+    if not user_agent:
+        return None
+    ua = user_agent.lower()
+    if "google" in ua:
+        return "Google Calendar"
+    if "outlook" in ua or "microsoft" in ua:
+        return "Outlook"
+    if "thunderbird" in ua:
+        return "Thunderbird"
+    # Apple's calendar clients report as macOS/iOS or dataaccessd, and plain
+    # "ical" covers several third-party readers.
+    if any(k in ua for k in ("ical", "dataaccessd", "macos", "mac os", "ios", "cfnetwork")):
+        return "Apple Calendar"
+    if any(k in ua for k in ("mozilla", "chrome", "safari", "firefox")):
+        return "Web browser"
+    return "Other"
+
+
 def _record_fetch(session: Session, token: str | None, user_agent: str | None) -> None:
     """Stamp a subscription as alive.
 
@@ -106,7 +133,7 @@ def _record_fetch(session: Session, token: str | None, user_agent: str | None) -
             return
         row.last_seen = datetime.now(timezone.utc)
         row.fetch_count += 1
-        row.last_user_agent = (user_agent or None) and user_agent[:200]
+        row.last_user_agent = _client_label(user_agent)
         session.add(row)
         session.commit()
     except Exception:
