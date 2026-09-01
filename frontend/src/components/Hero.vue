@@ -97,19 +97,20 @@
                grid to skeletons on every keystroke.
                The `!teams.length` half is belt-and-braces: whatever the flag
                says, a placeholder must never sit next to a real result. -->
-          <div
-            v-for="n in 6"
-            v-show="teamsFirstLoad && !teams.length"
-            :key="`team-skeleton-${n}`"
-            class="rounded-xl border border-white/[0.08] px-3 py-2.5 flex items-center gap-2.5"
-            aria-hidden="true"
-          >
-            <span class="ms-skeleton flex-none" style="width: 30px; height: 30px; border-radius: 9px"></span>
-            <div class="min-w-0 flex-1">
-              <span class="ms-skeleton block" style="width: 68%; height: 13px"></span>
-              <span class="ms-skeleton block" style="width: 45%; height: 10px; margin-top: 6px"></span>
+          <template v-if="teamsFirstLoad && !teams.length">
+            <div
+              v-for="n in 6"
+              :key="`team-skeleton-${n}`"
+              class="rounded-xl border border-white/[0.08] px-3 py-2.5 flex items-center gap-2.5"
+              aria-hidden="true"
+            >
+              <span class="ms-skeleton flex-none" style="width: 30px; height: 30px; border-radius: 9px"></span>
+              <div class="min-w-0 flex-1">
+                <span class="ms-skeleton block" style="width: 68%; height: 13px"></span>
+                <span class="ms-skeleton block" style="width: 45%; height: 10px; margin-top: 6px"></span>
+              </div>
             </div>
-          </div>
+          </template>
           <button
             v-for="t in teams"
             :key="`${t.sport}-${t.slug}`"

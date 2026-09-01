@@ -19,23 +19,24 @@
       </div>
 
       <div class="glass-card rounded-[20px] overflow-hidden">
-        <div
-          v-for="n in COLLAPSED_COUNT"
-          v-show="loading && !matches.length"
-          :key="`week-skeleton-${n}`"
-          class="flex items-center gap-3 sm:gap-3.5 px-3.5 sm:px-4 py-3 sm:py-3.5 border-b border-white/[0.07] last:border-b-0"
-          aria-hidden="true"
-        >
-          <span class="ms-skeleton week-crest flex-none" style="border-radius: 12px"></span>
-          <div class="min-w-0 flex-1">
-            <span class="ms-skeleton block" style="width: 62%; height: 14px"></span>
-            <span class="ms-skeleton block" style="width: 40%; height: 12px; margin-top: 6px"></span>
+        <template v-if="loading && !matches.length">
+          <div
+            v-for="n in COLLAPSED_COUNT"
+            :key="`week-skeleton-${n}`"
+            class="flex items-center gap-3 sm:gap-3.5 px-3.5 sm:px-4 py-3 sm:py-3.5 border-b border-white/[0.07] last:border-b-0"
+            aria-hidden="true"
+          >
+            <span class="ms-skeleton week-crest flex-none" style="border-radius: 12px"></span>
+            <div class="min-w-0 flex-1">
+              <span class="ms-skeleton block" style="width: 62%; height: 14px"></span>
+              <span class="ms-skeleton block" style="width: 40%; height: 12px; margin-top: 6px"></span>
+            </div>
+            <div class="flex items-center gap-2 sm:gap-2.5 flex-none">
+              <span class="ms-skeleton" style="width: 30px; height: 13px"></span>
+              <span class="ms-skeleton" style="width: 38px; height: 15px"></span>
+            </div>
           </div>
-          <div class="flex items-center gap-2 sm:gap-2.5 flex-none">
-            <span class="ms-skeleton" style="width: 30px; height: 13px"></span>
-            <span class="ms-skeleton" style="width: 38px; height: 15px"></span>
-          </div>
-        </div>
+        </template>
 
         <RouterLink
           v-for="m in visible"
