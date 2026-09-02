@@ -25,6 +25,10 @@ const MIME_TYPES = {
   '.ico': 'image/x-icon',
   '.xml': 'application/xml; charset=utf-8',
   '.txt': 'text/plain; charset=utf-8',
+  // llms.txt/pricing.md are read by AI crawlers and agents. Without an entry
+  // here .md falls through to application/octet-stream, which browsers download
+  // instead of rendering and some crawlers skip outright.
+  '.md': 'text/markdown; charset=utf-8',
 }
 
 function contentType(filePath) {

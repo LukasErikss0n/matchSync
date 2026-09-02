@@ -62,17 +62,64 @@ const routes = [
   })),
 ]
 
+// Vite leaves index.html's multi-line <meta> tags (description, og:description,
+// twitter:description) formatted across several lines, so a pattern written with
+// literal single spaces silently matches nothing and every route inherits the
+// homepage copy. Every gap here is \\s+ for that reason, and each replacement is
+// asserted below so a future reformat fails the build instead of shipping
+// 20 pages with one description.
+function metaPattern(attr, name) {
+  return new RegExp(`<meta\\s+${attr}="${name}"\\s+content="[^"]*"\\s*/?>`, 'i')
+}
+
 function applyRouteMeta(html, route) {
   const url = `${SITE_URL}${route.path}`
-  return html
-    .replace(/<title>.*?<\/title>/s, `<title>${route.title}</title>`)
-    .replace(/<link rel="canonical" href="[^"]*"\s*\/?>/, `<link rel="canonical" href="${url}" />`)
-    .replace(/<meta name="description" content="[^"]*"\s*\/?>/, `<meta name="description" content="${route.description}" />`)
-    .replace(/<meta property="og:url" content="[^"]*"\s*\/?>/, `<meta property="og:url" content="${url}" />`)
-    .replace(/<meta property="og:title" content="[^"]*"\s*\/?>/, `<meta property="og:title" content="${route.title}" />`)
-    .replace(/<meta property="og:description" content="[^"]*"\s*\/?>/, `<meta property="og:description" content="${route.description}" />`)
-    .replace(/<meta name="twitter:title" content="[^"]*"\s*\/?>/, `<meta name="twitter:title" content="${route.title}" />`)
-    .replace(/<meta name="twitter:description" content="[^"]*"\s*\/?>/, `<meta name="twitter:description" content="${route.description}" />`)
+  const edits = [
+    ['title', /<title>.*?<\/title>/s, `<title>${route.title}</title>`],
+    [
+      'canonical',
+      /<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/i,
+      `<link rel="canonical" href="${url}" />`,
+    ],
+    [
+      'description',
+      metaPattern('name', 'description'),
+      `<meta name="description" content="${route.description}" />`,
+    ],
+    ['og:url', metaPattern('property', 'og:url'), `<meta property="og:url" content="${url}" />`],
+    [
+      'og:title',
+      metaPattern('property', 'og:title'),
+      `<meta property="og:title" content="${route.title}" />`,
+    ],
+    [
+      'og:description',
+      metaPattern('property', 'og:description'),
+      `<meta property="og:description" content="${route.description}" />`,
+    ],
+    [
+      'twitter:title',
+      metaPattern('name', 'twitter:title'),
+      `<meta name="twitter:title" content="${route.title}" />`,
+    ],
+    [
+      'twitter:description',
+      metaPattern('name', 'twitter:description'),
+      `<meta name="twitter:description" content="${route.description}" />`,
+    ],
+  ]
+
+  let out = html
+  for (const [label, pattern, replacement] of edits) {
+    if (!pattern.test(out)) {
+      throw new Error(
+        `prerender: no <${label}> tag matched in index.html for ${route.path}. ` +
+          `The tag was probably reformatted, fix the pattern rather than shipping duplicate meta.`,
+      )
+    }
+    out = out.replace(pattern, replacement)
+  }
+  return out
 }
 
 const baseHtml = await readFile(path.join(distDir, 'index.html'), 'utf-8')

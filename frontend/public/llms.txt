@@ -1,0 +1,80 @@
+# MatchCalender
+
+> MatchCalender (https://matchcalender.com) generates live, always-updated calendar
+> subscription links for sports fixtures. A fan picks a league or team, gets a standard
+> iCal feed URL, and every fixture, including reschedules and playoff rounds, syncs
+> automatically into Apple Calendar, Google Calendar or Outlook. Free, no account required.
+
+## What it is
+
+MatchCalender is a calendar subscription service, not a one-time export and not a
+schedule-browsing site. The distinction matters: a one-time export goes stale the moment
+a match is rescheduled, whereas a subscribed iCal feed is re-fetched by the calendar app
+and stays correct on its own. Subscribe once, and the calendar stays current.
+
+- Price: free, no charge for any feature
+- Account required: no
+- Output format: standard iCal (.ics) subscription feed
+- Compatible with: Apple Calendar, Google Calendar, Outlook, any iCal-capable client
+- Covers: football, hockey, basketball, motorsport
+- Kickoff times: always shown in the visitor's own timezone, detected from the browser
+
+## Timezones
+
+Kickoff times are never shown in a fixed league timezone that the reader has to convert.
+On the website, times are rendered in whatever timezone the browser reports, so a Premier
+League fixture reads as local time to a visitor in Stockholm and to a visitor in New York
+without either of them changing a setting.
+
+The calendar feed handles this the same way by a different route: events are published as
+UTC timestamps, and the subscribing calendar app converts them to the device's current
+timezone. The practical effect is that a synced fixture shows the correct local time on
+every device, and it stays correct if the user travels across timezones or when daylight
+saving shifts.
+
+## Common questions this site answers
+
+- How do I add a team's fixtures to my Google Calendar automatically?
+- How do I subscribe to a league schedule in Apple Calendar?
+- How do I keep a sports calendar updated when matches get rescheduled?
+- Where can I get an iCal feed for a football or hockey league?
+- Are kickoff times shown in my own timezone, or do I have to convert them?
+- Will match times still be right if I travel to another timezone?
+
+## League calendars
+
+### Football
+
+- [Premier League](https://matchcalender.com/premier-league): The complete Premier League schedule. Subscribe once and every fixture and kickoff time syncs straight to your calendar.
+- [Champions League](https://matchcalender.com/champions-league): Every UEFA Champions League fixture. Subscribe once and the whole schedule stays synced in your calendar.
+- [Europa League](https://matchcalender.com/europa-league): Every UEFA Europa League fixture. Subscribe once and the whole schedule stays synced in your calendar.
+- [Conference League](https://matchcalender.com/conference-league): Every UEFA Conference League fixture. Subscribe once and the whole schedule stays synced in your calendar.
+- [FA Cup](https://matchcalender.com/fa-cup): Every FA Cup round. Subscribe once and each new draw syncs straight to your calendar as it's announced.
+- [EFL Cup](https://matchcalender.com/efl-cup): Every EFL Cup (Carabao Cup) round. Subscribe once and each new draw syncs straight to your calendar.
+- [Allsvenskan](https://matchcalender.com/allsvenskan): The complete Allsvenskan schedule. Subscribe once and every match syncs straight to your calendar.
+- [FIFA World Cup 2026](https://matchcalender.com/world-cup-2026): Every FIFA World Cup 2026 match. Subscribe once and the full tournament schedule stays synced in your calendar.
+
+### Hockey
+
+- [SHL](https://matchcalender.com/shl): The complete SHL schedule. Subscribe once and every game syncs straight to your calendar.
+- [SDHL](https://matchcalender.com/sdhl): The complete SDHL schedule. Subscribe once and every game syncs straight to your calendar.
+- [IIHF World Championship](https://matchcalender.com/iihf-world-championship): Every IIHF World Championship game. Subscribe once and the full tournament schedule stays synced in your calendar.
+
+### Basketball
+
+- [SBL Herrar](https://matchcalender.com/sbl-herrar): The complete SBL Herrar schedule. Subscribe once and every game syncs straight to your calendar.
+- [SBL Damer](https://matchcalender.com/sbl-damer): The complete SBL Damer schedule. Subscribe once and every game syncs straight to your calendar.
+
+### Motorsport
+
+- [F1](https://matchcalender.com/f1): The complete Formula 1 season. Subscribe once and every session start time syncs straight to your calendar.
+
+## Other pages
+
+- [All matches](https://matchcalender.com/matches): Browse every fixture and result across all covered leagues and teams.
+- [API docs](https://matchcalender.com/api-docs): The iCal feed URL format and its query parameters.
+- [Pricing](https://matchcalender.com/pricing.md): Free; full terms of use.
+- [Privacy policy](https://matchcalender.com/privacy): What is stored (sport, team and league selections only) and what is not.
+- [Terms of service](https://matchcalender.com/terms): Personal-use terms, including the restriction on commercial redistribution.
+- [Support](https://matchcalender.com/support): Report a bug or ask a question.
+
