@@ -318,7 +318,7 @@ async function handleSubmit() {
     submittedEmail.value = wantResponse.value ? supportEmail.value.trim() : ''
     submitted.value = true
   } catch {
-    error.value = "Couldn't send your report — please try again in a moment."
+    error.value = "Couldn't send your report. Please try again in a moment."
   } finally {
     sending.value = false
   }
