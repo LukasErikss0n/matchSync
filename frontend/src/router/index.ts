@@ -124,13 +124,28 @@ const router = createRouter({
     },
     {
       path: '/admin',
-      name: 'admin',
-      component: () => import('@/views/AdminView.vue'),
-      meta: {
-        title: 'Subscriptions | MatchCalender',
-        description: 'Operator dashboard.',
-        noindex: true,
-      },
+      component: () => import('@/views/admin/AdminLayout.vue'),
+      meta: { noindex: true },
+      children: [
+        {
+          path: '',
+          name: 'admin',
+          component: () => import('@/views/admin/AdminAnalyticsView.vue'),
+          meta: { title: 'Analytics | Admin | MatchCalender', description: 'Operator dashboard.' },
+        },
+        {
+          path: 'leagues',
+          name: 'admin-leagues',
+          component: () => import('@/views/admin/AdminLeaguesView.vue'),
+          meta: { title: 'Leagues | Admin | MatchCalender', description: 'Operator dashboard.' },
+        },
+        {
+          path: 'teams',
+          name: 'admin-teams',
+          component: () => import('@/views/admin/AdminTeamsView.vue'),
+          meta: { title: 'Teams | Admin | MatchCalender', description: 'Operator dashboard.' },
+        },
+      ],
     },
     {
       path: '/:pathMatch(.*)*',
