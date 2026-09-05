@@ -14,7 +14,7 @@
           </svg>
         </button>
         <h1 class="text-2xl font-extrabold tracking-tight" style="letter-spacing: -0.02em">
-          Report something
+          Help & feedback
         </h1>
       </div>
 
