@@ -132,12 +132,6 @@
           </div>
           <div v-if="pageMenuOpen" class="fixed inset-0 z-10" @click="pageMenuOpen = false" />
 
-          <!-- Device (read-only) -->
-          <div class="flex items-center justify-between rounded-[14px] px-4 py-3 glass-card">
-            <span class="text-[13px] font-semibold" style="color: rgba(244, 247, 251, 0.6)">Device</span>
-            <span class="text-[13px] font-bold">{{ device }}</span>
-          </div>
-
           <!-- Want a response -->
           <div class="flex flex-col gap-3 rounded-[14px] px-4 py-3.5 glass-card">
             <div class="flex items-center justify-between gap-3">
@@ -410,6 +404,15 @@ async function handleSubmit() {
   to {
     opacity: 1;
     transform: none;
+  }
+}
+
+/* iOS Safari auto-zooms on focus when a field's font-size is under 16px —
+   bump these to 16px on small screens only, so it never triggers. */
+@media (max-width: 639px) {
+  textarea,
+  input[type="text"] {
+    font-size: 16px;
   }
 }
 </style>

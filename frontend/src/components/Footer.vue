@@ -60,7 +60,7 @@
             to="/support"
             class="text-[13.5px] font-semibold hover:opacity-80 transition-opacity"
           >
-            <span class="ms-text-accent">Report a problem</span>
+            <span class="ms-text-accent">Help &amp; feedback</span>
           </RouterLink>
         </div>
       </div>

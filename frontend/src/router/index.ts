@@ -93,7 +93,7 @@ const router = createRouter({
       name: 'support',
       component: SupportView,
       meta: {
-        title: 'Report a problem | MatchCalender',
+        title: 'Help & feedback | MatchCalender',
         description: SUPPORT_DESCRIPTION,
       },
     },
