@@ -100,13 +100,23 @@
                the grid shrink-wraps around them, so they stay compact instead
                of stretching to fill the modal. -->
           <div class="grid grid-cols-2 gap-3 w-fit mx-auto mb-5">
-            <div v-for="s in sports" :key="s.id" class="w-26">
-              <SportCard
-                :sport="s"
-                :selected="sportId === s.id"
-                @click="selectSport(s.id)"
-              />
-            </div>
+            <template v-if="sportsLoading && sports.length === 0">
+              <div v-for="n in 4" :key="`sport-skeleton-${n}`" class="w-26">
+                <div class="w-full max-w-[180px] mx-auto aspect-square rounded-2xl sm:rounded-[22px] flex flex-col items-center justify-center gap-1.5 sm:gap-2">
+                  <span class="ms-skeleton" style="width: 52px; height: 52px; border-radius: 12px"></span>
+                  <span class="ms-skeleton" style="width: 56px; height: 13px; margin-top: 4px"></span>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <div v-for="s in sports" :key="s.id" class="w-26">
+                <SportCard
+                  :sport="s"
+                  :selected="sportId === s.id"
+                  @click="selectSport(s.id)"
+                />
+              </div>
+            </template>
           </div>
           <!-- Outside the grid: the button spans the modal, not the cards. -->
           <button
@@ -142,8 +152,21 @@
             class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4"
             style="max-height: 320px; overflow-y: auto"
           >
+            <template v-if="teamsLoading">
+              <div
+                v-for="n in 4"
+                :key="`team-skeleton-${n}`"
+                class="rounded-2xl border-2 border-transparent px-4 py-3 flex items-center gap-3"
+              >
+                <span class="ms-skeleton flex-shrink-0" style="width: 32px; height: 32px; border-radius: 999px"></span>
+                <div class="min-w-0 flex-1">
+                  <span class="ms-skeleton block" style="width: 70%; height: 13px"></span>
+                  <span class="ms-skeleton block" style="width: 45%; height: 11px; margin-top: 6px"></span>
+                </div>
+              </div>
+            </template>
             <div
-              v-if="!teamsLoading && teamResults.length === 0"
+              v-else-if="teamResults.length === 0"
               class="col-span-full flex flex-col items-center gap-2 py-6 text-center"
             >
               <span class="text-2xl">📅</span>
@@ -151,21 +174,23 @@
                 {{ search ? `No teams match "${search}"` : 'No teams available yet' }}
               </p>
             </div>
-            <button
-              v-for="t in teamResults"
-              :key="`${t.sport}-${t.slug}`"
-              class="team-card rounded-2xl border-2 px-4 py-3 text-left transition-all flex items-center gap-3"
-              :class="{ selected: teamSlug === t.slug }"
-              @click="selectTeam(t)"
-            >
-              <TeamBadge :name="t.name" :icon="t.icon" :size="32" />
-              <div class="min-w-0">
-                <div class="font-bold text-sm truncate">{{ t.name }}</div>
-                <div class="text-xs font-semibold mt-0.5 truncate" style="color: rgba(244,247,251,.5)">
-                  {{ t.leagues.map(l => l.name).join(' · ') }}
+            <template v-else>
+              <button
+                v-for="t in teamResults"
+                :key="`${t.sport}-${t.slug}`"
+                class="team-card rounded-2xl border-2 px-4 py-3 text-left transition-all flex items-center gap-3"
+                :class="{ selected: teamSlug === t.slug }"
+                @click="selectTeam(t)"
+              >
+                <TeamBadge :name="t.name" :icon="t.icon" :size="32" />
+                <div class="min-w-0">
+                  <div class="font-bold text-sm truncate">{{ t.name }}</div>
+                  <div class="text-xs font-semibold mt-0.5 truncate" style="color: rgba(244,247,251,.5)">
+                    {{ t.leagues.map(l => l.name).join(' · ') }}
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
+            </template>
           </div>
           <button
             :disabled="!teamSlug"
@@ -474,6 +499,10 @@ const search = ref('')
 const copied = ref(false)
 
 const sports = ref<Sport[]>([])
+// Sports are always re-fetched on mount (see onMounted below) — true until
+// that first response lands, so step 1 shows skeleton cards instead of an
+// empty grid for the round-trip.
+const sportsLoading = ref(true)
 const teamResults = ref<Team[]>([])
 // Starts true whenever mount will immediately fetch teams, so step 2 shows the
 // loading state instead of flashing "No teams available yet" at an empty list.
@@ -571,6 +600,7 @@ onMounted(async () => {
   fetchSports()
     .then((s) => { sports.value = s })
     .catch(() => { /* step 1 renders without cards; recovers on next open */ })
+    .finally(() => { sportsLoading.value = false })
 
   try {
     if (!props.initialTeam && !props.initialSport && urlParams.sport && urlParams.team) {
