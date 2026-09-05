@@ -53,7 +53,7 @@
       </div>
 
       <!-- Body -->
-      <div ref="stepViewport" class="relative step-viewport">
+      <div ref="stepViewport" class="relative step-viewport" :class="{ 'is-revealing': revealTransition }">
       <Transition
         :name="stepTransitionName"
         @enter="growViewportTo"
@@ -459,7 +459,14 @@ const step = ref(initialStep())
 // slides the right way (forward → new content enters from the right;
 // back → from the left) instead of always sliding one direction.
 const stepDirection = ref<'forward' | 'back'>('forward')
-const stepTransitionName = computed(() => `step-${stepDirection.value}`)
+// Set right before the submitting → step 4 swap (see goToLink) and cleared
+// once that transition lands (releaseViewportHeight), so only the calendar
+// link's reveal gets the slower treatment — every other step swap keeps the
+// snappier forward/back timing.
+const revealTransition = ref(false)
+const stepTransitionName = computed(() =>
+  revealTransition.value ? 'step-reveal' : `step-${stepDirection.value}`,
+)
 // flush: 'sync' matters. A default (post) watcher updates the direction only
 // *after* the re-render that swaps the step, so the Transition starts with
 // the previous step's name and then has it changed mid-flight — Vue strips
@@ -542,6 +549,7 @@ function growViewportTo(el: Element) {
 function releaseViewportHeight() {
   const vp = stepViewport.value
   if (vp) vp.style.height = ''
+  revealTransition.value = false
 }
 
 const showPreview = ref(false)
@@ -694,6 +702,11 @@ async function goToLink() {
       new Promise((resolve) => setTimeout(resolve, MIN_VISIBLE_MS)),
     ])
     calLink.value = link
+    // The reveal of the finished link deserves a slower, more deliberate
+    // swap than the snappy back-and-forth between the earlier picker steps
+    // (see .step-reveal-* below) — reset once it's finished so a later
+    // back/forward nav from step 4 goes back to the normal speed.
+    revealTransition.value = true
     step.value = 4
   } finally {
     submitting.value = false
@@ -814,6 +827,28 @@ function reset() {
 .step-back-enter-from { opacity: 0; transform: translateX(-36px); }
 .step-back-leave-to { opacity: 0; transform: translateX(24px); }
 
+/* The calendar-link reveal (submitting → step 4) is a one-time payoff, not a
+   click-driven step swap — it gets noticeably slower, more deliberate timing
+   than .step-forward-* so the "your link is ready" moment actually registers. */
+.step-reveal-leave-active {
+  position: absolute;
+  top: 0;
+  left: var(--step-pad);
+  right: var(--step-pad);
+  transition: opacity 0.3s ease-in, transform 0.3s ease-in;
+}
+.step-reveal-enter-active {
+  transition:
+    opacity 0.7s ease-out,
+    transform 0.7s cubic-bezier(0.16, 0.84, 0.32, 1);
+}
+.step-reveal-enter-from { opacity: 0; transform: translateX(36px); }
+.step-reveal-leave-to { opacity: 0; transform: translateX(-24px); }
+
+.step-viewport.is-revealing {
+  transition-duration: 0.7s;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .modal-backdrop,
   .modal-panel {
@@ -823,7 +858,9 @@ function reset() {
   .step-forward-enter-active,
   .step-forward-leave-active,
   .step-back-enter-active,
-  .step-back-leave-active {
+  .step-back-leave-active,
+  .step-reveal-enter-active,
+  .step-reveal-leave-active {
     transition: none;
   }
 }
