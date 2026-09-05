@@ -22,7 +22,7 @@
           <h2 class="text-2xl font-extrabold" style="letter-spacing: -0.5px">{{ homeTeam }} vs {{ awayTeam }}</h2>
         </div>
         <button
-          class="xcl-btn-1 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+          class="xcl-btn-1 w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
           @click="emit('close')"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M6 6l12 12M18 6 6 18"/></svg>

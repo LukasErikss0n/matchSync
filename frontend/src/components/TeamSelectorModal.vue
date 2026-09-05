@@ -22,7 +22,7 @@
           <h2 class="text-2xl font-extrabold" style="letter-spacing: -0.5px">{{ stepLabels[step - 1] }}</h2>
         </div>
         <button
-          class="xcl-btn-1 w-8 h-8 rounded-full flex items-center justify-center"
+          class="xcl-btn-1 w-11 h-11 rounded-full flex items-center justify-center"
           :class="{ 'xcl-closing-1': closing }"
           @click="handleClose"
         >

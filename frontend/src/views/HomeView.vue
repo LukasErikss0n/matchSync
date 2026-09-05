@@ -1,14 +1,16 @@
 <template>
   <Navbar @get-started="openSport" />
-  <Hero
-    @get-started="openSport"
-    @pick-sport="openWithSport"
-    @pick-team="openWithTeam"
-  />
-  <WeekMatches />
-  <SportsGrid @pick-sport="openWithSport" />
-  <HowItWorks @get-started="openSport" />
-  <Features />
+  <main>
+    <Hero
+      @get-started="openSport"
+      @pick-sport="openWithSport"
+      @pick-team="openWithTeam"
+    />
+    <WeekMatches />
+    <SportsGrid @pick-sport="openWithSport" />
+    <HowItWorks @get-started="openSport" />
+    <Features />
+  </main>
   <Footer />
   <TeamSelectorModal
     v-if="showModal"

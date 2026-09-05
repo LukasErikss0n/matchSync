@@ -1,4 +1,9 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
+/* Inter itself is loaded from index.html's <head>, not here — a CSS @import
+   is invisible to the browser's preload scanner (only discovered once this
+   stylesheet is fetched and parsed), which serialized the font behind the
+   rest of the CSS and was Lighthouse's top render-blocking-requests hit. A
+   <link> in <head> lets the scanner kick the font request off immediately,
+   in parallel with everything else. */
 @import "tailwindcss";
 @plugin "daisyui" {
     themes: light --default;

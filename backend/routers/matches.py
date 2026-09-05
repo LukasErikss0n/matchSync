@@ -11,6 +11,7 @@ from services.featured_match import (
     get_featured_match,
     get_featured_matches,
 )
+from services.crest_url import crest_url
 from services.standings import standings_supported
 from services.week_matches import MAX_WEEK_MATCHES, get_week_matches
 
@@ -129,6 +130,8 @@ def list_matches(
             away_slug=away_team.slug if away_team else None,
             home_icon=home_team.icon,
             away_icon=away_team.icon if away_team else None,
+            home_icon_cropped=crest_url(home_team),
+            away_icon_cropped=crest_url(away_team),
             home_score=match.home_score,
             away_score=match.away_score,
             start_time=start,

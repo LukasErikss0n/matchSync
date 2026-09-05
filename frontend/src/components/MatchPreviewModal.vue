@@ -18,7 +18,7 @@
         <div class="text-[11.5px] font-bold uppercase ms-text-accent" style="letter-spacing: 1.8px">
           {{ dateLabel }}
         </div>
-        <button class="xcl-btn-1 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" @click="emit('close')">
+        <button class="xcl-btn-1 w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0" @click="emit('close')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M6 6l12 12M18 6 6 18"/></svg>
         </button>
       </div>
@@ -26,7 +26,7 @@
       <!-- Teams -->
       <div class="relative flex items-center justify-center gap-5 sm:gap-7 px-7 pt-5 pb-7">
         <div class="flex flex-col items-center gap-2 min-w-0">
-          <TeamBadge :name="match.home_team" :icon="match.home_icon" :size="64" />
+          <TeamBadge :name="match.home_team" :icon="homeIcon" :size="64" />
           <span class="font-bold text-sm text-center max-w-[7.5rem]" style="overflow-wrap: anywhere">{{ match.home_team }}</span>
           <span v-if="loading" class="ms-skeleton" style="width: 34px; height: 18px; border-radius: 999px"></span>
           <span v-else-if="homePosition" class="text-[11px] font-bold px-2 py-0.5 rounded-full" style="background: rgba(255,255,255,.1); color: rgba(244,247,251,.6)">
@@ -42,7 +42,7 @@
         </div>
 
         <div class="flex flex-col items-center gap-2 min-w-0">
-          <TeamBadge :name="match.away_team" :icon="match.away_icon" :size="64" />
+          <TeamBadge :name="match.away_team" :icon="awayIcon" :size="64" />
           <span class="font-bold text-sm text-center max-w-[7.5rem]" style="overflow-wrap: anywhere">{{ match.away_team }}</span>
           <span v-if="loading" class="ms-skeleton" style="width: 34px; height: 18px; border-radius: 999px"></span>
           <span v-else-if="awayPosition" class="text-[11px] font-bold px-2 py-0.5 rounded-full" style="background: rgba(255,255,255,.1); color: rgba(244,247,251,.6)">
@@ -73,7 +73,7 @@
         <template v-else-if="homeForm || awayForm">
           <div v-if="homeForm" class="flex items-center justify-between py-1.5">
             <div class="flex items-center gap-2.5 min-w-0">
-              <TeamBadge :name="match.home_team" :icon="match.home_icon" :size="28" />
+              <TeamBadge :name="match.home_team" :icon="homeIcon" :size="28" />
               <span class="font-bold text-sm truncate">{{ match.home_team }}</span>
             </div>
             <div class="flex gap-1.5 flex-shrink-0">
@@ -82,7 +82,7 @@
           </div>
           <div v-if="awayForm" class="flex items-center justify-between py-1.5">
             <div class="flex items-center gap-2.5 min-w-0">
-              <TeamBadge :name="match.away_team" :icon="match.away_icon" :size="28" />
+              <TeamBadge :name="match.away_team" :icon="awayIcon" :size="28" />
               <span class="font-bold text-sm truncate">{{ match.away_team }}</span>
             </div>
             <div class="flex gap-1.5 flex-shrink-0">
@@ -119,6 +119,12 @@ import TeamBadge from './TeamBadge.vue'
 
 const props = defineProps<{ match: Match }>()
 const emit = defineEmits<{ close: []; 'view-full-standings': [] }>()
+
+// Prefer our own trimmed, same-origin crest — hotlinking the source's icon
+// URL directly (the plain *_icon fields) pulls in third-party cookies and
+// skips Cloudflare's edge cache.
+const homeIcon = computed(() => props.match.home_icon_cropped ?? props.match.home_icon ?? null)
+const awayIcon = computed(() => props.match.away_icon_cropped ?? props.match.away_icon ?? null)
 
 const loading = ref(true)
 const standings = ref<StandingEntry[] | null>(null)

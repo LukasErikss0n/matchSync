@@ -12,7 +12,7 @@
         {{ timeLabel }}
       </div>
       <div class="flex-1 flex items-center gap-2.5 sm:gap-3 min-w-0">
-        <TeamBadge :name="match.home_team" :icon="match.home_icon" :size="badgeSize" />
+        <TeamBadge :name="match.home_team" :icon="homeIcon" :size="badgeSize" />
         <div class="min-w-0">
           <div class="font-bold text-xs sm:text-sm truncate">{{ match.home_team }}</div>
           <div class="text-[11px] sm:text-xs font-semibold truncate" style="color: rgba(244,247,251,.5)">{{ match.away_team }}</div>
@@ -43,7 +43,7 @@
       <!-- Home -->
       <div class="flex-1 flex items-center justify-end gap-1.5 sm:gap-2.5 min-w-0">
         <span class="font-bold text-xs sm:text-sm text-right break-words">{{ match.home_team }}</span>
-        <TeamBadge :name="match.home_team" :icon="match.home_icon" :size="badgeSize" />
+        <TeamBadge :name="match.home_team" :icon="homeIcon" :size="badgeSize" />
       </div>
 
       <!-- Score / time -->
@@ -60,7 +60,7 @@
 
       <!-- Away -->
       <div class="flex-1 flex items-center gap-1.5 sm:gap-2.5 min-w-0">
-        <TeamBadge :name="match.away_team" :icon="match.away_icon" :size="badgeSize" />
+        <TeamBadge :name="match.away_team" :icon="awayIcon" :size="badgeSize" />
         <span class="font-bold text-xs sm:text-sm break-words">{{ match.away_team }}</span>
       </div>
     </template>
@@ -107,6 +107,12 @@ const props = defineProps<{ match: Match }>()
 const emit = defineEmits<{ add: [match: Match]; 'view-standings': [match: Match] }>()
 
 const supportsStandings = computed(() => !!props.match.league.supports_standings)
+
+// Prefer our own trimmed, same-origin crest — hotlinking the source's icon
+// URL directly (the plain *_icon fields) pulls in third-party cookies and
+// skips Cloudflare's edge cache.
+const homeIcon = computed(() => props.match.home_icon_cropped ?? props.match.home_icon ?? null)
+const awayIcon = computed(() => props.match.away_icon_cropped ?? props.match.away_icon ?? null)
 const isMotorsport = computed(() => props.match.sport === 'motorsport')
 
 const hasScore = computed(

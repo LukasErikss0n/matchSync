@@ -1,15 +1,21 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
-import MatchesView from '@/views/MatchesView.vue'
-import ApiDocsView from '@/views/ApiDocsView.vue'
-import PrivacyPolicyView from '@/views/PrivacyPolicyView.vue'
-import TermsOfServiceView from '@/views/TermsOfServiceView.vue'
-import SupportView from '@/views/SupportView.vue'
-import NotFoundView from '@/views/NotFoundView.vue'
-import GuideView from '@/views/GuideView.vue'
 import leaguePages from '@/data/leaguePages.json'
 import guidePages from '@/data/guidePages.json'
 import { applyPageMeta } from '@/utils/seo'
+
+// Only the home route (almost always the first thing a visitor loads) is
+// eager. Everything else is a separate chunk, fetched on navigation — a
+// homepage visitor was otherwise downloading and parsing MatchesView's whole
+// dependency tree (MatchRow, StandingsModal, MatchPreviewModal, the team
+// selector wizard, ...) plus every static/legal page before painting anything.
+const MatchesView = () => import('@/views/MatchesView.vue')
+const ApiDocsView = () => import('@/views/ApiDocsView.vue')
+const PrivacyPolicyView = () => import('@/views/PrivacyPolicyView.vue')
+const TermsOfServiceView = () => import('@/views/TermsOfServiceView.vue')
+const SupportView = () => import('@/views/SupportView.vue')
+const NotFoundView = () => import('@/views/NotFoundView.vue')
+const GuideView = () => import('@/views/GuideView.vue')
 
 const HOME_DESCRIPTION =
   'Subscribe once and get every fixture, reschedule and playoff round auto-synced to your calendar for football, hockey, basketball and more.'

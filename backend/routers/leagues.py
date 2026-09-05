@@ -3,6 +3,7 @@ from sqlmodel import Session, col, select
 from database import get_session
 from models.models import League, Sport, Team
 from schemas.schemas import LeagueOut, SeasonStatsOut, SportOut, StandingEntryOut, TeamOut
+from services.crest_url import crest_url
 from services.season_stats import get_season_stats
 from services.standings import get_standings
 
@@ -44,16 +45,20 @@ def _collect_teams(rows: list[tuple[Team, League, Sport]]) -> list[TeamOut]:
         key = (sport.slug, team.slug)
         entry = by_key.get(key)
         league_out = LeagueOut(name=league.name, slug=league.slug)
+        # Our own trimmed crest when we have one — same domain as the page,
+        # so it rides Cloudflare's edge cache and never a third-party cookie
+        # (see crest.png's Cache-Control) — falling back to the source's URL.
+        icon = crest_url(team) or team.icon
         if entry is None:
             by_key[key] = TeamOut(
                 name=team.name,
                 slug=team.slug,
                 sport=sport.slug,
-                icon=team.icon,
+                icon=icon,
                 leagues=[league_out],
             )
-        elif entry.icon is None and team.icon:
-            entry.icon = team.icon
+        elif entry.icon is None and icon:
+            entry.icon = icon
         elif not any(l.slug == league.slug for l in entry.leagues):
             entry.leagues.append(league_out)
     return list(by_key.values())
@@ -160,7 +165,10 @@ def league_standings(league_slug: str, session: Session = Depends(get_session)):
             position=row["position"],
             team=row["team"],
             team_slug=(teams_by_name[row["team"]].slug if row["team"] in teams_by_name else None),
-            team_icon=(teams_by_name[row["team"]].icon if row["team"] in teams_by_name else None),
+            team_icon=(
+                (crest_url(teams_by_name[row["team"]]) or teams_by_name[row["team"]].icon)
+                if row["team"] in teams_by_name else None
+            ),
             played=row["played"],
             won=row["won"],
             drawn=row["drawn"],
