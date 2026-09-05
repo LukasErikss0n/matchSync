@@ -246,6 +246,8 @@
         </div>
     </main>
 
+    <Footer />
+
     <TeamSelectorModal
         v-if="showModal"
         :initial-sport="modalSport"
@@ -290,6 +292,7 @@ import MatchRow from "@/components/MatchRow.vue";
 import TeamSelectorModal from "@/components/TeamSelectorModal.vue";
 import StandingsModal from "@/components/StandingsModal.vue";
 import MatchPreviewModal from "@/components/MatchPreviewModal.vue";
+import Footer from "@/components/Footer.vue";
 
 // Tiny inline chevron so we don't have to extend the Icon registry
 const ChevronDown = (
