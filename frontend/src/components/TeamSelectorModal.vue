@@ -26,7 +26,10 @@
           :class="{ 'xcl-closing-1': closing }"
           @click="handleClose"
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+            <path class="xcl-cross-a" d="M6 6 18 18"/>
+            <path class="xcl-cross-b" d="M18 6 6 18"/>
+          </svg>
         </button>
       </div>
 
@@ -1062,14 +1065,33 @@ function reset() {
 .xcl-btn-1:active {
   transform: scale(0.92);
 }
-.xcl-closing-1 {
-  animation: xcl-close-1 0.16s cubic-bezier(0.4, 0, 1, 1) forwards;
+.xcl-cross-a,
+.xcl-cross-b {
+  transform-box: fill-box;
+  transform-origin: center;
 }
-@keyframes xcl-close-1 {
-  to {
-    transform: scale(0.65) rotate(-90deg);
-    opacity: 0;
-  }
+/* Scissor close: each diagonal is its own path so it can rotate independently
+   to flat instead of the whole icon just scaling down (which read as nothing
+   more than shrinking, not "closing"). The two strokes flatten into a single
+   dash — finishing before the button's own fade-out does, so the cross
+   visibly closes shut first rather than just disappearing mid-rotation. */
+.xcl-closing-1 .xcl-cross-a {
+  animation: xcl-flatten-a 0.13s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.xcl-closing-1 .xcl-cross-b {
+  animation: xcl-flatten-b 0.13s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes xcl-flatten-a {
+  to { transform: rotate(-45deg); }
+}
+@keyframes xcl-flatten-b {
+  to { transform: rotate(45deg); }
+}
+.xcl-closing-1 {
+  animation: xcl-fade-1 0.2s ease forwards;
+}
+@keyframes xcl-fade-1 {
+  to { opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1080,6 +1102,10 @@ function reset() {
   .xcl-closing-1 {
     animation: none;
     opacity: 0.4;
+  }
+  .xcl-closing-1 .xcl-cross-a,
+  .xcl-closing-1 .xcl-cross-b {
+    animation: none;
   }
 }
 

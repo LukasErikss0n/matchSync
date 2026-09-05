@@ -1,11 +1,13 @@
 <template>
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
+    :class="{ 'is-closing': closing }"
     style="background: rgba(5, 8, 14, 0.6); backdrop-filter: blur(8px)"
-    @click.self="emit('close')"
+    @click.self="handleClose"
   >
     <div
-      class="glass-panel relative rounded-[30px] w-full max-w-xl fade-up overflow-hidden"
+      class="glass-panel relative rounded-[30px] w-full max-w-xl modal-panel overflow-hidden"
+      :class="{ 'is-closing': closing }"
       style="max-height: 90vh; overflow-y: auto; background: rgba(22,32,52,.9); backdrop-filter: blur(32px) saturate(150%); border: 1px solid rgba(255,255,255,.2)"
     >
       <div
@@ -23,9 +25,13 @@
         </div>
         <button
           class="xcl-btn-1 w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0"
-          @click="emit('close')"
+          :class="{ 'xcl-closing-1': closing }"
+          @click="handleClose"
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M6 6l12 12M18 6 6 18"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round">
+            <path class="xcl-cross-a" d="M6 6 18 18"/>
+            <path class="xcl-cross-b" d="M18 6 6 18"/>
+          </svg>
         </button>
       </div>
 
@@ -112,8 +118,18 @@ const emit = defineEmits<{ close: [] }>()
 const loading = ref(true)
 const standings = ref<StandingEntry[] | null>(null)
 
+// Same reverse-animation-then-unmount pattern as TeamSelectorModal — closing
+// by simply vanishing looked abrupt next to the panel's animated entrance.
+const closing = ref(false)
+const CLOSE_ANIMATION_MS = 180
+function handleClose() {
+  if (closing.value) return
+  closing.value = true
+  setTimeout(() => emit('close'), CLOSE_ANIMATION_MS)
+}
+
 function onKey(e: KeyboardEvent) {
-  if (e.key === 'Escape') emit('close')
+  if (e.key === 'Escape') handleClose()
 }
 
 onMounted(async () => {
@@ -149,6 +165,42 @@ function formStyle(result: string): string {
 </script>
 
 <style scoped>
+.modal-backdrop {
+  /* Chromium quirk: an element with any active CSS `animation` stops
+     correctly inheriting `color` (computes as transparent) unless it's set
+     explicitly here — even though the animation itself only touches
+     opacity. Reproduces mid-animation too, not just once "forwards" freezes
+     it. Setting `color: inherit` sidesteps it. */
+  color: inherit;
+  animation: backdropIn 0.22s ease forwards;
+}
+.modal-backdrop.is-closing {
+  animation: backdropIn 0.18s ease reverse forwards;
+}
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-panel {
+  color: inherit; /* see .modal-backdrop comment above */
+  animation: panelIn 0.32s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+.modal-panel.is-closing {
+  animation: panelIn 0.18s ease reverse forwards;
+}
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop,
+  .modal-panel {
+    animation: none;
+  }
+}
+
 /* Bare-icon close button, matching TeamSelectorModal's cross. */
 .xcl-btn-1 {
   background: transparent;
@@ -162,11 +214,47 @@ function formStyle(result: string): string {
 .xcl-btn-1:active {
   transform: scale(0.92);
 }
+.xcl-cross-a,
+.xcl-cross-b {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+/* Scissor close: each diagonal is its own path so it can rotate independently
+   to flat instead of the whole icon just scaling down (which read as nothing
+   more than shrinking, not "closing"). The two strokes flatten into a single
+   dash — finishing before the button's own fade-out does, so the cross
+   visibly closes shut first rather than just disappearing mid-rotation. */
+.xcl-closing-1 .xcl-cross-a {
+  animation: xcl-flatten-a 0.13s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.xcl-closing-1 .xcl-cross-b {
+  animation: xcl-flatten-b 0.13s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes xcl-flatten-a {
+  to { transform: rotate(-45deg); }
+}
+@keyframes xcl-flatten-b {
+  to { transform: rotate(45deg); }
+}
+.xcl-closing-1 {
+  animation: xcl-fade-1 0.2s ease forwards;
+}
+@keyframes xcl-fade-1 {
+  to { opacity: 0; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .xcl-btn-1:hover,
   .xcl-btn-1:active {
     transform: none;
+  }
+  .xcl-closing-1 {
+    animation: none;
+    opacity: 0.4;
+  }
+  .xcl-closing-1 .xcl-cross-a,
+  .xcl-closing-1 .xcl-cross-b {
+    animation: none;
   }
 }
 </style>
