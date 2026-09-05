@@ -56,8 +56,13 @@
       </div>
 
       <!-- Body -->
-      <div class="relative px-7 pb-7 step-viewport">
-      <Transition :name="stepTransitionName" mode="out-in">
+      <div ref="stepViewport" class="relative step-viewport">
+      <Transition
+        :name="stepTransitionName"
+        @enter="growViewportTo"
+        @after-enter="releaseViewportHeight"
+        @enter-cancelled="releaseViewportHeight"
+      >
         <!-- Grabbing your calendar link -->
         <div v-if="submitting" key="submitting">
           <div class="py-10 flex flex-col items-center text-center" role="status" aria-live="polite">
@@ -479,6 +484,40 @@ const calLink = ref<CalendarLink | null>(null)
 // than an extra numeric step.
 const submitting = ref(false)
 
+// The body animates its own height across a step swap. Without it the panel
+// snapped from the outgoing step's height to the incoming one's, and because
+// the swap used mode="out-in" the tall, empty step-3 box stayed on screen for
+// the length of the leave — the flash before the "grabbing data" state.
+const stepViewport = ref<HTMLElement | null>(null)
+
+// Locked synchronously, at the moment the step changes and before Vue
+// re-renders, so `height` still holds the outgoing step's size when the
+// transition below starts. A post-flush watcher would measure after the swap
+// and animate from the wrong value.
+watch([step, submitting], () => {
+  const vp = stepViewport.value
+  if (vp) vp.style.height = `${vp.offsetHeight}px`
+}, { flush: 'sync' })
+
+// Measured off the incoming step itself rather than the container: the
+// outgoing one is still in the DOM at this point (it leaves out of flow, see
+// .step-*-leave-active) and would inflate a container measurement.
+function growViewportTo(el: Element) {
+  const vp = stepViewport.value
+  if (!vp) return
+  const style = getComputedStyle(vp)
+  const pad = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom)
+  void vp.offsetHeight // flush the locked height so it becomes the start value
+  vp.style.height = `${(el as HTMLElement).offsetHeight + pad}px`
+}
+
+// Back to auto once the swap is done, so content that resizes in place (the
+// step-4 match preview) isn't pinned to the height it entered at.
+function releaseViewportHeight() {
+  const vp = stepViewport.value
+  if (vp) vp.style.height = ''
+}
+
 const showPreview = ref(false)
 const previewMatches = ref<Match[]>([])
 const previewLoading = ref(false)
@@ -711,10 +750,18 @@ function reset() {
   to { opacity: 1; transform: none; }
 }
 
-/* Step swaps use mode="out-in", so only one step is ever mid-transition —
-   no need for absolute positioning to avoid a layout jump between them. */
+/* Steps cross-fade: the outgoing one leaves out of flow while the incoming one
+   enters, and the viewport animates between their heights. mode="out-in" was
+   the alternative and it showed — the body sat empty at the old step's height
+   for the whole leave before the next step appeared. */
 .step-viewport {
+  /* One source for the body's inset: the leaving step is positioned against
+     the padding box, so it has to re-apply the horizontal padding to stay
+     aligned with the step that's replacing it. */
+  --step-pad: 1.75rem;
+  padding: 0 var(--step-pad) var(--step-pad);
   overflow: hidden;
+  transition: height 0.28s cubic-bezier(0.77, 0, 0.175, 1);
 }
 /* Asymmetric on purpose. Enter and leave used to share one 0.2s ease, which
    read as a flash: the outgoing step and the incoming one moved at the same
@@ -723,6 +770,10 @@ function reset() {
    that's the half the eye actually tracks. */
 .step-forward-leave-active,
 .step-back-leave-active {
+  position: absolute;
+  top: 0;
+  left: var(--step-pad);
+  right: var(--step-pad);
   transition: opacity 0.16s ease-in, transform 0.16s ease-in;
 }
 .step-forward-enter-active,
@@ -741,6 +792,7 @@ function reset() {
   .modal-panel {
     animation: none;
   }
+  .step-viewport,
   .step-forward-enter-active,
   .step-forward-leave-active,
   .step-back-enter-active,
