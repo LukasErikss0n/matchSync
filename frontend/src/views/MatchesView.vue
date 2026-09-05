@@ -253,6 +253,13 @@
         @close="closeModal"
     />
 
+    <MatchPreviewModal
+        v-if="previewMatch"
+        :match="previewMatch"
+        @close="previewMatch = null"
+        @view-full-standings="openFullStandings"
+    />
+
     <StandingsModal
         v-if="standingsMatch"
         :league-slug="standingsMatch.league.slug"
@@ -282,6 +289,7 @@ import TeamBadge from "@/components/TeamBadge.vue";
 import MatchRow from "@/components/MatchRow.vue";
 import TeamSelectorModal from "@/components/TeamSelectorModal.vue";
 import StandingsModal from "@/components/StandingsModal.vue";
+import MatchPreviewModal from "@/components/MatchPreviewModal.vue";
 
 // Tiny inline chevron so we don't have to extend the Icon registry
 const ChevronDown = (
@@ -414,6 +422,7 @@ const showModal = ref(false);
 const modalSport = ref<string | null>(null);
 const modalTeam = ref<Team | null>(null);
 const standingsMatch = ref<Match | null>(null);
+const previewMatch = ref<Match | null>(null);
 
 // "Updated X ago" badge — reflects the fetcher's last successful run, not page load
 const lastUpdatedAt = ref<Date | null>(null);
@@ -898,7 +907,13 @@ function closeModal() {
 }
 
 function onViewStandings(m: Match) {
-    standingsMatch.value = m;
+    previewMatch.value = m;
+}
+
+function openFullStandings() {
+    if (!previewMatch.value) return;
+    standingsMatch.value = previewMatch.value;
+    previewMatch.value = null;
 }
 
 onMounted(async () => {

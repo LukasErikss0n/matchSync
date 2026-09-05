@@ -4,12 +4,6 @@
     :style="{
       width: `${size}px`,
       height: `${size}px`,
-      // Muted, not pure white — a solid white disc reads harshly against the
-      // dark theme, especially in dense lists (standings, match rows) with
-      // many badges in view at once. Still light enough to keep dark line-art
-      // crests legible.
-      background: icon && !failed ? 'rgba(82, 82, 82, 0.02)' : undefined,
-      boxShadow: '0 4px 10px -4px rgba(0,0,0,.4)',
     }"
   >
     <img

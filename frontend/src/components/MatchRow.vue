@@ -65,9 +65,23 @@
       </div>
     </template>
 
+    <!-- Row-tap affordance — fades out on hover so "Add to calendar" (same
+         corner, sm+) can take over without the two overlapping. -->
+    <svg
+      v-if="supportsStandings"
+      class="flex-shrink-0 transition-opacity sm:group-hover:opacity-0"
+      width="7"
+      height="12"
+      viewBox="0 0 7 12"
+      fill="none"
+      style="color: rgba(244,247,251,.35)"
+    >
+      <path d="M1 1l5 5-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+
     <!-- Add to calendar — absolutely positioned so it doesn't shift the row's
          flex content off-center; hidden on mobile to free up name space -->
-    <div class="hidden sm:block absolute right-3 sm:right-6 top-1/2 -translate-y-1/2">
+    <div class="hidden sm:block absolute right-3 sm:right-10 top-1/2 -translate-y-1/2">
       <button
         class="flex items-center gap-1.5 rounded-full transition-all opacity-0 group-hover:opacity-100 px-3.5 py-2 text-xs font-bold"
         style="background: rgba(21,30,48,.95); border: 1px solid rgba(255,255,255,.14); color: rgba(244,247,251,.75)"

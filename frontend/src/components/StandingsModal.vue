@@ -22,8 +22,7 @@
           <h2 class="text-2xl font-extrabold" style="letter-spacing: -0.5px">{{ homeTeam }} vs {{ awayTeam }}</h2>
         </div>
         <button
-          class="w-8 h-8 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
-          style="background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16)"
+          class="xcl-btn-1 w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
           @click="emit('close')"
         >
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M6 6l12 12M18 6 6 18"/></svg>
@@ -31,9 +30,23 @@
       </div>
 
       <div class="relative px-3 sm:px-4 pb-5 pt-2">
-        <div v-if="loading" class="py-14 text-center text-sm" style="color: rgba(244,247,251,.5)">
-          Loading standings…
-        </div>
+        <template v-if="loading">
+          <div class="grid px-4 py-2 text-[10.5px] font-bold uppercase tracking-widest" style="grid-template-columns: 28px 1fr 52px 44px; color: rgba(244,247,251,.4)">
+            <span>#</span>
+            <span>Team</span>
+            <span class="text-right">GD</span>
+            <span class="text-right">Pts</span>
+          </div>
+          <div v-for="n in 8" :key="`standings-skeleton-${n}`" class="grid items-center px-4 py-3 mb-1.5" style="grid-template-columns: 28px 1fr 52px 44px">
+            <span class="ms-skeleton" style="width: 16px; height: 13px"></span>
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="ms-skeleton flex-shrink-0" style="width: 30px; height: 30px; border-radius: 999px"></span>
+              <span class="ms-skeleton block" style="width: 60%; height: 13px"></span>
+            </div>
+            <span class="ms-skeleton justify-self-end" style="width: 24px; height: 13px"></span>
+            <span class="ms-skeleton justify-self-end" style="width: 20px; height: 13px"></span>
+          </div>
+        </template>
         <div v-else-if="standings === null" class="py-14 text-center text-sm px-4" style="color: rgba(244,247,251,.5)">
           Standings aren't available for this league yet.
         </div>
@@ -47,38 +60,34 @@
             <span class="text-right">GD</span>
             <span class="text-right">Pts</span>
           </div>
-          <template v-for="row in visibleRows" :key="row.type === 'gap' ? `gap-${row.key}` : row.entry.position">
-            <div v-if="row.type === 'gap'" class="text-center text-sm py-1.5" style="color: rgba(244,247,251,.35)">
-              &hellip;
-            </div>
-            <div
-              v-else
-              class="grid items-start px-4 py-3 rounded-2xl mb-1.5 transition-colors"
-              :style="`grid-template-columns: 28px 1fr 52px 44px; ${isFocusTeam(row.entry.team)
-                ? 'background: rgba(142,205,242,.12); border: 1px solid rgba(142,205,242,.35)'
-                : 'border: 1px solid transparent'}`"
-            >
-              <span class="text-sm font-bold" style="color: rgba(244,247,251,.5)">{{ row.entry.position }}</span>
-              <div class="min-w-0">
-                <div class="flex items-center gap-2 min-w-0">
-                  <TeamBadge :name="row.entry.team" :icon="row.entry.team_icon" :size="22" />
-                  <span class="font-bold text-sm truncate">{{ row.entry.team }}</span>
-                </div>
-                <div class="flex gap-1 mt-1.5 ml-[30px]">
-                  <span
-                    v-for="(r, i) in row.entry.form"
-                    :key="i"
-                    class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold"
-                    :style="formStyle(r)"
-                  >{{ r }}</span>
-                </div>
+          <div
+            v-for="entry in standings"
+            :key="entry.position"
+            class="grid items-start px-4 py-3 rounded-2xl mb-1.5 transition-colors"
+            :style="`grid-template-columns: 28px 1fr 52px 44px; ${isFocusTeam(entry.team)
+              ? 'background: rgba(142,205,242,.12); border: 1px solid rgba(142,205,242,.35)'
+              : 'border: 1px solid transparent'}`"
+          >
+            <span class="text-sm font-bold" style="color: rgba(244,247,251,.5)">{{ entry.position }}</span>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 min-w-0">
+                <TeamBadge :name="entry.team" :icon="entry.team_icon" :size="30" />
+                <span class="font-bold text-sm truncate">{{ entry.team }}</span>
               </div>
-              <span class="text-sm font-bold text-right" :style="row.entry.goal_difference > 0 ? 'color: var(--ms-green)' : 'color: rgba(244,247,251,.7)'">
-                {{ row.entry.goal_difference > 0 ? '+' : '' }}{{ row.entry.goal_difference }}
-              </span>
-              <span class="text-sm font-extrabold text-right ms-text-accent">{{ row.entry.points }}</span>
+              <div class="flex gap-1 mt-1.5 ml-[38px]">
+                <span
+                  v-for="(r, i) in entry.form"
+                  :key="i"
+                  class="w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold"
+                  :style="formStyle(r)"
+                >{{ r }}</span>
+              </div>
             </div>
-          </template>
+            <span class="text-sm font-bold text-right" :style="entry.goal_difference > 0 ? 'color: var(--ms-green)' : 'color: rgba(244,247,251,.7)'">
+              {{ entry.goal_difference > 0 ? '+' : '' }}{{ entry.goal_difference }}
+            </span>
+            <span class="text-sm font-extrabold text-right ms-text-accent">{{ entry.points }}</span>
+          </div>
         </template>
       </div>
     </div>
@@ -86,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import type { StandingEntry } from '@/types'
 import { fetchStandings } from '@/services/sports'
 import TeamBadge from './TeamBadge.vue'
@@ -137,48 +146,27 @@ function formStyle(result: string): string {
   if (result === 'L') return 'background: rgba(232,93,117,.22); color: #f596a8'
   return 'background: rgba(255,255,255,.14); color: rgba(244,247,251,.7)'
 }
-
-type Row = { type: 'entry'; entry: StandingEntry } | { type: 'gap'; key: number }
-
-// Shows a 3-row window (one above/below) around each highlighted team, merging
-// the windows if they overlap/touch, otherwise separating them with a "…" gap
-// — mirrors how broadcasters trim a full table down to "what matters here".
-const visibleRows = computed<Row[]>(() => {
-  const rows = standings.value
-  if (!rows || rows.length === 0) return []
-
-  const focusPositions = rows
-    .filter((r) => isFocusTeam(r.team))
-    .map((r) => r.position)
-    .sort((a, b) => a - b)
-
-  if (focusPositions.length === 0) {
-    return rows.map((entry) => ({ type: 'entry', entry }))
-  }
-
-  const ranges: [number, number][] = focusPositions.map((p) => [
-    Math.max(1, p - 1),
-    Math.min(rows.length, p + 1),
-  ])
-
-  const merged: [number, number][] = []
-  for (const range of ranges) {
-    const last = merged[merged.length - 1]
-    if (last && range[0] <= last[1] + 1) {
-      last[1] = Math.max(last[1], range[1])
-    } else {
-      merged.push([...range])
-    }
-  }
-
-  const result: Row[] = []
-  merged.forEach(([start, end], i) => {
-    if (i > 0) result.push({ type: 'gap', key: i })
-    for (let pos = start; pos <= end; pos++) {
-      const entry = rows.find((r) => r.position === pos)
-      if (entry) result.push({ type: 'entry', entry })
-    }
-  })
-  return result
-})
 </script>
+
+<style scoped>
+/* Bare-icon close button, matching TeamSelectorModal's cross. */
+.xcl-btn-1 {
+  background: transparent;
+  border: none;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+}
+.xcl-btn-1:hover {
+  opacity: 0.7;
+  transform: scale(1.08);
+}
+.xcl-btn-1:active {
+  transform: scale(0.92);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xcl-btn-1:hover,
+  .xcl-btn-1:active {
+    transform: none;
+  }
+}
+</style>
