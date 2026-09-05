@@ -75,10 +75,13 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
 import leaguePages from '@/data/leaguePages.json'
+import guidePages from '@/data/guidePages.json'
 
 const productLinks = [
   { label: 'How it works', to: '/#how-it-works' },
   { label: 'Supported sports', to: '/#sports' },
+  { label: 'Calendar setup guide', to: guidePages.en.path },
+  { label: 'Kalenderguide (svenska)', to: guidePages.sv.path },
   { label: 'API docs', to: '/api-docs' },
 ]
 // Every league landing page, linked so crawlers reach them through the site

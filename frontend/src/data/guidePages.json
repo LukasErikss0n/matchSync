@@ -1,0 +1,200 @@
+{
+  "en": {
+    "path": "/guide",
+    "lang": "en",
+    "title": "How to subscribe to a sports calendar (Google, Apple, Outlook) | MatchCalender",
+    "description": "How to add football, hockey, basketball and F1 fixtures to Google Calendar, Apple Calendar or Outlook with a webcal subscription link that updates itself when matches are rescheduled.",
+    "label": "Guide",
+    "h1": "How to add fixtures to your calendar and keep them updated",
+    "intro": "Everything about subscribing to a fixture calendar: the difference between importing and subscribing, how to add a webcal link in Google Calendar, Apple Calendar and Outlook, and how to fix the two things that usually go wrong — duplicate events and a calendar that stops updating.",
+    "sections": [
+      {
+        "id": "subscribe-vs-import",
+        "q": "What is the difference between importing and subscribing to a calendar?",
+        "a": [
+          "Importing copies the fixtures into your calendar once. Subscribing points your calendar app at a URL that it re-reads on a schedule. The events look identical the day you add them, and they diverge from then on.",
+          "This matters in football specifically because fixtures move. A televised game shifts kickoff by two hours, a cup round gets a date once the draw is made, a postponed match is replayed months later. An imported file still shows the original time, because nothing told it otherwise. A subscribed feed corrects itself the next time your calendar refreshes.",
+          "MatchCalender only produces subscription links. There is no one-time export, because a stale fixture is worse than no fixture — it sends you to the pub at the wrong hour with no warning that anything changed."
+        ]
+      },
+      {
+        "id": "webcal-link",
+        "q": "What is a webcal link?",
+        "a": [
+          "A webcal link is an ordinary URL to an iCal (.ics) feed, written with webcal:// instead of https:// at the front. The file behind it is identical. The only thing the prefix changes is what your device does when you click it: webcal:// tells the operating system to hand the URL to the default calendar app and subscribe, rather than handing it to the browser and downloading it.",
+          "That is why clicking a webcal link on a phone opens the calendar app directly. If your calendar app asks you to paste a URL instead, use the https:// form of the same link — both point at the same feed and either will work."
+        ]
+      },
+      {
+        "id": "google-calendar",
+        "q": "How do I add fixtures to Google Calendar?",
+        "a": [
+          "Google Calendar calls this \"From URL\". It is on the desktop web version only — the Android and iOS Google Calendar apps cannot add a subscription, but they display one added on the web, so do it once on a computer and it appears on your phone."
+        ],
+        "steps": [
+          "Open Google Calendar in a browser at calendar.google.com.",
+          "In the left sidebar, click the + next to \"Other calendars\".",
+          "Choose \"From URL\".",
+          "Paste the calendar link. Use the https:// form here, not webcal://.",
+          "Click \"Add calendar\", then close settings. The fixtures appear within a minute or two."
+        ]
+      },
+      {
+        "id": "apple-calendar",
+        "q": "How do I subscribe in Apple Calendar?",
+        "a": [
+          "On an iPhone or iPad, tapping a webcal link is usually enough — Calendar opens and offers to subscribe. To add one by hand, go to Settings, then Apps, then Calendar, then Accounts, then Add Account, then Other, then Add Subscribed Calendar, and paste the link.",
+          "On a Mac, open Calendar and choose File, then New Calendar Subscription, and paste the link. Apple then asks how often to auto-refresh. Set it to every day or more often; the default on some versions is never, which quietly turns your subscription back into a one-time import."
+        ]
+      },
+      {
+        "id": "outlook",
+        "q": "How do I subscribe in Outlook?",
+        "a": [
+          "In Outlook on the web, open the Calendar, click \"Add calendar\" in the left sidebar, choose \"Subscribe from web\", paste the link, give the calendar a name, and click Import. The wording says import, but subscribing from a web address does create a live subscription that Outlook re-reads.",
+          "The subscription then syncs down to the Outlook desktop and mobile apps on the same account. Adding it directly in the desktop app is possible but less reliable, so prefer the web version."
+        ]
+      },
+      {
+        "id": "duplicates",
+        "q": "Why do I have duplicate fixtures, and how do I fix them?",
+        "a": [
+          "Duplicates almost always mean the same fixtures were added twice by two different methods — typically an .ics file imported earlier, plus a subscription added later. The imported copies are ordinary events living in your main calendar, so nothing can remove them automatically.",
+          "The fix is to delete the imported ones, not the subscription. A subscribed feed always arrives as its own separate calendar with its own name and colour, which is how you tell them apart: anything in your default personal calendar is an import, anything in a calendar named after the feed is the subscription.",
+          "If the imports are scattered through your main calendar and there are too many to delete by hand, the fastest route is to search your calendar for the team name and remove the matches that are not in the subscribed calendar. Then keep only the subscription, so this cannot happen again."
+        ]
+      },
+      {
+        "id": "stopped-updating",
+        "q": "Why did my fixture calendar stop updating?",
+        "a": [
+          "Usually it has not stopped — it just refreshes less often than people expect. Google Calendar decides its own refresh interval for external feeds and does not publish it; in practice it can be up to around 24 hours, and there is no button to force it. A kickoff change made this morning may genuinely not appear until tomorrow.",
+          "Apple Calendar is the common real failure, because the refresh interval is a setting you choose when subscribing and it can be set to never. On a Mac, right-click the calendar, choose Get Info, and check that auto-refresh is set to a real interval rather than none.",
+          "If a specific match is wrong rather than the whole feed being stale, that is a data problem on our end rather than a sync problem on yours — report it and we will look at the source."
+        ]
+      },
+      {
+        "id": "reschedules",
+        "q": "How do rescheduled matches and playoff rounds get added?",
+        "a": [
+          "Both arrive through the same feed you already subscribed to, with no action from you. When a kickoff moves, the event's time is updated in place, so it stays a single event in your calendar rather than becoming a second one. When a cup draw or a playoff round is announced, the new fixtures are appended to the feed and show up at the next refresh.",
+          "This is the entire reason the service exists. Competitions with unknown future rounds — the FA Cup, the EFL Cup, the IIHF World Championship, the World Cup knockout stage — cannot be exported correctly in advance by anyone, because the fixtures do not exist yet when you subscribe."
+        ]
+      },
+      {
+        "id": "timezone",
+        "q": "Are kickoff times shown in my own timezone?",
+        "a": [
+          "Yes, and you do not need to configure anything. On this site, times are rendered in whatever timezone your browser reports, so a Premier League fixture reads as local time in Stockholm and in New York without either visitor changing a setting.",
+          "The calendar feed reaches the same result by a different route: events are published as UTC timestamps, and your calendar app converts them to the device's current timezone. That means a synced fixture shows the correct local time on every device you own, and it stays correct if you travel across timezones or when daylight saving shifts."
+        ]
+      },
+      {
+        "id": "cost",
+        "q": "Does it cost anything, and do I need an account?",
+        "a": [
+          "No to both. Every calendar link is free, there is no paid tier, and there is nothing to sign up for — you pick a team or league, get a link, and subscribe. We store the sport, team and league behind a link so the feed can be generated, and nothing that identifies you."
+        ]
+      }
+    ]
+  },
+  "sv": {
+    "path": "/prenumerera-matchkalender",
+    "lang": "sv",
+    "title": "Prenumerera på matchkalender – spelschema direkt i kalendern | MatchCalender",
+    "description": "Så lägger du till spelschemat för Allsvenskan, SHL, SDHL och SBL i Google Kalender, Apple Kalender eller Outlook med en webcal-länk som uppdateras själv när matcher flyttas.",
+    "label": "Guide",
+    "h1": "Så får du spelschemat direkt i kalendern",
+    "intro": "Allt om att prenumerera på en matchkalender: skillnaden mellan att importera och att prenumerera, hur du lägger till en webcal-länk i Google Kalender, Apple Kalender och Outlook, och hur du löser de två vanligaste problemen — dubbla matcher och en kalender som slutat uppdateras.",
+    "sections": [
+      {
+        "id": "prenumerera-vs-importera",
+        "q": "Vad är skillnaden mellan att importera och att prenumerera?",
+        "a": [
+          "Att importera kopierar in matcherna i kalendern en gång. Att prenumerera pekar kalenderappen mot en adress som den läser om med jämna mellanrum. Dagen du lägger till dem ser de likadana ut, och från och med då börjar de skilja sig åt.",
+          "Det spelar roll eftersom matcher flyttas. En TV-sänd match ändrar avsparkstid, en cupomgång får datum först efter lottningen, en uppskjuten match spelas månader senare. En importerad fil visar fortfarande den gamla tiden, eftersom ingenting har talat om för den att något ändrats. En prenumeration rättar sig själv vid nästa uppdatering.",
+          "MatchCalender skapar bara prenumerationslänkar. Det finns ingen engångsexport, eftersom en matchtid som tyst blivit fel är sämre än ingen matchtid alls."
+        ]
+      },
+      {
+        "id": "webcal",
+        "q": "Vad är en webcal-länk?",
+        "a": [
+          "En webcal-länk är en vanlig adress till ett iCal-flöde (.ics), skriven med webcal:// i stället för https:// först. Filen bakom är densamma. Det enda prefixet ändrar är vad enheten gör när du klickar: webcal:// skickar adressen till kalenderappen för prenumeration i stället för till webbläsaren för nedladdning.",
+          "Därför öppnas kalenderappen direkt när du klickar på en webcal-länk i mobilen. Om din kalenderapp i stället ber dig klistra in en adress, använd https://-varianten av samma länk — båda pekar på samma flöde."
+        ]
+      },
+      {
+        "id": "google-kalender",
+        "q": "Hur lägger jag till spelschemat i Google Kalender?",
+        "a": [
+          "I Google Kalender heter funktionen \"Från webbadress\". Den finns bara i webbversionen på dator — Google Kalender-apparna för Android och iOS kan inte lägga till en prenumeration, men de visar en som lagts till på webben. Gör det en gång på datorn, så dyker den upp i mobilen."
+        ],
+        "steps": [
+          "Öppna calendar.google.com i en webbläsare.",
+          "Klicka på plustecknet bredvid \"Andra kalendrar\" i vänsterspalten.",
+          "Välj \"Från webbadress\".",
+          "Klistra in kalenderlänken. Använd https://-varianten här, inte webcal://.",
+          "Klicka på \"Lägg till kalender\". Matcherna dyker upp inom en minut eller två."
+        ]
+      },
+      {
+        "id": "apple-kalender",
+        "q": "Hur prenumererar jag i Apple Kalender?",
+        "a": [
+          "På iPhone eller iPad räcker det oftast att trycka på en webcal-länk — Kalender öppnas och erbjuder prenumeration. För att lägga till den manuellt: Inställningar, Appar, Kalender, Konton, Lägg till konto, Övrigt, Lägg till prenumererad kalender, och klistra in länken.",
+          "På Mac: öppna Kalender och välj Arkiv, Ny kalenderprenumeration, och klistra in länken. Apple frågar sedan hur ofta kalendern ska uppdateras automatiskt. Ställ in den på varje dag eller oftare — på vissa versioner är standardvärdet aldrig, vilket i praktiken gör om prenumerationen till en engångsimport."
+        ]
+      },
+      {
+        "id": "outlook",
+        "q": "Hur prenumererar jag i Outlook?",
+        "a": [
+          "I Outlook på webben: öppna Kalender, klicka på \"Lägg till kalender\" i vänsterspalten, välj \"Prenumerera från webben\", klistra in länken, namnge kalendern och klicka på Importera. Trots ordet importera skapar det här en riktig prenumeration som Outlook läser om.",
+          "Prenumerationen synkas sedan ner till Outlooks dator- och mobilappar på samma konto. Att lägga till den direkt i skrivbordsappen går, men fungerar sämre — använd hellre webbversionen."
+        ]
+      },
+      {
+        "id": "dubbla-matcher",
+        "q": "Varför har jag dubbla matcher i kalendern?",
+        "a": [
+          "Dubbletter beror nästan alltid på att samma matcher lagts till två gånger på två olika sätt — oftast en .ics-fil som importerats tidigare, plus en prenumeration som lagts till senare. De importerade kopiorna är vanliga händelser i din huvudkalender, så ingenting kan ta bort dem automatiskt.",
+          "Lösningen är att ta bort de importerade, inte prenumerationen. Ett prenumererat flöde hamnar alltid i en egen kalender med eget namn och egen färg — det är så du skiljer dem åt. Ligger matchen i din vanliga personliga kalender är den importerad.",
+          "Är de importerade matcherna utspridda och för många för att radera för hand: sök i kalendern på lagnamnet och ta bort de träffar som inte ligger i den prenumererade kalendern. Behåll sedan bara prenumerationen."
+        ]
+      },
+      {
+        "id": "slutat-uppdateras",
+        "q": "Varför har min matchkalender slutat uppdateras?",
+        "a": [
+          "Oftast har den inte slutat — den uppdateras bara mer sällan än man tror. Google Kalender bestämmer själv hur ofta externa flöden läses om och redovisar inte intervallet; i praktiken kan det röra sig om upp till ett dygn, och det finns ingen knapp för att tvinga fram en uppdatering. En ändrad avsparkstid kan alltså dröja till i morgon.",
+          "Apple Kalender är det vanliga verkliga felet, eftersom uppdateringsintervallet är en inställning du själv väljer och kan ställas på aldrig. Högerklicka på kalendern på Mac, välj Visa info och kontrollera att automatisk uppdatering är satt till ett riktigt intervall.",
+          "Är det en enskild match som är fel snarare än hela flödet som är gammalt, är det ett datafel hos oss och inte ett synkfel hos dig — rapportera det så tittar vi på källan."
+        ]
+      },
+      {
+        "id": "flyttade-matcher",
+        "q": "Hur läggs flyttade matcher och slutspel till?",
+        "a": [
+          "Båda kommer via samma flöde som du redan prenumererar på, utan att du behöver göra något. När en avsparkstid flyttas uppdateras händelsen på plats, så den förblir en enda händelse i kalendern i stället för att bli två. När en lottning eller en slutspelsomgång är klar läggs de nya matcherna till i flödet och dyker upp vid nästa uppdatering.",
+          "Det är hela poängen med tjänsten. Turneringar med okända kommande omgångar — slutspelet i SHL, hockey-VM, cupomgångar — går inte att exportera korrekt i förväg, eftersom matcherna inte finns än när du prenumererar."
+        ]
+      },
+      {
+        "id": "tidszon",
+        "q": "Visas avsparkstiderna i min egen tidszon?",
+        "a": [
+          "Ja, och du behöver inte ställa in något. På den här webbplatsen visas tiderna i den tidszon din webbläsare rapporterar, så en match läses som lokal tid både i Stockholm och i New York utan att någon ändrar en inställning.",
+          "Kalenderflödet når samma resultat på ett annat sätt: händelserna publiceras som UTC-tidsstämplar och kalenderappen räknar om dem till enhetens aktuella tidszon. En synkad match visar alltså rätt lokal tid på alla dina enheter, och den förblir rätt om du reser eller när sommartiden slår om."
+        ]
+      },
+      {
+        "id": "kostnad",
+        "q": "Kostar det något, och behöver jag ett konto?",
+        "a": [
+          "Nej på båda. Alla kalenderlänkar är gratis, det finns ingen betald nivå och det finns inget att registrera sig för — du väljer lag eller liga, får en länk och prenumererar. Vi lagrar sport, lag och liga bakom en länk så att flödet kan skapas, och ingenting som identifierar dig."
+        ]
+      }
+    ]
+  }
+}

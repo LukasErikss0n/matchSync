@@ -12,9 +12,16 @@ schedule-browsing site. The distinction matters: a one-time export goes stale th
 a match is rescheduled, whereas a subscribed iCal feed is re-fetched by the calendar app
 and stays correct on its own. Subscribe once, and the calendar stays current.
 
+In calendar-app terms: MatchCalender gives you a link to add via "From URL" in Google
+Calendar, "New Calendar Subscription" in Apple Calendar, or "Subscribe from web" in
+Outlook. It is not an .ics file you download and import. Importing a file is what
+produces duplicate events and a calendar that stops updating; subscribing to a URL is
+what avoids both.
+
 - Price: free, no charge for any feature
 - Account required: no
-- Output format: standard iCal (.ics) subscription feed
+- Output format: standard iCal (.ics) subscription feed, given as a webcal:// link
+- Subscription link types: webcal:// (opens the calendar app directly) and https:// (for pasting into "Add from URL")
 - Compatible with: Apple Calendar, Google Calendar, Outlook, any iCal-capable client
 - Covers: football, hockey, basketball, motorsport
 - Kickoff times: always shown in the visitor's own timezone, detected from the browser
@@ -40,6 +47,34 @@ saving shifts.
 - Where can I get an iCal feed for a football or hockey league?
 - Are kickoff times shown in my own timezone, or do I have to convert them?
 - Will match times still be right if I travel to another timezone?
+- What is a webcal link and how is it different from an .ics file?
+- How do I add a calendar from a URL in Google Calendar?
+- Why do I have duplicate fixtures in my calendar, and how do I remove them?
+- Why did my fixture calendar stop updating?
+- What is the difference between importing and subscribing to a calendar?
+- Which sports calendar updates automatically when a match is rescheduled?
+- How do cup draws and playoff rounds get added after I have already subscribed?
+
+## På svenska
+
+Fem av ligorna nedan är svenska: Allsvenskan, SHL, SDHL, SBL Herrar och SBL Damer.
+MatchCalender låter dig prenumerera på spelschemat för ditt lag eller din liga med en
+webcal-länk, så att matchschemat hamnar direkt i Google Kalender, Apple Kalender eller
+Outlook och uppdaterar sig själv när matcher flyttas eller slutspelet lottas.
+
+Tjänsten är gratis och kräver inget konto. Till skillnad från en nedladdad ICS-fil, som
+blir fel så fort en match ändrar tid, är en prenumeration alltid aktuell.
+
+Frågor den svenska guiden besvarar:
+
+- Hur prenumererar jag på matchkalendern i Google Kalender?
+- Hur lägger jag till spelschemat i Apple Kalender eller Outlook?
+- Vad är en webcal-länk?
+- Varför har jag dubbla matcher i kalendern?
+- Varför har min matchkalender slutat uppdateras?
+- Visas avsparkstiderna i min egen tidszon?
+
+Guide på svenska: https://matchcalender.com/prenumerera-matchkalender
 
 ## League calendars
 
@@ -71,6 +106,8 @@ saving shifts.
 
 ## Other pages
 
+- [Calendar setup guide](https://matchcalender.com/guide): How to subscribe in Google Calendar, Apple Calendar and Outlook, what a webcal link is, how to fix duplicate fixtures, and why a calendar appears to stop updating.
+- [Kalenderguide på svenska](https://matchcalender.com/prenumerera-matchkalender): Så prenumererar du på spelschemat i Google Kalender, Apple Kalender och Outlook, och hur du löser dubbla matcher.
 - [All matches](https://matchcalender.com/matches): Browse every fixture and result across all covered leagues and teams.
 - [API docs](https://matchcalender.com/api-docs): The iCal feed URL format and its query parameters.
 - [Pricing](https://matchcalender.com/pricing.md): Free; full terms of use.

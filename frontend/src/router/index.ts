@@ -6,7 +6,9 @@ import PrivacyPolicyView from '@/views/PrivacyPolicyView.vue'
 import TermsOfServiceView from '@/views/TermsOfServiceView.vue'
 import SupportView from '@/views/SupportView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
+import GuideView from '@/views/GuideView.vue'
 import leaguePages from '@/data/leaguePages.json'
+import guidePages from '@/data/guidePages.json'
 import { applyPageMeta } from '@/utils/seo'
 
 const HOME_DESCRIPTION =
@@ -108,6 +110,26 @@ const router = createRouter({
     // and lazily imported so the dashboard isn't part of the bundle every
     // visitor downloads. The real gate is the backend's ADMIN_TOKEN — this
     // route renders a token prompt, not data.
+    {
+      path: guidePages.en.path,
+      name: 'guide',
+      component: GuideView,
+      props: { locale: 'en' },
+      meta: {
+        title: guidePages.en.title,
+        description: guidePages.en.description,
+      },
+    },
+    {
+      path: guidePages.sv.path,
+      name: 'guide-sv',
+      component: GuideView,
+      props: { locale: 'sv' },
+      meta: {
+        title: guidePages.sv.title,
+        description: guidePages.sv.description,
+      },
+    },
     {
       path: '/admin',
       name: 'admin',
