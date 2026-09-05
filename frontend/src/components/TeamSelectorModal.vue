@@ -35,23 +35,20 @@
         <template v-for="(l, i) in stepLabels" :key="l">
           <div class="flex items-center gap-1.5">
             <span
-              class="step-indicator w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+              class="step-indicator w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold relative"
               :class="i + 1 < step ? 'done' : i + 1 === step ? 'active' : 'idle'"
             >
-              {{ i + 1 < step ? '✓' : i + 1 }}
+              <Transition name="step-check">
+                <span :key="i + 1 < step ? 'check' : 'num'" class="step-check-inner">{{ i + 1 < step ? '✓' : i + 1 }}</span>
+              </Transition>
             </span>
-            <span
-              class="text-xs font-medium"
-              :style="i + 1 === step ? 'color: var(--ms-text)' : 'color: var(--ms-muted-dim)'"
-            >
+            <span class="step-label text-xs font-medium" :class="{ 'is-current': i + 1 === step }">
               {{ l }}
             </span>
           </div>
-          <div
-            v-if="i < 3"
-            class="flex-1 h-px"
-            :style="i + 1 < step ? 'background: var(--ms-green)' : 'background: rgba(255,255,255,.14)'"
-          />
+          <div v-if="i < 3" class="step-track flex-1 h-px relative">
+            <div class="step-track-fill absolute inset-0" :class="{ 'is-filled': i + 1 < step }" />
+          </div>
         </template>
       </div>
 
@@ -848,6 +845,34 @@ function reset() {
 .preview-leave-to {
   opacity: 0;
   transform: translateY(-6px);
+}
+
+/* Step indicator: number → checkmark crossfade */
+.step-check-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.step-check-enter-active,
+.step-check-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.step-check-enter-from,
+.step-check-leave-to {
+  opacity: 0;
+  transform: scale(0.6);
+}
+@media (prefers-reduced-motion: reduce) {
+  .step-check-enter-active,
+  .step-check-leave-active {
+    transition: opacity 0.15s ease;
+  }
+  .step-check-enter-from,
+  .step-check-leave-to {
+    transform: none;
+  }
 }
 
 /* ── "Grabbing data" loading state (goToLink in flight) ─────────────────── */

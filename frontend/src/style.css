@@ -197,19 +197,83 @@ body::before {
 }
 
 /* ── Modal step indicator ──────────────────────────────────────────────────── */
-.step-indicator.active {
+.step-indicator {
+    isolation: isolate;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--ms-muted-dim);
+    transition: color 0.2s ease, transform 0.15s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Crossfaded on top of the idle background rather than transitioning
+   `background` directly — gradient/solid backgrounds can't interpolate. */
+.step-indicator::before,
+.step-indicator::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.step-indicator::before {
     background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark));
+}
+.step-indicator::after {
+    background: var(--ms-green);
+}
+
+.step-indicator.active {
     color: var(--ms-ink);
+    transform: scale(1.08);
+}
+.step-indicator.active::before {
+    opacity: 1;
 }
 
 .step-indicator.done {
-    background: var(--ms-green);
     color: var(--ms-ink);
 }
+.step-indicator.done::after {
+    opacity: 1;
+}
 
-.step-indicator.idle {
-    background: rgba(255, 255, 255, 0.1);
+.step-track {
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.step-track-fill {
+    background: var(--ms-green);
+    transform-origin: left;
+    transform: scaleX(0);
+    transition: transform 0.28s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.step-track-fill.is-filled {
+    transform: scaleX(1);
+}
+
+.step-label {
     color: var(--ms-muted-dim);
+    transition: color 0.2s ease;
+}
+.step-label.is-current {
+    color: var(--ms-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .step-indicator {
+        transition: color 0.15s ease;
+        transform: none !important;
+    }
+    .step-track-fill {
+        transition: opacity 0.15s ease;
+        transform: none;
+        opacity: 0;
+    }
+    .step-track-fill.is-filled {
+        opacity: 1;
+    }
 }
 
 /* ── Matches page: filter pills, dropdowns, pager ──────────────────────────── */
