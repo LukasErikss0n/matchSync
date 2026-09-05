@@ -1,8 +1,3 @@
-// Best-effort visitor country guess used only to nudge which match/league gets
-// featured on the hero card — no IP geolocation, no request to any server,
-// nothing stored. Timezone is checked first since it reflects where the
-// device actually is; navigator.language often just reflects OS/browser
-// install language and can be wrong for the visitor's real location.
 const TIMEZONE_COUNTRY: Record<string, string> = {
   'Europe/Stockholm': 'SE',
   'Europe/London': 'GB',

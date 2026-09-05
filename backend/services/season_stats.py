@@ -1,56 +1,29 @@
-"""Live season overview (start date + regular-season match count), computed
-directly from the same external providers backend/tasks/fetcher.py uses.
-
-Why not just read our own DB? The synced Match table only ever holds a rolling
-window (recent + upcoming matches — see TimeManagement.is_recent_or_future),
-so right after a season ends and before the next one is announced it can look
-like "the season has 1 match" when really the full season simply hasn't been
-scraped into our window. Querying the providers directly for the whole season
-(no recency filter) gives an honest answer, including "not published yet".
-"""
-
-import time as time_module
+from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from bs4 import BeautifulSoup
 
-from tasks.fetcher import (
-    FetchAPI,
-    FifaFilter,
-    FootballFilter,
-    HelpFunctions,
-    HockeyBasketballFilter,
-    IIHFFilter,
-    LEAGUE_DISPLAY,
-    SwedishFootballFilter,
-    TimeManagement,
-    is_playoff_game_type,
-    slugify,
-)
+from services.cache import MISSING, TTLCache
+from tasks.common import LEAGUE_DISPLAY, is_playoff_game_type, slugify
+from tasks.fetchers.fifa import FifaFilter
+from tasks.fetchers.football import FootballFilter
+from tasks.fetchers.hockey_basketball import HelpFunctions, HockeyBasketballFilter
+from tasks.fetchers.iihf import IIHFFilter
+from tasks.fetchers.swedish_football import SwedishFootballFilter
+from tasks.http_client import FetchAPI
+from tasks.time_management import TimeManagement
 
-_CACHE_TTL_SECONDS = 6 * 60 * 60  # these calls are expensive (PL: up to 49 requests/league)
-_cache: dict[str, tuple[float, "SeasonStats"]] = {}
+_cache: TTLCache["SeasonStats"] = TTLCache(ttl_seconds=6 * 60 * 60)
 
-# Pure knockout cups whose pairings are drawn round-by-round as the competition
-# progresses (the next round isn't fixed until the previous one finishes) — so
-# unlike a league or a League Phase, there's no fixed "total games this season"
-# to report. league-slug based since it's a property of the competition format,
-# not something derivable from the fixture data itself.
 _PROGRESSIVE_KNOCKOUT_SLUGS = {"fa-cup", "efl-cup"}
 
 
+@dataclass
 class SeasonStats:
-    def __init__(
-        self,
-        season_start: datetime | None,
-        regular_season_count: int,
-        published: bool,
-        progressive_knockout: bool = False,
-    ):
-        self.season_start = season_start
-        self.regular_season_count = regular_season_count
-        self.published = published
-        self.progressive_knockout = progressive_knockout
+    season_start: datetime | None
+    regular_season_count: int
+    published: bool
+    progressive_knockout: bool = False
 
 
 def _slug_to_league_key() -> dict[str, str]:
@@ -84,18 +57,10 @@ def _football_starts_for_season(
 
 
 def _football_starts(api: FetchAPI, time: TimeManagement, league_id: int) -> list[datetime]:
-    """Whole season, no recency filter — matchweeks stop once a week comes back empty."""
     season = time.get_active_season_year("08")
     starts = _football_starts_for_season(api, time, league_id, season)
     season_concluded = bool(starts) and max(starts) < datetime.now(timezone.utc)
 
-    # Providers usually publish next season's fixtures well before our month
-    # threshold flips (e.g. the PL releases fixtures in June, ~2 months before
-    # the August kickoff) — but not always (UEFA's league-phase draw tends to
-    # land later, closer to the actual August/September kickoff). So once the
-    # assumed season has concluded, check the next one and prefer it if it's
-    # out; if it isn't, report nothing rather than presenting a finished
-    # season's dates as if they were still upcoming.
     if not starts or season_concluded:
         next_season = str(int(season) + 1)
         next_starts = _football_starts_for_season(api, time, league_id, next_season)
@@ -109,8 +74,6 @@ def _football_starts(api: FetchAPI, time: TimeManagement, league_id: int) -> lis
 def _hockey_basketball_starts(
     api: FetchAPI, helpers: HelpFunctions, url_slug: str
 ) -> tuple[list[datetime], list[datetime]]:
-    """Returns (all starts, regular-season-only starts) — game types are the only
-    place this data distinguishes playoffs from the regular season."""
     meta = api.get(f"https://www.{url_slug}.se/api/sports-v2/season-series-game-types-filter")
     season_uuid, series_uuid, game_types = helpers.get_active_season_uuid(meta)
 
@@ -146,7 +109,6 @@ def _svenskfotboll_paginate(
         for match in soup.select(".match-list__match"):
             time_el = match.select_one("time")
             dt_attr = time_el.get("datetime") if time_el else None
-            # BeautifulSoup attributes can also be lists — only a str is usable.
             if not isinstance(dt_attr, str) or not dt_attr:
                 continue
             dt = _parse_iso(time.convert_to_utc(dt_attr))
@@ -157,10 +119,6 @@ def _svenskfotboll_paginate(
 
 
 def _swedish_football_starts(api: FetchAPI, time: TimeManagement, competition_id: int) -> list[datetime]:
-    # "upcoming-games" (what the fetcher's calendar sync uses) only ever returns
-    # future fixtures — once the season is underway, it can't see the rounds
-    # already played, so it can't tell us the true season start. "played-games"
-    # is the sibling endpoint with results; combining both gives the whole season.
     played = _svenskfotboll_paginate(api, time, "played-games", competition_id)
     upcoming = _svenskfotboll_paginate(api, time, "upcoming-games", competition_id)
     return played + upcoming
@@ -197,7 +155,7 @@ def _compute(league_slug: str) -> SeasonStats | None:
     helpers = HelpFunctions()
 
     starts: list[datetime] = []
-    regular_count: int | None = None  # None → no regular/playoff split for this competition
+    regular_count: int | None = None
 
     if league_key in FootballFilter.LEAGUES:
         starts = _football_starts(api, tm, FootballFilter.LEAGUES[league_key])
@@ -214,8 +172,6 @@ def _compute(league_slug: str) -> SeasonStats | None:
                     api, helpers, leagues[league_key]["url_slug"]
                 )
                 starts = all_starts
-                # If nothing got tagged as regular season (e.g. an unrecognized
-                # game-type label), fall back to the total rather than reporting 0.
                 regular_count = len(regular_starts) if regular_starts else len(all_starts)
                 break
 
@@ -238,12 +194,11 @@ def _compute(league_slug: str) -> SeasonStats | None:
 
 
 def get_season_stats(league_slug: str) -> SeasonStats | None:
-    now = time_module.monotonic()
     cached = _cache.get(league_slug)
-    if cached and now - cached[0] < _CACHE_TTL_SECONDS:
-        return cached[1]
+    if cached is not MISSING:
+        return cached
 
     result = _compute(league_slug)
     if result is not None:
-        _cache[league_slug] = (now, result)
+        _cache.set(league_slug, result)
     return result

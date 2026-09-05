@@ -1,0 +1,29 @@
+.fx-crest {
+  width: var(--fx-crest-w);
+  height: var(--fx-crest-h);
+  border-radius: var(--fx-crest-radius);
+  flex: none;
+  position: relative;
+}
+
+.fx-crest-bg {
+  position: absolute;
+  inset: 4%;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.fx-crest-probe {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fx-monogram {
+  font-size: var(--fx-monogram);
+  font-weight: 900;
+  letter-spacing: 0.5px;
+}

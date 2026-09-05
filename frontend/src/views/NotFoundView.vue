@@ -33,7 +33,5 @@ import Navbar from '@/components/Navbar.vue'
 import Footer from '@/components/Footer.vue'
 import TeamSelectorModal from '@/components/TeamSelectorModal.vue'
 
-// The noindex meta and canonical removal are applied by the router's
-// afterEach (see applyPageMeta), so this view only renders.
 const showModal = ref(false)
 </script>

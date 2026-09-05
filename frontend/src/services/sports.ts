@@ -49,7 +49,7 @@ export async function fetchMatches(opts: {
 
 export async function fetchStandings(leagueSlug: string): Promise<StandingEntry[] | null> {
   const res = await fetch(`${API_BASE}/leagues/${encodeURIComponent(leagueSlug)}/standings`)
-  if (res.status === 404) return null   // standings not supported for this league
+  if (res.status === 404) return null
   if (!res.ok) throw new Error(`Failed to fetch standings: ${res.status}`)
   return res.json()
 }
@@ -100,18 +100,9 @@ export async function sendSupportRequest(payload: SupportPayload): Promise<void>
   if (!res.ok) throw new Error(`Failed to send support request: ${res.status}`)
 }
 
-// Each call to /calendar mints a fresh subscriber token server-side, so going
-// Back and regenerating the same selection would otherwise leave a trail of
-// abandoned links on the admin dashboard. Reuse what this browser already
-// got for an identical selection.
-//
-// sessionStorage, not localStorage, and deliberately never shared: two
-// different people picking the same team and leagues must keep separate
-// tokens, or they collapse into a single counted subscriber.
 const CAL_LINK_CACHE_PREFIX = 'ms-cal-link:'
 
 function calLinkCacheKey(sport: string, teamSlug: string, leagueSlugs: string[]): string {
-  // Sorted so ticking the same leagues in a different order still hits.
   return `${CAL_LINK_CACHE_PREFIX}${sport}|${teamSlug}|${[...leagueSlugs].sort().join(',')}`
 }
 
@@ -145,8 +136,6 @@ export async function fetchCalendarLink(
   return link
 }
 
-// Admin dashboard. Sends X-Admin-Token, which — unlike X-API-Key — the
-// dev/prod proxy does not inject, so the operator has to supply it by hand.
 export async function fetchSubscriptionDashboard(
   adminToken: string,
   windowDays?: number,

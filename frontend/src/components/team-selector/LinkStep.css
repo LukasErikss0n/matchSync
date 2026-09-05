@@ -1,0 +1,9 @@
+.preview-enter-active,
+.preview-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.preview-enter-from,
+.preview-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}

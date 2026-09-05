@@ -50,18 +50,12 @@ export interface Match {
   away_slug?: string | null
   home_icon?: string | null
   away_icon?: string | null
-  home_color?: string | null   // #rrggbb, extracted from the crest server-side
-  away_color?: string | null
-  home_icon_cropped?: string | null   // home_icon trimmed to its artwork, as a data: URI
+  home_icon_cropped?: string | null
   away_icon_cropped?: string | null
   home_score?: number | null
   away_score?: number | null
-  start_time: string   // ISO-UTC (with Z) — rendered in the viewer's local time
+  start_time: string
   venue?: string | null
-  // Normalised upstream state, when the source reports one. Null for sources
-  // that don't, in which case consumers fall back to a kickoff-time window.
-  // Never infer this from the score: providers report 0-0 from kickoff, so a
-  // score means "under way or over", not "over".
   status?: MatchStatus | null
 }
 

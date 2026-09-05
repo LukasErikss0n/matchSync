@@ -7,13 +7,10 @@ from database import get_session
 from models.models import CalendarSubscription
 from schemas.schemas import CalendarSubscriptionOut, SubscriptionDashboardOut
 from security import require_admin_token
+from utils import ensure_utc
 
 router = APIRouter()
 
-# Calendar clients refresh on their own schedule and are not in a hurry about
-# it — Google in particular can leave many hours between polls, and Apple lets
-# the user pick an interval as slow as once a week. A window much tighter than
-# this would report healthy subscriptions as dead.
 DEFAULT_ACTIVE_WINDOW_DAYS = 7
 
 
@@ -40,12 +37,7 @@ def list_subscriptions(
     active = pending = dormant = 0
 
     for row in rows:
-        # Rows written before this column existed, and SQLite/Postgres driver
-        # differences, can hand back a naive datetime — compare in UTC or the
-        # subtraction raises.
-        last_seen = row.last_seen
-        if last_seen is not None and last_seen.tzinfo is None:
-            last_seen = last_seen.replace(tzinfo=timezone.utc)
+        last_seen = ensure_utc(row.last_seen) if row.last_seen is not None else None
 
         if last_seen is None:
             pending += 1

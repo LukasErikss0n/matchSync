@@ -1,0 +1,51 @@
+/* Dark tile with a blue underline instead of the navbar's filled-pill
+   active state — reads better against this row's already-transparent
+   background (see the "remove the bg" change above). */
+.ms-tab-slider--outline {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+/* A separate flat-edged bar rather than the tile's own border-bottom — the
+   tile is rounded, so a border there would bow with its corners instead of
+   sitting as a straight line. */
+.ms-tab-slider--outline::after {
+  content: '';
+  position: absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 0;
+  height: 2px;
+  background: var(--ms-blue);
+}
+
+.hero-eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ms-blue);
+  margin-bottom: 10px;
+}
+
+.hero-title {
+  font-size: clamp(32px, 6vw, 52px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--ms-text);
+}
+
+.hero-title span {
+  display: block;
+}
+
+.hero-subtitle {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ms-muted);
+  max-width: 30rem;
+  margin: 16px 0 0;
+  line-height: 1.5;
+}

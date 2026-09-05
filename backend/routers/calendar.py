@@ -25,7 +25,6 @@ def _resolve_team_rows(
     team_slug: str,
     league_slugs: list[str] | None,
 ) -> list[tuple[Team, League]]:
-    """Return all (Team, League) rows matching the given sport+team and (optionally) league filter."""
     sport_row = session.exec(select(Sport).where(Sport.slug == sport_slug)).first()
     if not sport_row:
         raise HTTPException(status_code=404, detail="Sport not found")
@@ -63,11 +62,6 @@ def get_calendar_link(
     team_name = rows[0][0].name
     league_outs = [LeagueOut(name=l.name, slug=l.slug) for _, l in rows]
 
-    # Every issued link gets its own token, which is the only thing that
-    # distinguishes two people subscribing to the same team and leagues —
-    # without it their feed requests are identical and count as one.
-    # Sorted so the stored form doesn't depend on the order the user happened
-    # to tick the league checkboxes.
     token = secrets.token_urlsafe(9)
     session.add(
         CalendarSubscription(
@@ -89,14 +83,6 @@ def get_calendar_link(
 
 
 def _client_label(user_agent: str | None) -> str | None:
-    """Reduce a User-Agent to a coarse client family before it is stored.
-
-    A raw UA carries OS and version detail we have no use for, and which the
-    privacy policy promises not to keep — the dashboard only ever needs to
-    know whether it was Google, Apple, and so on. Classifying here rather
-    than at render time means the detail is never written down in the first
-    place.
-    """
     if not user_agent:
         return None
     ua = user_agent.lower()
@@ -106,8 +92,6 @@ def _client_label(user_agent: str | None) -> str | None:
         return "Outlook"
     if "thunderbird" in ua:
         return "Thunderbird"
-    # Apple's calendar clients report as macOS/iOS or dataaccessd, and plain
-    # "ical" covers several third-party readers.
     if any(k in ua for k in ("ical", "dataaccessd", "macos", "mac os", "ios", "cfnetwork")):
         return "Apple Calendar"
     if any(k in ua for k in ("mozilla", "chrome", "safari", "firefox")):
@@ -116,13 +100,6 @@ def _client_label(user_agent: str | None) -> str | None:
 
 
 def _record_fetch(session: Session, token: str | None, user_agent: str | None) -> None:
-    """Stamp a subscription as alive.
-
-    Deliberately never raises and never 404s on an unknown token: this runs on
-    the path a subscriber's calendar app polls, and breaking someone's feed to
-    protect a metric would be the wrong trade. Links issued before tokens
-    existed simply carry no id and go unrecorded.
-    """
     if not token:
         return
     try:
@@ -159,14 +136,11 @@ def get_ics(
     ).all()
 
     team_name = rows[0][0].name
-    # league name per team row, so each event title can say which competition it is
     league_by_team = {t.id: l.name for t, l in rows if t.id is not None}
     ics_bytes = build_ics(team_name, list(matches), league_by_team)
     _record_fetch(session, id, request.headers.get("user-agent"))
     return Response(
         content=ics_bytes,
         media_type="text/calendar",
-        # A cached feed is a poll that never reaches us — it would both serve
-        # stale fixtures and make an active subscriber look dormant.
         headers={"Cache-Control": "no-store"},
     )

@@ -5,12 +5,6 @@
     :class="{ selected }"
     @click="emit('click')"
   >
-    <!-- Icon and label are a fixed size at every breakpoint. They used to be
-         smaller below `sm`, but the card is square and sized off its column,
-         so on a phone it grows while the icon shrinks — the content ended up
-         filling ~17% of the card against ~33% on a laptop, which read as
-         large and empty. max-w keeps the card from ballooning past the
-         160-180px it occupies on desktop. -->
     <div
       class="w-[52px] h-[52px] rounded-xl flex items-center justify-center mb-1"
       :style="{ background: iconBgTint, border: `1px solid ${iconColor}4d` }"
@@ -36,10 +30,8 @@ const props = withDefaults(
 
 const emit = defineEmits<{ click: [] }>()
 
-// Deterministic pastel pick, matching the design's 3-color rotation
 const PALETTE = ['#8ecdf2', '#f2b8c6', '#c9e8d2']
 const iconColor = computed(() => {
-  // Hockey lands on the pink slot by hash coincidence — pinned to blue instead.
   if (props.sport.id === 'hockey') return '#8ecdf2'
   let hash = 0
   for (let i = 0; i < props.sport.id.length; i++) hash = (hash * 31 + props.sport.id.charCodeAt(i)) >>> 0

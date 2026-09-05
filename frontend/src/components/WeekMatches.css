@@ -1,0 +1,35 @@
+.week-crest {
+  width: 40px;
+  height: 40px;
+}
+
+@media (min-width: 640px) {
+  .week-crest {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.week-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.day-pill {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 7px;
+}
+
+.day-pill.today {
+  color: var(--ms-green);
+  background: rgba(201, 232, 210, 0.13);
+  border: 1px solid rgba(201, 232, 210, 0.35);
+}
+
+.day-pill.live {
+  color: var(--ms-ink);
+  background: var(--ms-green);
+}

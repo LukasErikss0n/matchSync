@@ -1,0 +1,92 @@
+.modal-backdrop {
+  /* Chromium quirk: an element with any active CSS `animation` stops
+     correctly inheriting `color` (computes as transparent) unless it's set
+     explicitly here — even though the animation itself only touches
+     opacity. Reproduces mid-animation too, not just once "forwards" freezes
+     it. Setting `color: inherit` sidesteps it. */
+  color: inherit;
+  animation: backdropIn 0.22s ease forwards;
+}
+.modal-backdrop.is-closing {
+  animation: backdropIn 0.18s ease reverse forwards;
+}
+@keyframes backdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-panel {
+  color: inherit; /* see .modal-backdrop comment above */
+  animation: panelIn 0.32s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+.modal-panel.is-closing {
+  animation: panelIn 0.18s ease reverse forwards;
+}
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop,
+  .modal-panel {
+    animation: none;
+  }
+}
+
+/* Bare-icon close button, matching TeamSelectorModal's cross. */
+.xcl-btn-1 {
+  background: transparent;
+  border: none;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+}
+.xcl-btn-1:hover {
+  opacity: 0.7;
+  transform: scale(1.08);
+}
+.xcl-btn-1:active {
+  transform: scale(0.92);
+}
+.xcl-cross-a,
+.xcl-cross-b {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+/* Scissor close: each diagonal is its own path so it can rotate independently
+   to flat instead of the whole icon just scaling down (which read as nothing
+   more than shrinking, not "closing"). The two strokes flatten into a single
+   dash — finishing before the button's own fade-out does, so the cross
+   visibly closes shut first rather than just disappearing mid-rotation. */
+.xcl-closing-1 .xcl-cross-a {
+  animation: xcl-flatten-a 0.13s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.xcl-closing-1 .xcl-cross-b {
+  animation: xcl-flatten-b 0.13s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes xcl-flatten-a {
+  to { transform: rotate(-45deg); }
+}
+@keyframes xcl-flatten-b {
+  to { transform: rotate(45deg); }
+}
+.xcl-closing-1 {
+  animation: xcl-fade-1 0.2s ease forwards;
+}
+@keyframes xcl-fade-1 {
+  to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xcl-btn-1:hover,
+  .xcl-btn-1:active {
+    transform: none;
+  }
+  .xcl-closing-1 {
+    animation: none;
+    opacity: 0.4;
+  }
+  .xcl-closing-1 .xcl-cross-a,
+  .xcl-closing-1 .xcl-cross-b {
+    animation: none;
+  }
+}

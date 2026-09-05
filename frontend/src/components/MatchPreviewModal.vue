@@ -13,7 +13,6 @@
         style="background: linear-gradient(100deg, rgba(142,205,242,.05) 0%, rgba(142,205,242,.02) 35%, transparent 65%)"
       ></div>
 
-      <!-- Header -->
       <div class="relative flex items-center justify-between px-7 pt-7">
         <div class="text-[11.5px] font-bold uppercase ms-text-accent" style="letter-spacing: 1.8px">
           {{ dateLabel }}
@@ -23,7 +22,6 @@
         </button>
       </div>
 
-      <!-- Teams -->
       <div class="relative flex items-center justify-center gap-5 sm:gap-7 px-7 pt-5 pb-7">
         <div class="flex flex-col items-center gap-2 min-w-0">
           <TeamBadge :name="match.home_team" :icon="homeIcon" :size="64" />
@@ -53,7 +51,6 @@
 
       <div class="relative border-t border-white/10"></div>
 
-      <!-- Last 5 matches -->
       <div class="relative px-7 py-5">
         <div class="text-[10.5px] font-bold uppercase tracking-widest mb-3" style="color: rgba(244,247,251,.4)">
           Last 5 matches
@@ -95,7 +92,6 @@
         </div>
       </div>
 
-      <!-- View full standings -->
       <div class="relative px-7 pb-7">
         <span v-if="loading" class="ms-skeleton block" style="width: 100%; height: 52px; border-radius: 16px"></span>
         <button
@@ -120,9 +116,6 @@ import TeamBadge from './TeamBadge.vue'
 const props = defineProps<{ match: Match }>()
 const emit = defineEmits<{ close: []; 'view-full-standings': [] }>()
 
-// Prefer our own trimmed, same-origin crest — hotlinking the source's icon
-// URL directly (the plain *_icon fields) pulls in third-party cookies and
-// skips Cloudflare's edge cache.
 const homeIcon = computed(() => props.match.home_icon_cropped ?? props.match.home_icon ?? null)
 const awayIcon = computed(() => props.match.away_icon_cropped ?? props.match.away_icon ?? null)
 
@@ -135,8 +128,6 @@ function onKey(e: KeyboardEvent) {
 
 onMounted(async () => {
   window.addEventListener('keydown', onKey)
-  // Locking scroll removes the scrollbar, which shrinks the viewport and
-  // shifts everything left of it — pad the gap back in so nothing jumps.
   const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
   document.body.style.overflow = 'hidden'
   if (scrollbarWidth > 0) document.body.style.paddingRight = `${scrollbarWidth}px`
@@ -196,37 +187,4 @@ const dateLabel = computed(() => {
 })
 </script>
 
-<style scoped>
-/* Bare-icon close button, matching TeamSelectorModal's cross. */
-.xcl-btn-1 {
-  background: transparent;
-  border: none;
-  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
-}
-.xcl-btn-1:hover {
-  opacity: 0.7;
-  transform: scale(1.08);
-}
-.xcl-btn-1:active {
-  transform: scale(0.92);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .xcl-btn-1:hover,
-  .xcl-btn-1:active {
-    transform: none;
-  }
-}
-
-.vfs-btn-1 {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-}
-.vfs-btn-1:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.28);
-}
-.vfs-btn-1:active {
-  background: rgba(255, 255, 255, 0.03);
-}
-</style>
+<style scoped src="./MatchPreviewModal.css"></style>

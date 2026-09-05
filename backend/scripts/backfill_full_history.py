@@ -1,19 +1,9 @@
-"""One-off backfill: pulls a whole season's results into the Match table for
-leagues whose regular sync only ever sees a trailing RESULTS_WINDOW_DAYS
-window (see tasks/fetcher.py). Needed once per league before local standings
-computation (services/standings_local.py) has enough history to be accurate;
-the regular periodic fetcher keeps it current from then on.
-
-Run inside the backend container:
-    python3 scripts/backfill_full_history.py                        # everything below
-    python3 scripts/backfill_full_history.py allsvenskan premier_league  # just these
+"""Run inside the backend container:
+    python3 scripts/backfill_full_history.py
+    python3 scripts/backfill_full_history.py allsvenskan premier_league
 
 Supported league keys: allsvenskan, premier_league, shl, sdhl, sblherrar,
 sbldamer, f1.
-(UEFA Champions/Europa/Conference League are deliberately not included: their
-fixture feed mixes league-phase and two-legged knockout matches with no
-reliable way to tell them apart, so a locally-computed table would start
-counting knockout ties as extra league games once the knockout rounds begin.)
 """
 
 import sys
@@ -21,16 +11,13 @@ import sys
 from sqlmodel import Session
 
 from database import engine
-from tasks.fetcher import (
-    DBStore,
-    F1Filter,
-    FetchAPI,
-    FootballFilter,
-    HelpFunctions,
-    HockeyBasketballFilter,
-    SwedishFootballFilter,
-    TimeManagement,
-)
+from tasks.db_store import DBStore
+from tasks.fetchers.f1 import F1Filter
+from tasks.fetchers.football import FootballFilter
+from tasks.fetchers.hockey_basketball import HelpFunctions, HockeyBasketballFilter
+from tasks.fetchers.swedish_football import SwedishFootballFilter
+from tasks.http_client import FetchAPI
+from tasks.time_management import TimeManagement
 
 _HOCKEY_BASKETBALL_LEAGUE_KEYS = {"shl", "sdhl", "sblherrar", "sbldamer"}
 _FOOTBALL_LEAGUE_KEYS = {"premier_league"}

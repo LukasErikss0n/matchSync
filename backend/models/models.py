@@ -30,7 +30,6 @@ class Team(TeamBase, table=True):
 
 class Match(MatchBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    # external_id is unique per (event, team) — store once for home, once for away
     external_id: str = Field(unique=True)
     team_id: int = Field(foreign_key="team.id")
     team: Optional[Team] = Relationship(back_populates="matches")
@@ -38,6 +37,4 @@ class Match(MatchBase, table=True):
 
 class CalendarSubscription(CalendarSubscriptionBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    # Looked up on every feed fetch, so it carries an index, and uniqueness
-    # is what makes "one row per issued link" hold.
     token: str = Field(unique=True, index=True)

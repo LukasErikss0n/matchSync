@@ -14,8 +14,6 @@
         {{ page.intro }}
       </p>
 
-      <!-- Anchor list: gives the page an internal link target per question, which
-           is also what a "jump to answer" citation in an AI answer points at. -->
       <nav class="glass-card rounded-[17px] px-5 py-4 mb-10">
         <ul class="flex flex-col gap-2">
           <li v-for="s in page.sections" :key="`toc-${s.id}`">
@@ -61,8 +59,6 @@ import Footer from '@/components/Footer.vue'
 import TeamSelectorModal from '@/components/TeamSelectorModal.vue'
 import guidePages from '@/data/guidePages.json'
 
-// Same JSON that scripts/prerender.mjs bakes into the static HTML, so the
-// crawler-visible copy and the hydrated copy can't drift apart.
 const props = defineProps<{ locale: 'en' | 'sv' }>()
 
 const page = computed(() => guidePages[props.locale])
@@ -70,53 +66,4 @@ const page = computed(() => guidePages[props.locale])
 const showModal = ref(false)
 </script>
 
-<style scoped>
-.guide-body {
-  font-size: 15px;
-  line-height: 1.75;
-  color: var(--ms-muted);
-}
-
-.guide-steps {
-  counter-reset: guide-step;
-  padding-left: 0;
-  list-style: none;
-}
-
-.guide-steps li {
-  counter-increment: guide-step;
-  position: relative;
-  padding-left: 2.25rem;
-  font-size: 15px;
-  line-height: 1.7;
-  color: var(--ms-muted);
-}
-
-.guide-steps li::before {
-  content: counter(guide-step);
-  position: absolute;
-  left: 0;
-  top: 1px;
-  width: 24px;
-  height: 24px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--ms-blue);
-  background: rgba(142, 205, 242, 0.12);
-  border: 1px solid rgba(142, 205, 242, 0.28);
-}
-
-.guide-toc-link {
-  color: var(--ms-blue);
-  text-decoration: none;
-}
-
-.guide-toc-link:hover {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-</style>
+<style scoped src="./GuideView.css"></style>

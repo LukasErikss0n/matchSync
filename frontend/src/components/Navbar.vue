@@ -52,11 +52,6 @@
 </template>
 
 <script lang="ts">
-// The router keys each view by path, so Navbar itself is fully remounted on
-// every navigation. Module scope (unlike <script setup>'s per-instance scope)
-// survives that remount, so the pill can snap to where it "already was"
-// before animating to the new tab, instead of every navigation looking like
-// a fresh slide-in from the left.
 let lastActiveIndex = 0;
 let everMounted = false;
 </script>
@@ -67,10 +62,6 @@ import { nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue"
 
 const emit = defineEmits<{ getStarted: [] }>();
 
-// Hide on scroll-down, reveal on scroll-up — both driven by the same CSS
-// transition duration (see .nav-shell), so hiding and revealing happen at
-// the same speed. Only kicks in past a small threshold so the bar doesn't
-// flicker away on a tiny scroll right at the top of the page.
 const SCROLL_HIDE_THRESHOLD = 80;
 const navHidden = ref(false);
 let lastScrollY = 0;
@@ -81,9 +72,9 @@ function updateNavVisibility() {
     if (y <= SCROLL_HIDE_THRESHOLD) {
         navHidden.value = false;
     } else if (y > lastScrollY) {
-        navHidden.value = true; // scrolling down
+        navHidden.value = true;
     } else if (y < lastScrollY) {
-        navHidden.value = false; // scrolling up
+        navHidden.value = false;
     }
     lastScrollY = y;
     scrollTicking = false;
@@ -96,8 +87,8 @@ function onScroll() {
 }
 
 const tabs = [
-    { label: "Home", to: "/" }, //home
-    { label: "Matches", to: "/matches" }, //matches — league defaults to the featured match's league
+    { label: "Home", to: "/" },
+    { label: "Matches", to: "/matches" },
 ];
 
 const route = useRoute();
@@ -137,8 +128,6 @@ onMounted(async () => {
     activeIndex.value = target;
 
     if (everMounted) {
-        // Snap instantly to the previous instance's last position, then let
-        // the browser paint that before animating to the real target.
         applyStyle(lastActiveIndex, false);
         requestAnimationFrame(() => requestAnimationFrame(() => applyStyle(target, true)));
     } else {
@@ -149,9 +138,6 @@ onMounted(async () => {
     lastActiveIndex = target;
     window.addEventListener("resize", () => applyStyle(activeIndex.value, false));
 
-    // Seeded from the real scroll position (not 0) since Navbar remounts on
-    // every navigation — a mid-page remount shouldn't read as "just
-    // scrolled down" and hide itself immediately.
     lastScrollY = window.scrollY;
     window.addEventListener("scroll", onScroll, { passive: true });
 });
@@ -161,43 +147,4 @@ onBeforeUnmount(() => {
 });
 </script>
 
-<style scoped>
-/* Same treatment as Hero.vue's sport tabs: flat, no filled pill — just a
-   straight-edged underline on the active tab. */
-.ms-tab-slider--outline {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-}
-
-.ms-tab-slider--outline::after {
-    content: "";
-    position: absolute;
-    left: 14%;
-    right: 14%;
-    bottom: 4px;
-    height: 3px;
-    background: var(--ms-blue);
-}
-
-/* One transition, one duration, for both directions — hiding on scroll-down
-   and revealing on scroll-up move at the identical speed. */
-.nav-shell {
-    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease;
-}
-
-.nav-shell-hidden {
-    transform: translateY(-130%);
-    opacity: 0;
-    pointer-events: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .nav-shell {
-        transition: opacity 0.15s ease;
-    }
-    .nav-shell-hidden {
-        transform: none;
-    }
-}
-</style>
+<style scoped src="./Navbar.css"></style>

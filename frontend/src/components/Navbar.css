@@ -1,0 +1,38 @@
+/* Same treatment as Hero.vue's sport tabs: flat, no filled pill — just a
+   straight-edged underline on the active tab. */
+.ms-tab-slider--outline {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.ms-tab-slider--outline::after {
+    content: "";
+    position: absolute;
+    left: 14%;
+    right: 14%;
+    bottom: 4px;
+    height: 3px;
+    background: var(--ms-blue);
+}
+
+/* One transition, one duration, for both directions — hiding on scroll-down
+   and revealing on scroll-up move at the identical speed. */
+.nav-shell {
+    transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.22s ease;
+}
+
+.nav-shell-hidden {
+    transform: translateY(-130%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-shell {
+        transition: opacity 0.15s ease;
+    }
+    .nav-shell-hidden {
+        transform: none;
+    }
+}

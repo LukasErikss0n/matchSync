@@ -84,8 +84,6 @@ const productLinks = [
   { label: 'Kalenderguide (svenska)', to: guidePages.sv.path },
   { label: 'API docs', to: '/api-docs' },
 ]
-// Every league landing page, linked so crawlers reach them through the site
-// (not only via sitemap.xml).
 const leagueLinks = leaguePages.map((p) => ({ label: p.name, to: p.path }))
 const companyLinks = [
   { label: 'Privacy policy', to: '/privacy' },

@@ -1,7 +1,6 @@
 <template>
   <main class="min-h-screen px-4 sm:px-6 py-10 sm:py-14">
     <div class="max-w-lg mx-auto fade-up">
-      <!-- Header -->
       <div class="flex items-center gap-3 mb-8">
         <button
           class="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
@@ -19,7 +18,6 @@
       </div>
 
       <Transition name="stepin" mode="out-in">
-        <!-- Confirmation state -->
         <div v-if="submitted" key="confirm" class="glass-card rounded-[17px] px-6 py-10 text-center stepin">
           <div
             class="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
@@ -46,9 +44,7 @@
           </RouterLink>
         </div>
 
-        <!-- Form -->
         <form v-else key="form" class="flex flex-col gap-6 stepin" @submit.prevent="handleSubmit">
-          <!-- Type picker -->
           <div class="flex flex-col gap-2.5">
             <button
               v-for="opt in typeOptions"
@@ -79,7 +75,6 @@
             </button>
           </div>
 
-          <!-- What happened -->
           <div>
             <label class="block text-[11px] font-bold uppercase tracking-widest mb-2" style="color: rgba(244, 247, 251, 0.45)">
               What happened?
@@ -93,7 +88,6 @@
             />
           </div>
 
-          <!-- Page (bug only) -->
           <div v-if="supportType === 'bug'" class="relative">
             <label class="block text-[11px] font-bold uppercase tracking-widest mb-2" style="color: rgba(244, 247, 251, 0.45)">
               Page
@@ -132,7 +126,6 @@
           </div>
           <div v-if="pageMenuOpen" class="fixed inset-0 z-10" @click="pageMenuOpen = false" />
 
-          <!-- Want a response -->
           <div class="flex flex-col gap-3 rounded-[14px] px-4 py-3.5 glass-card">
             <div class="flex items-center justify-between gap-3">
               <div class="flex items-center gap-2.5">
@@ -325,94 +318,4 @@ async function handleSubmit() {
 }
 </script>
 
-<style scoped>
-.support-type-card {
-  border: 1px solid var(--ms-glass-border);
-  cursor: pointer;
-}
-
-.support-type-card.selected {
-  border-color: rgba(142, 205, 242, 0.5);
-  background: rgba(142, 205, 242, 0.1);
-}
-
-.support-radio {
-  border: 2px solid rgba(255, 255, 255, 0.22);
-  background: transparent;
-  transition: all 0.15s ease;
-}
-
-.support-radio.selected {
-  border-color: var(--ms-blue);
-  background: linear-gradient(160deg, var(--ms-blue), var(--ms-blue-dark));
-}
-
-.support-toggle {
-  width: 42px;
-  height: 25px;
-  border-radius: 999px;
-  box-sizing: border-box;
-  padding: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.14);
-  flex-shrink: 0;
-  transition: background 0.15s ease;
-  position: relative;
-}
-
-.support-toggle.on {
-  background: var(--ms-blue-dark);
-  border-color: rgba(142, 205, 242, 0.5);
-}
-
-.support-toggle-knob {
-  display: block;
-  width: 21px;
-  height: 21px;
-  border-radius: 50%;
-  background: white;
-  transition: transform 0.15s ease;
-}
-
-.support-toggle.on .support-toggle-knob {
-  transform: translateX(17px);
-}
-
-.support-send-btn {
-  color: var(--ms-ink);
-  background: linear-gradient(160deg, var(--ms-blue) 0%, var(--ms-blue-dark) 100%);
-  border: none;
-  box-shadow: 0 16px 32px -12px rgba(94, 178, 230, 0.55);
-  transition: filter 0.15s ease;
-}
-
-.support-send-btn:hover:not(:disabled) {
-  filter: brightness(1.06);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .stepin {
-    animation: stepin 0.32s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
-  }
-}
-
-@keyframes stepin {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* iOS Safari auto-zooms on focus when a field's font-size is under 16px —
-   bump these to 16px on small screens only, so it never triggers. */
-@media (max-width: 639px) {
-  textarea,
-  input[type="text"] {
-    font-size: 16px;
-  }
-}
-</style>
+<style scoped src="./SupportView.css"></style>

@@ -4,11 +4,6 @@ import leaguePages from '@/data/leaguePages.json'
 import guidePages from '@/data/guidePages.json'
 import { applyPageMeta } from '@/utils/seo'
 
-// Only the home route (almost always the first thing a visitor loads) is
-// eager. Everything else is a separate chunk, fetched on navigation — a
-// homepage visitor was otherwise downloading and parsing MatchesView's whole
-// dependency tree (MatchRow, StandingsModal, MatchPreviewModal, the team
-// selector wizard, ...) plus every static/legal page before painting anything.
 const MatchesView = () => import('@/views/MatchesView.vue')
 const ApiDocsView = () => import('@/views/ApiDocsView.vue')
 const PrivacyPolicyView = () => import('@/views/PrivacyPolicyView.vue')
@@ -36,9 +31,6 @@ const router = createRouter({
     if (to.hash) {
       return { el: to.hash, behavior: 'smooth', top: 96 }
     }
-    // Query-only updates on the same path (e.g. the team-selector wizard
-    // syncing its step/sport/team into the URL) shouldn't jerk the page
-    // back to the top — only an actual page change should.
     if (to.path === from.path) return false
     return { top: 0 }
   },
@@ -97,8 +89,6 @@ const router = createRouter({
         description: SUPPORT_DESCRIPTION,
       },
     },
-    // Per-league landing pages — each reuses MatchesView, locked to one league
-    // and given its own SEO title/description/H1 (see src/data/leaguePages.json).
     ...leaguePages.map((p) => ({
       path: p.path,
       name: `league-${p.slug}`,
@@ -112,10 +102,6 @@ const router = createRouter({
         isLeaguePage: true,
       },
     })),
-    // Operator-only. noindex because this must never reach a search result,
-    // and lazily imported so the dashboard isn't part of the bundle every
-    // visitor downloads. The real gate is the backend's ADMIN_TOKEN — this
-    // route renders a token prompt, not data.
     {
       path: guidePages.en.path,
       name: 'guide',
@@ -146,9 +132,6 @@ const router = createRouter({
         noindex: true,
       },
     },
-    // Catch-all. prod-server.mjs already answers 404 for anything not
-    // prerendered; this renders something useful inside that response instead
-    // of the blank shell an unmatched route would leave behind.
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',

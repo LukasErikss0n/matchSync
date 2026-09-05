@@ -1,9 +1,9 @@
-from datetime import timedelta, timezone
+from datetime import timedelta
 
 from icalendar import Alarm, Calendar, Event, vDuration
 from models.models import Match
+from utils import ensure_utc
 
-# Short league labels for event titles; leagues not listed use their full name.
 LEAGUE_SHORT_NAMES: dict[str, str] = {
     "Premier League": "Prem",
     "UEFA Champions League": "UCL",
@@ -13,8 +13,6 @@ LEAGUE_SHORT_NAMES: dict[str, str] = {
     "FIFA World Cup 2026": "World Cup",
 }
 
-# F1 isn't a two-competitor match ("home_team" is the Grand Prix, "away_team"
-# is the session, see tasks/fetcher.py's F1Filter) — "vs" reads wrong for it.
 _NON_MATCH_LEAGUES = {"Formula 1"}
 
 
@@ -38,19 +36,13 @@ def build_ics(
     cal.add("x-published-ttl", vDuration(timedelta(hours=1)))
 
     for match in matches:
-        # Ensure start_time is UTC-aware
-        start = match.start_time
-        if start.tzinfo is None:
-            start = start.replace(tzinfo=timezone.utc)
-        end = match.end_time or start + timedelta(hours=2)
-        if end.tzinfo is None:
-            end = end.replace(tzinfo=timezone.utc)
+        start = ensure_utc(match.start_time)
+        end = ensure_utc(match.end_time) if match.end_time else start + timedelta(hours=2)
 
         league = (league_by_team or {}).get(match.team_id)
         prefix = f"{LEAGUE_SHORT_NAMES.get(league, league)}: " if league else ""
 
         event = Event()
-        # Stable UID derived from external_id — must not change between refreshes
         event.add("uid", f"{match.external_id}@matchcalender.com")
         title = _title(league, match.home_team, match.away_team)
         event.add("summary", f"{prefix}{title}")

@@ -1,6 +1,4 @@
 <template>
-  <!-- The navbar's CTA opens the subscribe wizard everywhere else; there's no
-       wizard on this page, so send it home rather than leave a dead button. -->
   <Navbar @get-started="router.push('/')" />
 
   <main class="min-h-screen">
@@ -13,8 +11,6 @@
         Every issued link, and whether a calendar app is still fetching it.
       </p>
 
-      <!-- Token gate. Kept in localStorage so a refresh doesn't ask again;
-           it is a secret, so there's an explicit way to drop it. -->
       <form
         v-if="!data && !loading"
         class="glass-card rounded-2xl p-5 max-w-md"
@@ -157,8 +153,6 @@ async function load() {
     data.value = await fetchSubscriptionDashboard(value)
     localStorage.setItem(STORAGE_KEY, value)
   } catch (e) {
-    // Drop a token the server rejected, so a stale one doesn't silently
-    // re-fail on every visit.
     localStorage.removeItem(STORAGE_KEY)
     data.value = null
     error.value = e instanceof Error ? e.message : 'Could not load dashboard'
@@ -198,30 +192,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-.sub-pill {
-  padding: 5px 11px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  font-weight: 700;
-  text-transform: capitalize;
-}
-
-.sub-pill.active {
-  color: var(--ms-green);
-  background: rgba(201, 232, 210, 0.12);
-  border: 1px solid rgba(201, 232, 210, 0.3);
-}
-
-.sub-pill.pending {
-  color: rgba(244, 247, 251, 0.55);
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-}
-
-.sub-pill.dormant {
-  color: var(--ms-pink);
-  background: rgba(242, 184, 198, 0.1);
-  border: 1px solid rgba(242, 184, 198, 0.28);
-}
-</style>
+<style scoped src="./AdminView.css"></style>

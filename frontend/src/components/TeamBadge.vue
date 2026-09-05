@@ -34,7 +34,6 @@ const props = withDefaults(
 )
 
 const failed = ref(false)
-// Reset the error flag if the icon URL changes (component reused across rows)
 watch(() => props.icon, () => (failed.value = false))
 
 const initials = computed(() => {
@@ -44,7 +43,6 @@ const initials = computed(() => {
   return (words[0][0] + words[1][0]).toUpperCase()
 })
 
-// Deterministic, pleasant color picked from the team name.
 const PALETTE = [
   '#0ea5e9', '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e',
   '#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981',

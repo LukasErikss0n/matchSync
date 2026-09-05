@@ -1,5 +1,3 @@
-from datetime import timezone
-
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session, col, select
 
@@ -11,7 +9,7 @@ from services.featured_match import (
     get_featured_match,
     get_featured_matches,
 )
-from services.crest_url import crest_url
+from services.match_out import build_match_out
 from services.standings import standings_supported
 from services.week_matches import MAX_WEEK_MATCHES, get_week_matches
 
@@ -31,7 +29,6 @@ def featured_match(
     region: str | None = _REGION_QUERY,
     session: Session = Depends(get_session),
 ):
-    """The single highest-scoring live/upcoming/recent match, for the hero card."""
     return get_featured_match(session, region)
 
 
@@ -41,7 +38,6 @@ def featured_matches(
     limit: int = Query(default=3, ge=1, le=MAX_FEATURED),
     session: Session = Depends(get_session),
 ):
-    """Top-ranked matches (at most one per league) for the rotating hero card."""
     return get_featured_matches(session, region, limit)
 
 
@@ -51,7 +47,6 @@ def this_week(
     limit: int = Query(default=MAX_WEEK_MATCHES, ge=1, le=MAX_WEEK_MATCHES),
     session: Session = Depends(get_session),
 ):
-    """The coming week's matches, ranked by league then kickoff."""
     return get_week_matches(session, region, limit)
 
 
@@ -63,7 +58,6 @@ def list_matches(
     limit: int = Query(default=500, ge=1, le=2000),
     session: Session = Depends(get_session),
 ):
-    # Read only the home-perspective row so each fixture appears once.
     stmt = (
         select(Match, Team, League, Sport)
         .join(Team, col(Match.team_id) == col(Team.id))
@@ -80,7 +74,6 @@ def list_matches(
     if not rows:
         return []
 
-    # Away crest/slug live on a different Team row — build a per-league lookup.
     league_ids = {lg.id for _, _, lg, _ in rows}
     team_rows = session.exec(
         select(Team).where(col(Team.league_id).in_(league_ids))
@@ -89,11 +82,6 @@ def list_matches(
         (t.league_id, t.name): t for t in team_rows
     }
 
-    # `team` normally shows up as a match's home or away text — but a third,
-    # text-less "_extra" perspective also exists (see tasks/fetcher.py's
-    # DBStore.save/F1Filter — e.g. F1's "Formula 1" pseudo-team, which every
-    # session belongs to without being the home_team/Grand-Prix or away_team/
-    # session text). Resolve which events that covers up front.
     extra_event_ids: set[str] = set()
     if team:
         extra_rows = session.exec(
@@ -105,7 +93,7 @@ def list_matches(
 
     result: list[MatchOut] = []
     for match, home_team, lg, sp in rows:
-        assert match.id is not None and lg.id is not None  # persisted rows
+        assert match.id is not None and lg.id is not None
         away_team = teams_by_league.get((lg.id, match.away_team))
 
         if team:
@@ -114,29 +102,12 @@ def list_matches(
             if not is_home_or_away and base_id not in extra_event_ids:
                 continue
 
-        # Stored naive but always UTC — stamp tz so the wire value is ISO-UTC.
-        start = match.start_time
-        if start.tzinfo is None:
-            start = start.replace(tzinfo=timezone.utc)
-
-        result.append(MatchOut(
-            id=match.id,
-            external_id=match.external_id,
-            sport=sp.slug,
-            league=LeagueOut(name=lg.name, slug=lg.slug, supports_standings=standings_supported(lg.slug)),
-            home_team=match.home_team,
-            away_team=match.away_team,
-            home_slug=home_team.slug,
-            away_slug=away_team.slug if away_team else None,
-            home_icon=home_team.icon,
-            away_icon=away_team.icon if away_team else None,
-            home_icon_cropped=crest_url(home_team),
-            away_icon_cropped=crest_url(away_team),
-            home_score=match.home_score,
-            away_score=match.away_score,
-            start_time=start,
-            venue=match.venue,
-            status=match.status,
+        result.append(build_match_out(
+            match,
+            home_team,
+            away_team,
+            LeagueOut(name=lg.name, slug=lg.slug, supports_standings=standings_supported(lg.slug)),
+            sp.slug,
         ))
 
     return result[:limit]

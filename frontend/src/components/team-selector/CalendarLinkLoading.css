@@ -1,0 +1,128 @@
+.icl-badge {
+  position: relative;
+}
+
+.icl-phases {
+  position: relative;
+}
+
+.icl-check {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  opacity: 0;
+}
+
+@keyframes icl-check-in {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes icl-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.icl-check-1 {
+  transform: scale(0.6);
+  animation: icl-check-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) 1.75s forwards;
+}
+
+.icl-phase {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  animation: icl-phase-window 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.icl-phase-a {
+  animation-delay: 0s;
+}
+.icl-phase-b {
+  animation-delay: 0.85s;
+}
+.icl-phase-c {
+  animation: icl-phase-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) 1.7s both;
+}
+@keyframes icl-phase-window {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  15%,
+  80% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@keyframes icl-phase-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 12 bars around the badge center, brightness sweeping clockwise via
+   staggered negative animation-delays ("iOS activity indicator" technique). */
+.icl-spinner {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  animation: icl-fade-out 0.3s ease 1.75s forwards;
+}
+.icl-spinner-bar {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 3px;
+  height: 9px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--ms-blue);
+  transform-origin: 50% 16px;
+  opacity: 0.15;
+  animation: icl-spinner-fade 1.2s linear infinite;
+}
+@keyframes icl-spinner-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icl-spinner {
+    animation: none;
+    opacity: 0.6;
+  }
+  .icl-spinner-bar {
+    animation: none;
+    opacity: 0.5;
+  }
+  .icl-phase-a,
+  .icl-phase-b {
+    display: none;
+  }
+  .icl-phase-c {
+    position: static;
+    animation: icl-phase-in 0.25s ease forwards;
+  }
+  .icl-check-1 {
+    animation: icl-check-in 0.25s ease forwards;
+  }
+}

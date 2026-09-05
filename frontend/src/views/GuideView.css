@@ -1,0 +1,48 @@
+.guide-body {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--ms-muted);
+}
+
+.guide-steps {
+  counter-reset: guide-step;
+  padding-left: 0;
+  list-style: none;
+}
+
+.guide-steps li {
+  counter-increment: guide-step;
+  position: relative;
+  padding-left: 2.25rem;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ms-muted);
+}
+
+.guide-steps li::before {
+  content: counter(guide-step);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ms-blue);
+  background: rgba(142, 205, 242, 0.12);
+  border: 1px solid rgba(142, 205, 242, 0.28);
+}
+
+.guide-toc-link {
+  color: var(--ms-blue);
+  text-decoration: none;
+}
+
+.guide-toc-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

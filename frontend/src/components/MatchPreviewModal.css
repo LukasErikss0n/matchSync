@@ -1,0 +1,32 @@
+/* Bare-icon close button, matching TeamSelectorModal's cross. */
+.xcl-btn-1 {
+  background: transparent;
+  border: none;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
+}
+.xcl-btn-1:hover {
+  opacity: 0.7;
+  transform: scale(1.08);
+}
+.xcl-btn-1:active {
+  transform: scale(0.92);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xcl-btn-1:hover,
+  .xcl-btn-1:active {
+    transform: none;
+  }
+}
+
+.vfs-btn-1 {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+.vfs-btn-1:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.28);
+}
+.vfs-btn-1:active {
+  background: rgba(255, 255, 255, 0.03);
+}
