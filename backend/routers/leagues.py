@@ -4,6 +4,7 @@ from database import get_session
 from models.models import League, Sport, Team
 from schemas.schemas import LeagueOut, SeasonStatsOut, SportOut, StandingEntryOut, TeamOut
 from services.crest_url import crest_url
+from services.search import match_score
 from services.season_stats import get_season_stats
 from services.standings import get_standings
 
@@ -80,10 +81,19 @@ def list_teams(
     teams = _collect_teams(rows)
 
     if q:
-        ql = q.lower()
-        teams = [t for t in teams if ql in t.name.lower()]
+        scores: dict[int, float] = {}
+        matched = []
+        for t in teams:
+            fields = (t.name, *(l.name for l in t.leagues), *(l.slug for l in t.leagues))
+            score = match_score(q, *fields)
+            if score > 0:
+                scores[id(t)] = score
+                matched.append(t)
+        teams = matched
+        teams.sort(key=lambda t: (-scores[id(t)], -len(t.leagues), t.name.lower()))
+    else:
+        teams.sort(key=lambda t: (-len(t.leagues), t.name.lower()))
 
-    teams.sort(key=lambda t: (-len(t.leagues), t.name.lower()))
     return teams[:limit]
 
 
