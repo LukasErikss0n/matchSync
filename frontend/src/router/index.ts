@@ -130,20 +130,8 @@ const router = createRouter({
         {
           path: '',
           name: 'admin',
-          component: () => import('@/views/admin/AdminAnalyticsView.vue'),
-          meta: { title: 'Analytics | Admin | MatchCalender', description: 'Operator dashboard.' },
-        },
-        {
-          path: 'leagues',
-          name: 'admin-leagues',
-          component: () => import('@/views/admin/AdminLeaguesView.vue'),
-          meta: { title: 'Leagues | Admin | MatchCalender', description: 'Operator dashboard.' },
-        },
-        {
-          path: 'teams',
-          name: 'admin-teams',
-          component: () => import('@/views/admin/AdminTeamsView.vue'),
-          meta: { title: 'Teams | Admin | MatchCalender', description: 'Operator dashboard.' },
+          component: () => import('@/views/admin/AdminDashboardView.vue'),
+          meta: { title: 'Admin | MatchCalender', description: 'Operator dashboard.' },
         },
       ],
     },
