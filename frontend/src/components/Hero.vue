@@ -145,20 +145,25 @@ const featuredMatches = computed(() => cachedFeaturedMatches.value ?? [])
 const featuredLoading = computed(() => cachedFeaturedMatches.value === undefined)
 
 let searchTimer: number | null = null
+let teamsRequestSeq = 0
 
 const teamsFirstLoad = ref(true)
 
 async function loadTeams() {
+  const seq = ++teamsRequestSeq
   loading.value = true
   try {
-    teams.value = await fetchTeams({
+    const results = await fetchTeams({
       sport: sportFilter.value ?? undefined,
       q: search.value.trim() || undefined,
       limit: 8,
     })
+    if (seq === teamsRequestSeq) teams.value = results
   } finally {
-    teamsFirstLoad.value = false
-    loading.value = false
+    if (seq === teamsRequestSeq) {
+      teamsFirstLoad.value = false
+      loading.value = false
+    }
   }
 }
 
