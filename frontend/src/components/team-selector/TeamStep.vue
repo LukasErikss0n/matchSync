@@ -12,7 +12,7 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="color: rgba(244,247,251,.5)"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input
         :value="search"
-        class="flex-1 bg-transparent border-none outline-none text-[15px] py-3.5"
+        class="flex-1 bg-transparent border-none outline-none text-[16px] py-3.5"
         style="color: var(--ms-text)"
         :placeholder="`Search ${sportLabel} teams…`"
         autofocus

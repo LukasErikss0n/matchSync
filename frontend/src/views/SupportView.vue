@@ -151,7 +151,7 @@
                 <input
                   v-model="supportEmail"
                   type="text"
-                  class="w-full rounded-xl px-3.5 py-2.5 text-[13.5px] outline-none"
+                  class="w-full rounded-xl px-3.5 py-2.5 text-[16px] sm:text-[13.5px] outline-none"
                   style="background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.14); color: var(--ms-text)"
                   placeholder="you@example.com"
                   @input="emailError = ''"

@@ -63,7 +63,7 @@
             v-model="search"
             type="text"
             placeholder="Search teams and leagues"
-            class="flex-1 bg-transparent border-none outline-none text-[13.5px] py-2.5"
+            class="flex-1 bg-transparent border-none outline-none text-[16px] sm:text-[13.5px] py-2.5"
             style="color: var(--ms-text)"
           />
         </div>

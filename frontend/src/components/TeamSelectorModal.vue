@@ -2,13 +2,13 @@
   <div
     class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
     :class="{ 'is-closing': closing }"
-    style="background: rgba(5, 8, 14, 0.6); backdrop-filter: blur(8px)"
+    style="height: 100dvh; background: rgba(5, 8, 14, 0.6); backdrop-filter: blur(8px)"
     @click.self="handleClose"
   >
     <div
       class="glass-panel relative rounded-[30px] w-full max-w-xl modal-panel overflow-hidden"
       :class="{ 'is-closing': closing }"
-      style="max-height: 90vh; overflow-y: auto; background: rgba(22,32,52,.9); backdrop-filter: blur(32px) saturate(150%); border: 1px solid rgba(255,255,255,.2)"
+      style="max-height: 90dvh; overflow-y: auto; background: rgba(22,32,52,.9); backdrop-filter: blur(32px) saturate(150%); border: 1px solid rgba(255,255,255,.2)"
     >
       <div
         class="absolute inset-0 pointer-events-none"
